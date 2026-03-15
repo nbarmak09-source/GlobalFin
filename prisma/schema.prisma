@@ -1,0 +1,129 @@
+// Prisma schema for NextAuth + app data
+// https://authjs.dev/reference/adapter/prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- NextAuth (Prisma Adapter) ---
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  hashedPassword String?  // for credentials provider
+  accounts      Account[]
+  sessions      Session[]
+  positions     Position[]
+  watchlistItems WatchlistItem[]
+  pitches       Pitch[]
+  alerts        Alert[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// --- App: per-user portfolio & watchlist ---
+model Position {
+  id           String   @id @default(cuid())
+  userId       String
+  symbol       String
+  name         String
+  shares       Float
+  avgCost      Float
+  purchaseDate String?  @map("purchase_date") // YYYY-MM-DD
+  sortOrder    Int      @default(0) @map("sort_order")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model WatchlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  symbol    String
+  name      String
+  addedAt   DateTime @default(now()) @map("added_at")
+  sortOrder Int      @default(0) @map("sort_order")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// --- App: per-user saved pitches ---
+model Pitch {
+  id              String   @id @default(cuid())
+  userId          String
+  symbol          String
+  companyName     String   @map("company_name")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  thesis          String   @db.Text
+  companyOverview String   @map("company_overview") @db.Text
+  valuation       String   @db.Text
+  financials      String   @db.Text
+  catalysts       String   @db.Text
+  risks           String   @db.Text
+  recommendation  String   @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// --- App: per-user price alerts ---
+model Alert {
+  id          String    @id @default(cuid())
+  userId      String
+  symbol      String
+  companyName String    @map("company_name")
+  targetPrice Float     @map("target_price")
+  direction   String    // "above" or "below"
+  note        String?   @db.Text
+  triggered   Boolean   @default(false)
+  triggeredAt DateTime? @map("triggered_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

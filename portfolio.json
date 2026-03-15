@@ -1,0 +1,46 @@
+{
+  "positions": [
+    {
+      "id": "5ea505d5-947f-4037-a3e7-3cd96170a3ef",
+      "symbol": "IREN",
+      "name": "IREN LIMITED",
+      "shares": 2500,
+      "avgCost": 41.67
+    },
+    {
+      "id": "a6df2793-efb5-478b-9efe-c486266d559d",
+      "symbol": "MSFT",
+      "name": "Microsoft Corporation",
+      "shares": 6,
+      "avgCost": 197.96
+    },
+    {
+      "id": "1b156e26-c8b6-453d-8970-98b56adec3c8",
+      "symbol": "SU",
+      "name": "Suncor Energy  Inc.",
+      "shares": 26,
+      "avgCost": 14.76
+    },
+    {
+      "id": "58b1c4fa-8ac8-45e4-b7ed-d1b00a772d08",
+      "symbol": "AAPL",
+      "name": "Apple Inc.",
+      "shares": 11,
+      "avgCost": 107.74
+    }
+  ],
+  "watchlist": [
+    {
+      "id": "86ddf9de-6b7f-4682-8036-e68d03d1395b",
+      "symbol": "IREN",
+      "name": "IREN LIMITED",
+      "addedAt": "2026-03-02T15:29:28.255Z"
+    },
+    {
+      "id": "d1da20a9-f733-4c79-a33e-20de8971b37f",
+      "symbol": "CIFR",
+      "name": "Cipher Mining Inc.",
+      "addedAt": "2026-03-02T15:29:36.203Z"
+    }
+  ]
+}

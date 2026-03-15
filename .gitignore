@@ -22,6 +22,10 @@
 
 # misc
 .DS_Store
+market-summary-cache.json
+visual-capitalist-cache.json
+vc-daily-cache.json
+public/vc-daily.*
 *.pem
 
 # debug
@@ -32,6 +36,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel

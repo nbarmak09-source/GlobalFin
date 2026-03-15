@@ -1,0 +1,6 @@
+# Allow crawlers by default. Block /api if you prefer to hide API routes from indexing.
+User-agent: *
+Allow: /
+
+# Disallow API and auth routes from indexing (optional; uncomment if desired)
+# Disallow: /api/
