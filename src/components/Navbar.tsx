@@ -30,10 +30,10 @@ const dashboardTab = { href: "/", label: "Dashboard", icon: LayoutDashboard };
 const tabs = [
   { href: "/research", label: "Research", icon: Search },
   { href: "/investing", label: "Investing", icon: TrendingUp },
-  { href: "/fixed-income", label: "Fixed Income & Credit", icon: LineChart },
+  { href: "/fixed-income", label: "Fixed Income", icon: LineChart },
   {
     href: "/alternatives",
-    label: "Alt Assets & Real Estate",
+    label: "Alts & Real Estate",
     icon: Building2,
   },
 ];
@@ -42,6 +42,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const ecmActive = pathname.startsWith("/ecm");
 
   useEffect(() => {
@@ -114,25 +115,42 @@ export default function Navbar() {
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
           {navLinks}
-          <div className="ml-2 flex items-center gap-1 border-l border-border pl-2">
-            <span
-              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted max-w-[120px] truncate"
-              title={session?.user?.email ?? "Signed in"}
-            >
-              <User className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden sm:inline truncate">
-                {session?.user?.name ?? session?.user?.email ?? "You"}
-              </span>
-            </span>
+          <div className="ml-2 flex items-center gap-1 border-l border-border pl-2 relative">
             <button
               type="button"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors min-h-[44px]"
-              title="Sign out"
+              onClick={() => setAccountOpen((v) => !v)}
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted hover:text-foreground hover:bg-card-hover transition-colors"
+              title={session?.user?.email ?? "Account"}
             >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Sign out</span>
+              <User className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline max-w-[140px] truncate">
+                {session?.user?.name ?? session?.user?.email ?? "Account"}
+              </span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${accountOpen ? "rotate-180" : ""}`} />
             </button>
+            {accountOpen && (
+              <div className="absolute right-0 top-full mt-2 w-44 rounded-lg border border-border bg-card shadow-lg z-50">
+                <Link
+                  href="/account"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:bg-card-hover hover:text-foreground"
+                  onClick={() => setAccountOpen(false)}
+                >
+                  <User className="h-4 w-4" />
+                  <span>View account</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAccountOpen(false);
+                    signOut({ callbackUrl: "/login" });
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted hover:bg-card-hover hover:text-foreground"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
         {/* Mobile menu button */}
@@ -164,6 +182,13 @@ export default function Navbar() {
               <User className="h-4 w-4" />
               {session?.user?.email ?? "Signed in"}
             </span>
+            <Link
+              href="/account"
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors min-h-[44px]"
+            >
+              <User className="h-4 w-4" />
+              Account
+            </Link>
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
