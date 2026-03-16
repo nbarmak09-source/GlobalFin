@@ -57,7 +57,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="w-full max-w-sm space-y-8">
+    <div className="w-full max-w-sm space-y-6 sm:space-y-8">
       <div className="flex flex-col items-center gap-2">
         <Link
           href="/"
@@ -115,7 +115,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50"
+            className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50 min-h-[44px]"
           >
             {loading ? "Signing in…" : "Sign in"}
           </button>
@@ -137,14 +137,14 @@ function LoginForm() {
           <button
             type="button"
             onClick={() => handleOAuth("google")}
-            className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-card-hover transition-colors"
+            className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-foreground hover:bg-card-hover transition-colors min-h-[44px]"
           >
             Google
           </button>
           <button
             type="button"
             onClick={() => handleOAuth("github")}
-            className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-card-hover transition-colors"
+            className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-foreground hover:bg-card-hover transition-colors min-h-[44px]"
           >
             GitHub
           </button>
@@ -163,7 +163,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center px-4">
+    <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center px-3 py-6 sm:px-4">
       <Suspense fallback={<div className="text-muted">Loading…</div>}>
         <LoginForm />
       </Suspense>

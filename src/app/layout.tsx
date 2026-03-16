@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Source_Sans_3, Libre_Baskerville, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
@@ -28,6 +28,12 @@ export const metadata: Metadata = {
   description: "Global Capital Markets HQ - Personal stock market dashboard with live data, research, and portfolio tracking",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -39,14 +45,16 @@ export default function RootLayout({
         className={`${sourceSans.variable} ${libreBaskerville.variable} ${ibmPlexMono.variable} font-sans antialiased min-h-screen w-full overflow-x-hidden flex flex-col`}
       >
         <SessionProvider>
-          <TickerTape />
+          <div className="hidden sm:block">
+            <TickerTape />
+          </div>
           <Navbar />
-          <main className="flex-1 mx-auto max-w-7xl w-full min-w-0 px-4 py-6">{children}</main>
-          <footer className="border-t border-border py-4">
-            <p className="text-center text-xs text-muted max-w-2xl mx-auto px-4">
+          <main className="flex-1 mx-auto max-w-7xl w-full min-w-0 px-3 py-4 sm:px-4 sm:py-6">{children}</main>
+          <footer className="border-t border-border py-3 sm:py-4">
+            <p className="text-center text-xs text-muted max-w-2xl mx-auto px-3 sm:px-4">
               Data and analysis are for informational purposes only and do not constitute financial, investment, or legal advice.
             </p>
-            <p className="text-center text-xs text-muted mt-2">
+            <p className="text-center text-xs text-muted mt-2 px-3 sm:px-4">
               Questions or concerns?{" "}
               <a
                 href="mailto:nbarmak09@gmail.com"

@@ -37,8 +37,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-8">
+    <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center px-3 py-6 sm:px-4">
+      <div className="w-full max-w-sm space-y-6 sm:space-y-8">
         <div className="flex flex-col items-center gap-2">
           <Link
             href="/"
@@ -58,7 +58,7 @@ export default function RegisterPage() {
               </p>
               <Link
                 href="/login"
-                className="block w-full text-center rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90 transition-colors"
+                className="block w-full text-center rounded-lg bg-accent px-4 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-colors min-h-[44px]"
               >
                 Go to sign in
               </Link>
@@ -120,7 +120,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50"
+              className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50 min-h-[44px]"
             >
               {loading ? "Creating account…" : "Sign up"}
             </button>
