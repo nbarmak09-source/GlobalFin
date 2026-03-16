@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -29,6 +29,7 @@ import {
 const dashboardTab = { href: "/", label: "Dashboard", icon: LayoutDashboard };
 const tabs = [
   { href: "/research", label: "Research", icon: Search },
+  { href: "/investing", label: "Investing", icon: TrendingUp },
   { href: "/fixed-income", label: "Fixed Income & Credit", icon: LineChart },
   {
     href: "/alternatives",
@@ -37,58 +38,15 @@ const tabs = [
   },
 ];
 
-const investingLinks = [
-  { href: "/investing", label: "Overview", icon: LayoutDashboard },
-  { href: "/portfolio", label: "Portfolio", icon: Briefcase },
-  { href: "/stocks", label: "Stocks", icon: CandlestickChart },
-  { href: "/pitch", label: "Pitch", icon: FileText },
-  { href: "/screener", label: "Screener", icon: Filter },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/allocation", label: "Allocation", icon: PieChart },
-  { href: "/alerts", label: "Price Alerts", icon: Bell },
-  { href: "/models", label: "Models", icon: Calculator },
-];
-
-const INVESTING_PREFIXES = [
-  "/investing",
-  "/portfolio",
-  "/stocks",
-  "/pitch",
-  "/screener",
-  "/calendar",
-  "/allocation",
-  "/alerts",
-  "/models",
-];
-
 export default function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [investingOpen, setInvestingOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const investingActive = INVESTING_PREFIXES.some((p) =>
-    pathname.startsWith(p)
-  );
   const ecmActive = pathname.startsWith("/ecm");
 
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setInvestingOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
 
   useEffect(() => {
     if (mobileOpen) document.body.style.overflow = "hidden";
@@ -139,36 +97,6 @@ export default function Navbar() {
         <Briefcase className="h-4 w-4 shrink-0" />
         ECM
       </Link>
-      <div className="relative" ref={dropdownRef}>
-        <button
-          type="button"
-          onClick={() => setInvestingOpen((v) => !v)}
-          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
-            investingActive
-              ? "bg-accent/15 text-accent"
-              : "text-muted hover:text-foreground hover:bg-card-hover"
-          }`}
-        >
-          <TrendingUp className="h-4 w-4 shrink-0" />
-          Investing
-          <ChevronDown className={`h-3 w-3 shrink-0 ml-auto transition-transform ${investingOpen ? "rotate-180" : ""}`} />
-        </button>
-        {investingOpen && (
-          <div className="mt-1 ml-4 space-y-0.5 border-l border-border pl-2 md:ml-0 md:mt-1 md:absolute md:right-0 md:top-full md:w-52 md:rounded-xl md:bg-card md:border md:border-border md:shadow-xl md:z-40 md:overflow-hidden md:pl-0">
-            {investingLinks.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-card-hover transition-colors rounded-lg min-h-[44px] md:py-2"
-                onClick={() => setInvestingOpen(false)}
-              >
-                <Icon className="h-4 w-4 text-accent shrink-0" />
-                {label}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
     </>
   );
 
