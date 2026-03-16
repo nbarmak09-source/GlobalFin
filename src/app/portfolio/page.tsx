@@ -160,17 +160,17 @@ export default function PortfolioPage() {
           <button
             onClick={toggleValuesVisible}
             className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted hover:text-foreground hover:bg-card-hover transition-colors"
-            title={valuesVisible ? "Hide values" : "Show values"}
+            title={valuesVisible ? "Hide market values" : "Show market values"}
           >
             {valuesVisible ? (
               <>
                 <EyeOff className="h-4 w-4" />
-                <span className="hidden sm:inline">Hide</span>
+                <span className="hidden sm:inline">Hide Mkt Value</span>
               </>
             ) : (
               <>
                 <Eye className="h-4 w-4" />
-                <span className="hidden sm:inline">Show</span>
+                <span className="hidden sm:inline">Show Mkt Value</span>
               </>
             )}
           </button>

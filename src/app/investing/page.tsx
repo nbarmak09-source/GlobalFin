@@ -95,10 +95,28 @@ function pct(n: number) {
   return `${s}${n.toFixed(2)}%`;
 }
 
+const MASK = "••••";
+
 export default function InvestingPage() {
   const [portfolio, setPortfolio] = useState<PortfolioSnapshot | null>(null);
   const [alerts, setAlerts] = useState<AlertSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
+  const [valuesVisible, setValuesVisible] = useState(true);
+
+  useEffect(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem("portfolio-values-visible") : null;
+    if (stored !== null) setValuesVisible(stored === "true");
+  }, []);
+
+  function toggleValuesVisible() {
+    setValuesVisible((v) => {
+      const next = !v;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("portfolio-values-visible", String(next));
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     async function load() {
@@ -163,9 +181,18 @@ export default function InvestingPage() {
             Your personal investing toolkit — portfolio, research, and alerts.
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
-          <TrendingUp className="h-3.5 w-3.5" />
-          <span>Investing hub</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleValuesVisible}
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted hover:text-foreground hover:bg-card-hover transition-colors"
+            title={valuesVisible ? "Hide values" : "Show values"}
+          >
+            <span>{valuesVisible ? "Hide values" : "Show values"}</span>
+          </button>
+          <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
+            <TrendingUp className="h-3.5 w-3.5" />
+            <span>Investing hub</span>
+          </div>
         </div>
       </header>
 
@@ -179,7 +206,7 @@ export default function InvestingPage() {
           ) : portfolio ? (
             <>
               <p className="text-2xl font-bold tabular-nums">
-                {fmt(portfolio.totalValue)}
+                {valuesVisible ? fmt(portfolio.totalValue) : MASK}
               </p>
               <div className="flex items-center gap-3 text-xs">
                 <span
@@ -217,7 +244,7 @@ export default function InvestingPage() {
                 {pct(portfolio.totalPLPct)}
               </p>
               <p className="text-xs text-muted">
-                {fmt(portfolio.totalValue - portfolio.totalCost)} P&L
+                {valuesVisible ? fmt(portfolio.totalValue - portfolio.totalCost) : MASK} P&L
               </p>
             </>
           ) : (

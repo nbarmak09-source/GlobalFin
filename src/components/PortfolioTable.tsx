@@ -137,21 +137,17 @@ function SortableRow({
       <td className="px-4 py-3 text-right">
         <div
           className={`font-mono font-medium ${
-            valuesVisible && pos.totalPL >= 0 ? "text-green" : valuesVisible ? "text-red" : "text-muted"
+            pos.totalPL >= 0 ? "text-green" : "text-red"
           }`}
         >
-          {valuesVisible
-            ? `${pos.totalPL >= 0 ? "+" : ""}$${formatCurrency(Math.abs(pos.totalPL))}`
-            : MASK}
+          {`${pos.totalPL >= 0 ? "+" : ""}$${formatCurrency(Math.abs(pos.totalPL))}`}
         </div>
         <div
           className={`text-xs font-mono ${
-            valuesVisible && pos.totalPLPercent >= 0 ? "text-green" : valuesVisible ? "text-red" : "text-muted"
+            pos.totalPLPercent >= 0 ? "text-green" : "text-red"
           }`}
         >
-          {valuesVisible
-            ? `${pos.totalPLPercent >= 0 ? "+" : ""}${pos.totalPLPercent.toFixed(2)}%`
-            : MASK}
+          {`${pos.totalPLPercent >= 0 ? "+" : ""}${pos.totalPLPercent.toFixed(2)}%`}
         </div>
       </td>
       <td className="px-4 py-3">
