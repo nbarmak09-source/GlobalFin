@@ -44,12 +44,6 @@ const toolCards = [
     desc: "Deep-dive into single-name fundamentals.",
   },
   {
-    href: "/pitch",
-    icon: FileText,
-    label: "Pitch",
-    desc: "Generate AI-powered investment memos.",
-  },
-  {
     href: "/screener",
     icon: Filter,
     label: "Screener",
@@ -66,6 +60,18 @@ const toolCards = [
     icon: PieChart,
     label: "Allocation",
     desc: "Visualise sector and geographic exposure.",
+  },
+  {
+    href: "/filings",
+    icon: FileText,
+    label: "Filings",
+    desc: "AI summaries of 10-K and 10-Q filings.",
+  },
+  {
+    href: "/pitch",
+    icon: Calculator,
+    label: "Pitch",
+    desc: "Generate AI-powered investment memos.",
   },
   {
     href: "/alerts",

@@ -4,6 +4,8 @@ import { getQuote } from "@/lib/yahoo";
 const COMMODITIES = [
   { symbol: "GC=F", label: "Gold" },
   { symbol: "SI=F", label: "Silver" },
+  { symbol: "HG=F", label: "Copper" },
+  { symbol: "PA=F", label: "Palladium" },
   { symbol: "CL=F", label: "WTI Crude" },
   { symbol: "NG=F", label: "Natural Gas" },
   { symbol: "ZC=F", label: "Corn" },
