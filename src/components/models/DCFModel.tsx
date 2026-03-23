@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import type { QuoteSummaryData, SECFinancials } from "@/lib/types";
+import { useState, useMemo, type ReactNode } from "react";
+import type {
+  QuoteSummaryData,
+  SECAnnualFinancialRow,
+  SECFinancials,
+} from "@/lib/types";
+import LatestFiscalBaseSummary from "@/components/models/LatestFiscalBaseSummary";
 import { Download, TrendingUp, TrendingDown } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -28,6 +33,45 @@ function fmtM(n: number): string {
   if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(1)}M`;
   if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(1)}K`;
   return n.toFixed(0);
+}
+
+function cellPctOfRev(
+  value: number | null,
+  revenue: number | null,
+  useAbsForDisplay: boolean,
+): ReactNode {
+  if (value == null) return "—";
+  const displayed = useAbsForDisplay ? Math.abs(value) : value;
+  const pct =
+    revenue != null && revenue > 0
+      ? (Math.abs(value) / revenue) * 100
+      : null;
+  return (
+    <>
+      {fmtM(displayed)}
+      {pct != null && (
+        <span className="text-muted text-xs">
+          {" "}
+          ({pct.toFixed(1)}% of revenue)
+        </span>
+      )}
+    </>
+  );
+}
+
+function cellDeltaWC(
+  row: SECAnnualFinancialRow,
+  prev: SECAnnualFinancialRow | undefined,
+): ReactNode {
+  if (
+    !prev ||
+    prev.workingCapital == null ||
+    row.workingCapital == null
+  ) {
+    return "—";
+  }
+  const delta = row.workingCapital - prev.workingCapital;
+  return cellPctOfRev(delta, row.revenue, false);
 }
 
 function deriveDefaults(data: QuoteSummaryData, secData: SECFinancials | null) {
@@ -509,27 +553,76 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
                 </tr>
               </thead>
               <tbody>
-                {(
-                  [
-                    { label: "Revenue", key: "revenue" },
-                    { label: "CapEx", key: "capex" },
-                    { label: "D&A", key: "depreciation" },
-                    { label: "Operating CF", key: "operatingCashflow" },
-                    { label: "Working Capital", key: "workingCapital" },
-                  ] as const
-                ).map(({ label, key }) => (
-                  <tr key={key} className="border-b border-border/50">
-                    <td className="px-4 py-2 font-medium">{label}</td>
-                    {historicalRows.map((r) => (
-                      <td
-                        key={r.fiscalYear}
-                        className="px-4 py-2 text-right tabular-nums"
-                      >
-                        {r[key] != null ? fmtM(r[key]!) : "—"}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                <tr className="border-b border-border/50">
+                  <td className="px-4 py-2 font-medium">Revenue</td>
+                  {historicalRows.map((r) => (
+                    <td
+                      key={r.fiscalYear}
+                      className="px-4 py-2 text-right tabular-nums"
+                    >
+                      {r.revenue != null ? fmtM(r.revenue) : "—"}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="px-4 py-2 font-medium">CapEx</td>
+                  {historicalRows.map((r) => (
+                    <td
+                      key={r.fiscalYear}
+                      className="px-4 py-2 text-right tabular-nums"
+                    >
+                      {cellPctOfRev(r.capex, r.revenue, true)}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="px-4 py-2 font-medium">D&amp;A</td>
+                  {historicalRows.map((r) => (
+                    <td
+                      key={r.fiscalYear}
+                      className="px-4 py-2 text-right tabular-nums"
+                    >
+                      {cellPctOfRev(r.depreciation, r.revenue, false)}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="px-4 py-2 font-medium">Operating CF</td>
+                  {historicalRows.map((r) => (
+                    <td
+                      key={r.fiscalYear}
+                      className="px-4 py-2 text-right tabular-nums"
+                    >
+                      {r.operatingCashflow != null
+                        ? fmtM(r.operatingCashflow)
+                        : "—"}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="px-4 py-2 font-medium">Working Capital</td>
+                  {historicalRows.map((r) => (
+                    <td
+                      key={r.fiscalYear}
+                      className="px-4 py-2 text-right tabular-nums"
+                    >
+                      {r.workingCapital != null
+                        ? fmtM(r.workingCapital)
+                        : "—"}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="px-4 py-2 font-medium">Change in WC</td>
+                  {historicalRows.map((r, i) => (
+                    <td
+                      key={r.fiscalYear}
+                      className="px-4 py-2 text-right tabular-nums"
+                    >
+                      {cellDeltaWC(r, historicalRows[i - 1])}
+                    </td>
+                  ))}
+                </tr>
               </tbody>
             </table>
           </div>
@@ -538,6 +631,14 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
 
       {/* Model Assumptions */}
       <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <LatestFiscalBaseSummary
+          secData={secData}
+          data={data}
+          showWaccAndTax
+          defaultWacc={wacc}
+          defaultTaxRate={taxRate}
+        />
+
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Model Assumptions</h3>
           <button
@@ -753,14 +854,36 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
                     <td className="px-4 py-2 text-right tabular-nums">
                       {base != null ? fmtM(base) : "—"}
                     </td>
-                    {values.map((v, i) => (
-                      <td
-                        key={i}
-                        className={`px-4 py-2 text-right tabular-nums ${bold ? "font-semibold" : ""}`}
-                      >
-                        {fmtM(v)}
-                      </td>
-                    ))}
+                    {values.map((v, i) => {
+                      const rev = projections.years[i].revenue;
+                      let bracket: string | null = null;
+                      if (
+                        label === "(-) D&A" ||
+                        label === "(+) D&A"
+                      ) {
+                        bracket = ` (${daPct}% of revenue)`;
+                      } else if (label === "(-) CapEx") {
+                        bracket = ` (${capexPct}% of revenue)`;
+                      } else if (
+                        label === "(-) ΔWC" &&
+                        rev > 0
+                      ) {
+                        bracket = ` (${((Math.abs(v) / rev) * 100).toFixed(1)}% of revenue)`;
+                      }
+                      return (
+                        <td
+                          key={i}
+                          className={`px-4 py-2 text-right tabular-nums ${bold ? "font-semibold" : ""}`}
+                        >
+                          {fmtM(v)}
+                          {bracket && (
+                            <span className="text-muted text-xs font-normal">
+                              {bracket}
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ),
               )}

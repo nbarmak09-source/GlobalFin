@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { QuoteSummaryData, SECFinancials } from "@/lib/types";
+import LatestFiscalBaseSummary from "@/components/models/LatestFiscalBaseSummary";
 import { Download, TrendingUp, TrendingDown } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -828,6 +829,8 @@ export default function LBOModel({
           </div>
         </div>
       </section>
+
+      <LatestFiscalBaseSummary secData={secData} data={data} />
 
       {/* Operating Assumptions */}
       <section className="rounded-xl border border-border bg-card p-5 space-y-4">
