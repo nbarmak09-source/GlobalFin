@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import type { QuoteSummaryData, SECFinancials } from "@/lib/types";
-import LatestFiscalBaseSummary from "@/components/models/LatestFiscalBaseSummary";
 import { Download, TrendingUp, TrendingDown } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -58,11 +57,11 @@ function deriveDefaults(
       (a, b) => Number(b.fiscalYear) - Number(a.fiscalYear),
     );
     const latest = sorted[0];
-    if (latest.revenue && latest.capex) {
+    if (latest.revenue && latest.capex != null) {
       capexPct =
         Math.round((Math.abs(latest.capex) / latest.revenue) * 1000) / 10;
     }
-    if (latest.revenue && latest.depreciation) {
+    if (latest.revenue && latest.depreciation != null) {
       daPct =
         Math.round((latest.depreciation / latest.revenue) * 1000) / 10;
     }
@@ -829,8 +828,6 @@ export default function LBOModel({
           </div>
         </div>
       </section>
-
-      <LatestFiscalBaseSummary secData={secData} data={data} />
 
       {/* Operating Assumptions */}
       <section className="rounded-xl border border-border bg-card p-5 space-y-4">

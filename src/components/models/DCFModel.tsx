@@ -6,7 +6,6 @@ import type {
   SECAnnualFinancialRow,
   SECFinancials,
 } from "@/lib/types";
-import LatestFiscalBaseSummary from "@/components/models/LatestFiscalBaseSummary";
 import { Download, TrendingUp, TrendingDown } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -74,6 +73,119 @@ function cellDeltaWC(
   return cellPctOfRev(delta, row.revenue, false);
 }
 
+type FiscalBaseBridge = {
+  fiscalYear: string;
+  revenue: number;
+  ebitda: number | null;
+  da: number | null;
+  ebit: number | null;
+  taxes: number | null;
+  nopat: number | null;
+  capex: number | null;
+  dwc: number | null;
+  ufcf: number | null;
+};
+
+function pickCompletedFiscalRow(
+  annualData: SECAnnualFinancialRow[] | undefined,
+): { row: SECAnnualFinancialRow | null; prev: SECAnnualFinancialRow | null } {
+  if (!annualData?.length) return { row: null, prev: null };
+  const asc = [...annualData].sort(
+    (a, b) => Number(a.fiscalYear) - Number(b.fiscalYear),
+  );
+  const cy = new Date().getFullYear();
+  const completed = asc.filter((r) => Number(r.fiscalYear) < cy);
+  const pool = completed.length > 0 ? completed : asc;
+  const row = pool[pool.length - 1];
+  const idx = asc.findIndex((r) => r.fiscalYear === row.fiscalYear);
+  const prev = idx > 0 ? asc[idx - 1] : null;
+  return { row, prev };
+}
+
+function buildFiscalBaseBridge(
+  row: SECAnnualFinancialRow,
+  prev: SECAnnualFinancialRow | null,
+  quoteEbitdaMarginDec: number,
+  taxRatePct: number,
+): FiscalBaseBridge | null {
+  const revenue = row.revenue;
+  if (revenue == null || revenue <= 0) return null;
+
+  const ebitda =
+    row.ebitda != null
+      ? row.ebitda
+      : quoteEbitdaMarginDec > 0
+        ? revenue * quoteEbitdaMarginDec
+        : null;
+  const da = row.depreciation ?? null;
+  const ebit =
+    ebitda != null && da != null ? ebitda - da : null;
+  const taxes =
+    ebit != null ? Math.max(ebit * (taxRatePct / 100), 0) : null;
+  const nopat =
+    ebit != null && taxes != null ? ebit - taxes : null;
+  const capex =
+    row.capex != null ? Math.abs(row.capex) : null;
+  const dwc =
+    prev?.workingCapital != null && row.workingCapital != null
+      ? row.workingCapital - prev.workingCapital
+      : null;
+  const ufcf =
+    nopat != null && da != null && capex != null && dwc != null
+      ? nopat + da - capex - dwc
+      : null;
+
+  return {
+    fiscalYear: row.fiscalYear,
+    revenue,
+    ebitda,
+    da,
+    ebit,
+    taxes,
+    nopat,
+    capex,
+    dwc,
+    ufcf,
+  };
+}
+
+function renderFiscalBaseCell(
+  label: string,
+  fb: FiscalBaseBridge | null,
+): ReactNode {
+  if (!fb) return "—";
+  const rev = fb.revenue;
+  switch (label) {
+    case "Revenue":
+      return fmtM(fb.revenue);
+    case "EBITDA":
+      return fb.ebitda != null ? fmtM(fb.ebitda) : "—";
+    case "(-) D&A":
+    case "(+) D&A":
+      return fb.da != null
+        ? cellPctOfRev(fb.da, rev, false)
+        : "—";
+    case "EBIT":
+      return fb.ebit != null ? fmtM(fb.ebit) : "—";
+    case "(-) Taxes":
+      return fb.taxes != null ? fmtM(fb.taxes) : "—";
+    case "NOPAT":
+      return fb.nopat != null ? fmtM(fb.nopat) : "—";
+    case "(-) CapEx":
+      return fb.capex != null
+        ? cellPctOfRev(fb.capex, rev, false)
+        : "—";
+    case "(-) ΔWC":
+      return fb.dwc != null
+        ? cellPctOfRev(fb.dwc, rev, false)
+        : "—";
+    case "Unlevered FCF":
+      return fb.ufcf != null ? fmtM(fb.ufcf) : "—";
+    default:
+      return "—";
+  }
+}
+
 function deriveDefaults(data: QuoteSummaryData, secData: SECFinancials | null) {
   const revGrowthPct = (data.revenueGrowth || 0.05) * 100;
   const ebitdaMarginPct = (data.ebitdaMargins || 0.2) * 100;
@@ -87,11 +199,11 @@ function deriveDefaults(data: QuoteSummaryData, secData: SECFinancials | null) {
       (a, b) => Number(b.fiscalYear) - Number(a.fiscalYear),
     );
     const latest = sorted[0];
-    if (latest.revenue && latest.capex) {
+    if (latest.revenue && latest.capex != null) {
       capexPct =
         Math.round((Math.abs(latest.capex) / latest.revenue) * 1000) / 10;
     }
-    if (latest.revenue && latest.depreciation) {
+    if (latest.revenue && latest.depreciation != null) {
       daPct =
         Math.round((latest.depreciation / latest.revenue) * 1000) / 10;
     }
@@ -321,6 +433,26 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
     wcPct,
   ]);
 
+  const fiscalPick = useMemo(
+    () => pickCompletedFiscalRow(secData?.annualData),
+    [secData?.annualData],
+  );
+
+  const fiscalBridge = useMemo(() => {
+    if (!fiscalPick.row) return null;
+    return buildFiscalBaseBridge(
+      fiscalPick.row,
+      fiscalPick.prev,
+      data.ebitdaMargins ?? 0.2,
+      taxRate,
+    );
+  }, [
+    fiscalPick.row,
+    fiscalPick.prev,
+    data.ebitdaMargins,
+    taxRate,
+  ]);
+
   function exportToExcel() {
     const wb = XLSX.utils.book_new();
 
@@ -451,7 +583,6 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
 
   const projectionLineItems: {
     label: string;
-    base: number | null;
     values: number[];
     bold?: boolean;
     highlight?: boolean;
@@ -459,63 +590,60 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
   }[] = [
     {
       label: "Revenue",
-      base: projections.baseRevenue,
       values: projections.years.map((y) => y.revenue),
       bold: true,
     },
     {
       label: "EBITDA",
-      base: null,
       values: projections.years.map((y) => y.ebitda),
     },
     {
       label: "(-) D&A",
-      base: null,
       values: projections.years.map((y) => y.da),
     },
     {
       label: "EBIT",
-      base: null,
       values: projections.years.map((y) => y.ebit),
       bold: true,
       separator: true,
     },
     {
       label: "(-) Taxes",
-      base: null,
       values: projections.years.map((y) => y.taxes),
     },
     {
       label: "NOPAT",
-      base: null,
       values: projections.years.map((y) => y.nopat),
       bold: true,
       separator: true,
     },
     {
       label: "(+) D&A",
-      base: null,
       values: projections.years.map((y) => y.da),
     },
     {
       label: "(-) CapEx",
-      base: null,
       values: projections.years.map((y) => y.capex),
     },
     {
       label: "(-) ΔWC",
-      base: null,
       values: projections.years.map((y) => y.dwc),
     },
     {
       label: "Unlevered FCF",
-      base: null,
       values: projections.years.map((y) => y.ufcf),
       bold: true,
       highlight: true,
       separator: true,
     },
   ];
+
+  const filingsSourceLabel =
+    secData?.dataSource === "yahoo"
+      ? "Yahoo Finance"
+      : secData?.dataSource === "sec"
+        ? "SEC EDGAR"
+        : "Filings";
 
   return (
     <div className="space-y-6">
@@ -534,7 +662,7 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
         <section className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="px-5 py-3 border-b border-border bg-card-hover">
             <h3 className="text-sm font-semibold">
-              Historical Financials (SEC EDGAR)
+              Historical Financials ({filingsSourceLabel})
             </h3>
           </div>
           <div className="overflow-x-auto">
@@ -631,14 +759,6 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
 
       {/* Model Assumptions */}
       <section className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <LatestFiscalBaseSummary
-          secData={secData}
-          data={data}
-          showWaccAndTax
-          defaultWacc={wacc}
-          defaultTaxRate={taxRate}
-        />
-
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Model Assumptions</h3>
           <button
@@ -816,8 +936,16 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
 
       {/* Projected Free Cash Flow */}
       <section className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-border bg-card-hover">
+        <div className="px-5 py-3 border-b border-border bg-card-hover space-y-1">
           <h3 className="text-sm font-semibold">Projected Free Cash Flow</h3>
+          <p className="text-xs text-muted">
+            Base column is the last completed fiscal year (
+            {fiscalBridge
+              ? `FY ${fiscalBridge.fiscalYear} · ${filingsSourceLabel}`
+              : "no filing data"}
+            ). Forecasts still grow from LTM revenue in the quote (
+            {fmtM(projections.baseRevenue)}).
+          </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -826,8 +954,13 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
                 <th className="px-4 py-2 font-medium min-w-[140px]">
                   ($ millions)
                 </th>
-                <th className="px-4 py-2 font-medium text-right min-w-[90px]">
-                  Base
+                <th className="px-4 py-2 font-medium text-right min-w-[100px]">
+                  <span className="block">Base</span>
+                  {fiscalBridge ? (
+                    <span className="block text-[10px] font-normal text-muted normal-case">
+                      FY {fiscalBridge.fiscalYear}
+                    </span>
+                  ) : null}
                 </th>
                 {projections.years.map((y) => (
                   <th
@@ -841,7 +974,7 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
             </thead>
             <tbody>
               {projectionLineItems.map(
-                ({ label, base, values, bold, highlight, separator }) => (
+                ({ label, values, bold, highlight, separator }) => (
                   <tr
                     key={label}
                     className={`${highlight ? "bg-accent/5" : ""} ${separator ? "border-b border-border" : "border-b border-border/30"}`}
@@ -852,7 +985,7 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
                       {label}
                     </td>
                     <td className="px-4 py-2 text-right tabular-nums">
-                      {base != null ? fmtM(base) : "—"}
+                      {renderFiscalBaseCell(label, fiscalBridge)}
                     </td>
                     {values.map((v, i) => {
                       const rev = projections.years[i].revenue;

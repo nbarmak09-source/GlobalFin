@@ -39,9 +39,19 @@ function ModelsPageContent() {
         setQuoteData(q);
         if (q.shortName) setDisplayName(q.shortName);
       }
-      if (secRes.ok) {
+      try {
         const s: SECFinancials = await secRes.json();
-        setSecData(s);
+        if (
+          secRes.ok &&
+          Array.isArray(s.annualData) &&
+          s.annualData.length > 0
+        ) {
+          setSecData(s);
+        } else {
+          setSecData(null);
+        }
+      } catch {
+        setSecData(null);
       }
     } catch {
       // silently fail

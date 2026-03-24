@@ -351,6 +351,8 @@ export interface QuoteSummaryData {
 export interface SECAnnualFinancialRow {
   fiscalYear: string;
   revenue: number | null;
+  /** Yahoo annual fundamentals only; omitted on older cached SEC payloads. */
+  ebitda?: number | null;
   capex: number | null;
   depreciation: number | null;
   currentAssets: number | null;
@@ -363,4 +365,6 @@ export interface SECFinancials {
   symbol: string;
   cik: string;
   annualData: SECAnnualFinancialRow[];
+  /** Where annual rows came from; SEC is preferred when available. */
+  dataSource?: "sec" | "yahoo" | "mixed";
 }
