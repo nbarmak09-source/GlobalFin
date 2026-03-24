@@ -32,7 +32,7 @@ function ModelsPageContent() {
     try {
       const [quoteRes, secRes] = await Promise.all([
         fetch(`/api/stocks?action=summary&symbol=${encodeURIComponent(sym)}`),
-        fetch(`/api/sec-financials?symbol=${encodeURIComponent(sym)}`),
+        fetch(`/api/sec-financials?symbol=${encodeURIComponent(sym)}&refresh=1`),
       ]);
       if (quoteRes.ok) {
         const q: QuoteSummaryData = await quoteRes.json();

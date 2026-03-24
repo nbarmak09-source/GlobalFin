@@ -94,9 +94,11 @@ function pickCompletedFiscalRow(
     (a, b) => Number(a.fiscalYear) - Number(b.fiscalYear),
   );
   const cy = new Date().getFullYear();
-  const completed = asc.filter((r) => Number(r.fiscalYear) < cy);
-  const pool = completed.length > 0 ? completed : asc;
+  const withRevenue = asc.filter((r) => r.revenue != null && r.revenue > 0);
+  const completed = withRevenue.filter((r) => Number(r.fiscalYear) < cy);
+  const pool = completed.length > 0 ? completed : withRevenue;
   const row = pool[pool.length - 1];
+  if (!row) return { row: null, prev: null };
   const idx = asc.findIndex((r) => r.fiscalYear === row.fiscalYear);
   const prev = idx > 0 ? asc[idx - 1] : null;
   return { row, prev };
@@ -987,36 +989,14 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
                     <td className="px-4 py-2 text-right tabular-nums">
                       {renderFiscalBaseCell(label, fiscalBridge)}
                     </td>
-                    {values.map((v, i) => {
-                      const rev = projections.years[i].revenue;
-                      let bracket: string | null = null;
-                      if (
-                        label === "(-) D&A" ||
-                        label === "(+) D&A"
-                      ) {
-                        bracket = ` (${daPct}% of revenue)`;
-                      } else if (label === "(-) CapEx") {
-                        bracket = ` (${capexPct}% of revenue)`;
-                      } else if (
-                        label === "(-) ΔWC" &&
-                        rev > 0
-                      ) {
-                        bracket = ` (${((Math.abs(v) / rev) * 100).toFixed(1)}% of revenue)`;
-                      }
-                      return (
-                        <td
-                          key={i}
-                          className={`px-4 py-2 text-right tabular-nums ${bold ? "font-semibold" : ""}`}
-                        >
-                          {fmtM(v)}
-                          {bracket && (
-                            <span className="text-muted text-xs font-normal">
-                              {bracket}
-                            </span>
-                          )}
-                        </td>
-                      );
-                    })}
+                    {values.map((v, i) => (
+                      <td
+                        key={i}
+                        className={`px-4 py-2 text-right tabular-nums ${bold ? "font-semibold" : ""}`}
+                      >
+                        {fmtM(v)}
+                      </td>
+                    ))}
                   </tr>
                 ),
               )}

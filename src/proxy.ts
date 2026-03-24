@@ -21,6 +21,8 @@ const AI_ROUTES = [
 const PUBLIC_API_ROUTES = [
   "/api/news",
   "/api/stocks",
+  "/api/sec-financials",
+  "/api/sec-filings",
   "/api/vc-daily",
   "/api/currencies",
   "/api/yield-curve",
