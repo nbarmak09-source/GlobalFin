@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Fragment } from "react";
+import Link from "next/link";
 import { Trash2, TrendingUp, TrendingDown, GripVertical, ChevronDown, Pencil } from "lucide-react";
 import PositionDetailPanel from "./PositionDetailPanel";
 import type { EnrichedPosition } from "@/lib/types";
@@ -82,6 +83,8 @@ function SortableRow({
     position: "relative" as const,
   };
 
+  const stocksHref = `/stocks?symbol=${encodeURIComponent(pos.symbol)}`;
+
   return (
     <tr
       ref={setNodeRef}
@@ -89,7 +92,8 @@ function SortableRow({
       className={`border-b border-border/50 transition-colors bg-card ${!isExpanded ? "hover:bg-card-hover cursor-pointer" : ""}`}
       onClick={(e) => {
         const target = e.target as HTMLElement;
-        if (!target.closest("button")) onToggleExpand();
+        if (target.closest("button") || target.closest("a")) return;
+        onToggleExpand();
       }}
     >
       <td className="px-2 py-3 w-8">
@@ -103,10 +107,22 @@ function SortableRow({
         </button>
       </td>
       <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div>
-            <div className="font-semibold text-accent">{pos.symbol}</div>
-            <div className="text-xs text-muted">{pos.name}</div>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="min-w-0">
+            <Link
+              href={stocksHref}
+              onClick={(e) => e.stopPropagation()}
+              className="font-semibold text-accent hover:underline block truncate"
+            >
+              {pos.symbol}
+            </Link>
+            <Link
+              href={stocksHref}
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs text-muted hover:text-accent hover:underline block truncate"
+            >
+              {pos.name}
+            </Link>
           </div>
           <ChevronDown
             className={`h-4 w-4 text-muted transition-transform flex-shrink-0 ${isExpanded ? "rotate-180" : ""}`}

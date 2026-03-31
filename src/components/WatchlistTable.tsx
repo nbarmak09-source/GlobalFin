@@ -1,6 +1,15 @@
 "use client";
 
-import { Trash2, TrendingUp, TrendingDown, GripVertical } from "lucide-react";
+import { useState, Fragment } from "react";
+import Link from "next/link";
+import {
+  Trash2,
+  TrendingUp,
+  TrendingDown,
+  GripVertical,
+  ChevronDown,
+} from "lucide-react";
+import PositionDetailPanel from "./PositionDetailPanel";
 import type { EnrichedWatchlistItem } from "@/lib/types";
 import {
   DndContext,
@@ -45,9 +54,13 @@ function formatMarketCap(value: number): string {
 function SortableRow({
   item,
   onRemove,
+  isExpanded,
+  onToggleExpand,
 }: {
   item: EnrichedWatchlistItem;
   onRemove: (id: string) => void;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
 }) {
   const {
     attributes,
@@ -66,24 +79,52 @@ function SortableRow({
     position: "relative" as const,
   };
 
+  const stocksHref = `/stocks?symbol=${encodeURIComponent(item.symbol)}`;
+
   return (
     <tr
       ref={setNodeRef}
       style={style}
-      className="border-b border-border/50 hover:bg-card-hover transition-colors bg-card"
+      className={`border-b border-border/50 transition-colors bg-card ${!isExpanded ? "hover:bg-card-hover cursor-pointer" : ""}`}
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest("button") || target.closest("a")) return;
+        onToggleExpand();
+      }}
     >
       <td className="px-2 py-3 w-8">
         <button
           {...attributes}
           {...listeners}
+          onClick={(e) => e.stopPropagation()}
           className="cursor-grab active:cursor-grabbing rounded p-1 text-muted hover:text-foreground hover:bg-card-hover transition-colors touch-none"
         >
           <GripVertical className="h-4 w-4" />
         </button>
       </td>
       <td className="px-4 py-3">
-        <div className="font-semibold text-accent">{item.symbol}</div>
-        <div className="text-xs text-muted">{item.name}</div>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="min-w-0">
+            <Link
+              href={stocksHref}
+              onClick={(e) => e.stopPropagation()}
+              className="font-semibold text-accent hover:underline block truncate"
+            >
+              {item.symbol}
+            </Link>
+            <Link
+              href={stocksHref}
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs text-muted hover:text-accent hover:underline block truncate"
+            >
+              {item.name}
+            </Link>
+          </div>
+          <ChevronDown
+            className={`h-4 w-4 text-muted transition-transform flex-shrink-0 ${isExpanded ? "rotate-180" : ""}`}
+            aria-hidden
+          />
+        </div>
       </td>
       <td className="px-4 py-3 text-right font-mono">
         ${formatCurrency(item.currentPrice)}
@@ -117,7 +158,10 @@ function SortableRow({
       </td>
       <td className="px-4 py-3">
         <button
-          onClick={() => onRemove(item.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(item.id);
+          }}
           className="rounded-lg p-1.5 text-muted hover:text-red hover:bg-red/10 transition-colors"
           title="Remove from watchlist"
         >
@@ -133,6 +177,8 @@ export default function WatchlistTable({
   onRemove,
   onReorder,
 }: WatchlistTableProps) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
@@ -189,11 +235,26 @@ export default function WatchlistTable({
                 strategy={verticalListSortingStrategy}
               >
                 {items.map((item) => (
-                  <SortableRow
-                    key={item.id}
-                    item={item}
-                    onRemove={onRemove}
-                  />
+                  <Fragment key={item.id}>
+                    <SortableRow
+                      item={item}
+                      onRemove={onRemove}
+                      isExpanded={expandedId === item.id}
+                      onToggleExpand={() =>
+                        setExpandedId((id) => (id === item.id ? null : item.id))
+                      }
+                    />
+                    {expandedId === item.id && (
+                      <tr>
+                        <td colSpan={8} className="p-0 align-top">
+                          <PositionDetailPanel
+                            symbol={item.symbol}
+                            onClose={() => setExpandedId(null)}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </SortableContext>
             </tbody>

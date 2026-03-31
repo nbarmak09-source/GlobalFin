@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Filter,
@@ -72,7 +73,17 @@ function fmtNum(n: number, dec = 2) {
   return n.toFixed(dec);
 }
 
-export default function ScreenerPage() {
+const PRESETS: Record<string, Record<string, string>> = {
+  undervalued: { maxPE: "15" },
+  "growth-tech": { sector: "Technology", minRevenueGrowth: "10" },
+  dividends: { minDividendYield: "3" },
+  "balance-sheet": { maxDebtToEquity: "80", minCurrentRatio: "1.5" },
+  "mega-cap": { minMarketCap: "200000000000" },
+  defensive: { maxBeta: "0.8" },
+};
+
+function ScreenerContent() {
+  const searchParams = useSearchParams();
   const [results, setResults] = useState<ScreenerResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -89,31 +100,60 @@ export default function ScreenerPage() {
   const [sortKey, setSortKey] = useState<SortKey>("marketCap");
   const [sortAsc, setSortAsc] = useState(false);
 
-  async function runScreen() {
-    setLoading(true);
-    setHasSearched(true);
-    try {
-      const params = new URLSearchParams();
-      if (sector) params.set("sector", sector);
-      if (minPE) params.set("minPE", minPE);
-      if (maxPE) params.set("maxPE", maxPE);
-      if (minDividendYield) params.set("minDividendYield", minDividendYield);
-      if (maxDividendYield) params.set("maxDividendYield", maxDividendYield);
-      if (minBeta) params.set("minBeta", minBeta);
-      if (maxBeta) params.set("maxBeta", maxBeta);
+  const runScreen = useCallback(
+    async (overrides?: Record<string, string>) => {
+      setLoading(true);
+      setHasSearched(true);
+      try {
+        const params = new URLSearchParams();
+        if (overrides) {
+          for (const [k, v] of Object.entries(overrides)) {
+            if (v) params.set(k, v);
+          }
+        } else {
+          if (sector) params.set("sector", sector);
+          if (minPE) params.set("minPE", minPE);
+          if (maxPE) params.set("maxPE", maxPE);
+          if (minDividendYield) params.set("minDividendYield", minDividendYield);
+          if (maxDividendYield) params.set("maxDividendYield", maxDividendYield);
+          if (minBeta) params.set("minBeta", minBeta);
+          if (maxBeta) params.set("maxBeta", maxBeta);
+        }
 
-      const res = await fetch(`/api/screener?${params.toString()}`, {
-        credentials: "include",
-      });
-      if (res.ok) {
-        setResults(await res.json());
+        const res = await fetch(`/api/screener?${params.toString()}`, {
+          credentials: "include",
+        });
+        if (res.ok) {
+          setResults(await res.json());
+        }
+      } catch {
+        // fail silently
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      // fail silently
-    } finally {
-      setLoading(false);
+    },
+    [sector, minPE, maxPE, minDividendYield, maxDividendYield, minBeta, maxBeta]
+  );
+
+  useEffect(() => {
+    const presetName = searchParams.get("preset");
+    const urlSector = searchParams.get("sector");
+
+    if (presetName && PRESETS[presetName]) {
+      const p = PRESETS[presetName];
+      if (p.sector) setSector(p.sector);
+      if (p.maxPE) setMaxPE(p.maxPE);
+      if (p.minPE) setMinPE(p.minPE);
+      if (p.minDividendYield) setMinDividendYield(p.minDividendYield);
+      if (p.maxBeta) setMaxBeta(p.maxBeta);
+      if (p.minBeta) setMinBeta(p.minBeta);
+      runScreen(p);
+    } else if (urlSector) {
+      setSector(urlSector);
+      runScreen({ sector: urlSector });
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -284,7 +324,7 @@ export default function ScreenerPage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={runScreen}
+            onClick={() => runScreen()}
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50"
           >
@@ -418,5 +458,20 @@ export default function ScreenerPage() {
         </section>
       )}
     </div>
+  );
+}
+
+export default function ScreenerPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-24 gap-2 text-muted">
+          <RefreshCw className="h-5 w-5 animate-spin" />
+          Loading screener...
+        </div>
+      }
+    >
+      <ScreenerContent />
+    </Suspense>
   );
 }

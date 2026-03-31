@@ -28,6 +28,11 @@ export interface ScreenerResult {
   profitMargins: number;
   fiftyTwoWeekHigh: number;
   fiftyTwoWeekLow: number;
+  recommendationMean: number;
+  recommendationKey: string;
+  debtToEquity: number;
+  currentRatio: number;
+  priceToBook: number;
 }
 
 function passesFilters(
@@ -70,6 +75,24 @@ function passesFilters(
   if (filters.maxBeta) {
     const v = parseFloat(filters.maxBeta);
     if (!isNaN(v) && d.beta > v) return false;
+  }
+
+  if (filters.minRevenueGrowth) {
+    const v = parseFloat(filters.minRevenueGrowth);
+    if (!isNaN(v) && d.revenueGrowth * 100 < v) return false;
+  }
+  if (filters.maxRevenueGrowth) {
+    const v = parseFloat(filters.maxRevenueGrowth);
+    if (!isNaN(v) && d.revenueGrowth * 100 > v) return false;
+  }
+
+  if (filters.maxDebtToEquity) {
+    const v = parseFloat(filters.maxDebtToEquity);
+    if (!isNaN(v) && (d.debtToEquity <= 0 || d.debtToEquity > v)) return false;
+  }
+  if (filters.minCurrentRatio) {
+    const v = parseFloat(filters.minCurrentRatio);
+    if (!isNaN(v) && (d.currentRatio <= 0 || d.currentRatio < v)) return false;
   }
 
   return true;
@@ -119,6 +142,11 @@ export async function GET(request: NextRequest) {
           profitMargins: d.profitMargins * 100,
           fiftyTwoWeekHigh: d.fiftyTwoWeekHigh,
           fiftyTwoWeekLow: d.fiftyTwoWeekLow,
+          recommendationMean: d.recommendationMean ?? 0,
+          recommendationKey: d.recommendationKey ?? "",
+          debtToEquity: d.debtToEquity ?? 0,
+          currentRatio: d.currentRatio ?? 0,
+          priceToBook: d.priceToBook ?? 0,
         });
       });
     }
