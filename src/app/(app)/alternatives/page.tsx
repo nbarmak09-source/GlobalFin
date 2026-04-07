@@ -90,7 +90,7 @@ export default function AlternativesPage() {
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-serif mb-1">
-            Alternative Assets &amp; Real Estate
+            Alternatives
           </h1>
           <p className="text-sm text-muted">
             Real assets dashboard: listed real estate, housing beta, and key commodities.

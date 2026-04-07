@@ -12,6 +12,7 @@ import {
   PieChart,
   Bell,
   Calculator,
+  Wand2,
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
@@ -30,7 +31,7 @@ interface AlertSnapshot {
   triggered: number;
 }
 
-const toolCards = [
+const investingCards = [
   {
     href: "/portfolio",
     icon: Briefcase,
@@ -50,28 +51,10 @@ const toolCards = [
     desc: "Filter stocks by fundamentals and metrics.",
   },
   {
-    href: "/calendar",
-    icon: CalendarDays,
-    label: "Calendar",
-    desc: "Earnings and dividend dates for your holdings.",
-  },
-  {
     href: "/allocation",
     icon: PieChart,
     label: "Allocation",
     desc: "Visualise sector and geographic exposure.",
-  },
-  {
-    href: "/filings",
-    icon: FileText,
-    label: "Filings",
-    desc: "AI summaries of 10-K and 10-Q filings.",
-  },
-  {
-    href: "/pitch",
-    icon: Calculator,
-    label: "Pitch",
-    desc: "Generate AI-powered investment memos.",
   },
   {
     href: "/alerts",
@@ -80,10 +63,31 @@ const toolCards = [
     desc: "Set targets and track price crossings.",
   },
   {
+    href: "/calendar",
+    icon: CalendarDays,
+    label: "Calendar",
+    desc: "Earnings and dividend dates for your holdings.",
+  },
+];
+
+const toolCards = [
+  {
     href: "/models",
     icon: Calculator,
-    label: "Models",
+    label: "Valuation Models",
     desc: "Build DCF, comps, and LBO valuation models.",
+  },
+  {
+    href: "/filings",
+    icon: FileText,
+    label: "Filings AI",
+    desc: "AI summaries of 10-K and 10-Q filings.",
+  },
+  {
+    href: "/pitch",
+    icon: Wand2,
+    label: "Pitch Builder",
+    desc: "Generate AI-powered investment memos.",
   },
 ];
 
@@ -283,7 +287,26 @@ export default function InvestingPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-muted uppercase tracking-wide">
-          Tools
+          Investing
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {investingCards.map(({ href, icon: Icon, label, desc }) => (
+            <Link
+              key={href}
+              href={href}
+              className="rounded-xl border border-border bg-card p-5 hover:bg-card-hover transition-colors"
+            >
+              <Icon className="h-5 w-5 text-accent" />
+              <h3 className="mt-3 text-sm font-semibold">{label}</h3>
+              <p className="mt-1 text-xs text-muted">{desc}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-muted uppercase tracking-wide">
+          Analysis Tools
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {toolCards.map(({ href, icon: Icon, label, desc }) => (

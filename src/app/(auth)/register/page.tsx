@@ -37,8 +37,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center px-3 py-6 sm:px-4">
-      <div className="w-full max-w-sm space-y-6 sm:space-y-8">
+    <div className="w-full max-w-sm space-y-6 sm:space-y-8">
         <div className="flex flex-col items-center gap-2">
           <Link
             href="/"
@@ -134,7 +133,6 @@ export default function RegisterPage() {
             Sign in
           </Link>
         </p>
-      </div>
     </div>
   );
 }

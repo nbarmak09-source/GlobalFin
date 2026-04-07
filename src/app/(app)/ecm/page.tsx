@@ -96,7 +96,7 @@ export default function EcmPage() {
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-serif mb-1">
-            Equity Capital Markets
+            Deal Flow
           </h1>
           <p className="text-sm text-muted">
             Market indices, sector performance, deal flow, and equity news.
@@ -104,7 +104,7 @@ export default function EcmPage() {
         </div>
         <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
           <Sparkles className="h-3.5 w-3.5" />
-          <span>ECM overview</span>
+          <span>Capital markets overview</span>
         </div>
       </header>
 
