@@ -2,6 +2,14 @@
 
 import type { QuoteSummaryData } from "@/lib/types";
 import TradingViewChart from "@/components/TradingViewChart";
+import PowerTierBadge from "@/components/research/PowerTierBadge";
+import {
+  getTierBySymbol,
+  getLordDisplayName,
+  isHighTetherDependency,
+} from "@/lib/tiers";
+import { getSupplyChainByTicker } from "@/lib/supplyChainLookup";
+import SupplyChainCrossLinkSection from "@/components/supply-chain/SupplyChainCrossLinkSection";
 import {
   Globe,
   MapPin,
@@ -37,6 +45,9 @@ interface OverviewTabProps {
 }
 
 export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabProps) {
+  const powerTier = getTierBySymbol(symbol);
+  const supplyChainMatch = getSupplyChainByTicker(symbol);
+
   const stats = [
     { label: "Market Cap", value: formatNumber(data.marketCap) },
     { label: "P/E Ratio (TTM)", value: fmt(data.trailingPE) },
@@ -110,12 +121,43 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
               Company Info
             </h3>
 
-            {data.sector && (
-              <div className="flex items-center gap-2 text-sm">
-                <Building2 className="h-4 w-4 text-muted flex-shrink-0" />
-                <span className="text-muted">Sector:</span>
-                <span className="font-medium">{data.sector}</span>
+            {powerTier ? (
+              <div className="flex flex-col gap-2 text-sm">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Building2 className="h-4 w-4 text-muted flex-shrink-0" />
+                  <span className="text-muted">Power tier:</span>
+                  <PowerTierBadge tier={powerTier.tier} long />
+                </div>
+                {powerTier.tier === "vassal" && (
+                  <div className="rounded-lg border border-border bg-background/70 px-3 py-2 space-y-1">
+                    <p className="text-xs text-muted uppercase tracking-wide font-medium">
+                      Tether score
+                    </p>
+                    <p className="text-sm text-foreground">
+                      <span className="font-mono font-semibold">
+                        {powerTier.tetherScore}%
+                      </span>
+                      <span className="text-muted"> from a single Lord </span>
+                      <span className="font-medium">
+                        ({getLordDisplayName(powerTier.primaryLordId)})
+                      </span>
+                    </p>
+                    {isHighTetherDependency(powerTier.tetherScore) && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                        High single-vendor dependency
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
+            ) : (
+              data.sector && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Building2 className="h-4 w-4 text-muted flex-shrink-0" />
+                  <span className="text-muted">Sector:</span>
+                  <span className="font-medium">{data.sector}</span>
+                </div>
+              )
             )}
             {data.industry && (
               <div className="flex items-center gap-2 text-sm">
@@ -163,6 +205,10 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
               </div>
             )}
           </div>
+
+          {supplyChainMatch && (
+            <SupplyChainCrossLinkSection match={supplyChainMatch} />
+          )}
 
           {data.earningsDate && (
             <div className="rounded-xl bg-card border border-border p-5">

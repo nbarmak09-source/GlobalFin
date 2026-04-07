@@ -17,6 +17,10 @@ const AI_ROUTES = [
   "/api/pitch/generate",
 ];
 
+/** When true, skip login redirect and allow protected APIs without a session (local dev only). */
+const AUTH_DISABLED =
+  process.env.DISABLE_AUTH === "true" || process.env.DISABLE_AUTH === "1";
+
 // Public APIs: no auth required (dashboard data, ticker, news, etc.)
 const PUBLIC_API_ROUTES = [
   "/api/news",
@@ -57,7 +61,7 @@ const authHandler = auth((req) => {
   // API routes: public ones skip auth, rest require session, then rate limit
   if (pathname.startsWith("/api/")) {
     const isPublic = PUBLIC_API_ROUTES.some((r) => pathname.startsWith(r));
-    if (!isPublic && !req.auth) {
+    if (!isPublic && !req.auth && !AUTH_DISABLED) {
       const res = NextResponse.json(
         { error: "Unauthorized" },
         { status: 401, headers: { "Content-Type": "application/json" } }
@@ -97,7 +101,7 @@ const authHandler = auth((req) => {
   }
 
   // All other pages: require session and redirect to login if missing
-  if (!req.auth) {
+  if (!AUTH_DISABLED && !req.auth) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return withSecurityHeaders(NextResponse.redirect(loginUrl));

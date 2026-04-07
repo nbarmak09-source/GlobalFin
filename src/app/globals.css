@@ -8,8 +8,8 @@
   --card-hover: #1c2128;
   --border: #2d333b;
   --muted: #8b949e;
-  --green: #10b981;
-  --red: #dc2626;
+  --green: #22c55e;
+  --red: #ef4444;
   --accent: #c9a227;
   /* Chart-specific (mirrors theme) */
   --chart-bg: #13161d;
@@ -81,4 +81,78 @@ body {
 
 .ticker-scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* ── Pitch print styles ─────────────────────────────────────────────────── */
+@media print {
+  body > * { display: none !important; }
+  #pitch-print-root { display: block !important; }
+
+  #pitch-print-root {
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-family: "Georgia", serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    padding: 0;
+    margin: 0;
+  }
+
+  #pitch-print-root .pitch-cover {
+    page-break-after: always;
+    text-align: center;
+    padding: 4cm 2cm;
+  }
+
+  #pitch-print-root .pitch-cover h1 { font-size: 28pt; margin-bottom: 0.3em; }
+  #pitch-print-root .pitch-cover h2 { font-size: 14pt; font-weight: normal; color: #555; }
+
+  #pitch-print-root .pitch-section {
+    margin-bottom: 1.5em;
+    page-break-inside: avoid;
+  }
+
+  #pitch-print-root .pitch-section h3 {
+    font-size: 13pt;
+    font-weight: bold;
+    border-bottom: 1.5pt solid #c9a227;
+    padding-bottom: 3pt;
+    margin-bottom: 6pt;
+    color: #1a1a2e;
+  }
+
+  #pitch-print-root .pitch-section p,
+  #pitch-print-root .pitch-section li { font-size: 10.5pt; color: #222; }
+
+  #pitch-print-root .pitch-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1em;
+    font-size: 9.5pt;
+  }
+
+  #pitch-print-root .pitch-stats-table th {
+    background: #1a1a2e !important;
+    color: #fff !important;
+    padding: 4pt 6pt;
+    text-align: left;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #pitch-print-root .pitch-stats-table td { padding: 3pt 6pt; border-bottom: 0.5pt solid #ddd; }
+  #pitch-print-root .pitch-stats-table tr:nth-child(even) td {
+    background: #f9f9f9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #pitch-print-root .pitch-disclaimer {
+    margin-top: 2em;
+    padding-top: 0.5em;
+    border-top: 0.5pt solid #ccc;
+    font-size: 8pt;
+    color: #888;
+    font-style: italic;
+  }
 }

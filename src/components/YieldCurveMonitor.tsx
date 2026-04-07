@@ -150,7 +150,7 @@ function TenYearHistoryChart({ points }: { points: HistoryPoint[] }) {
               x2={W - PAD.right}
               y1={yScale(v)}
               y2={yScale(v)}
-              stroke="var(--border)"
+              stroke="rgba(255,255,255,0.08)"
               strokeWidth={0.5}
             />
             <text
@@ -287,7 +287,7 @@ export default function YieldCurveMonitor() {
 
   if (loading) {
     return (
-      <div className="rounded-xl bg-card border border-border overflow-hidden">
+      <div className="rounded-lg bg-card overflow-hidden w-full" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
         <div className="px-5 py-4 space-y-4">
           <div className="h-4 bg-border rounded w-1/3 animate-pulse" />
           <div className="h-24 bg-border rounded animate-pulse" />
@@ -298,7 +298,7 @@ export default function YieldCurveMonitor() {
 
   if (error || !data || data.tenors.length === 0) {
     return (
-      <div className="rounded-xl bg-card border border-border p-6 text-center text-sm text-muted">
+      <div className="rounded-lg bg-card p-6 text-center text-sm text-muted w-full" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
         {error || "No yield curve data available"}
       </div>
     );
@@ -307,50 +307,59 @@ export default function YieldCurveMonitor() {
   const { tenors, asOf } = data;
 
   return (
-    <div className="rounded-xl bg-card border border-border overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-card-hover/30">
-        <div className="flex items-center gap-2">
-          <LineChart className="h-4 w-4 text-accent" />
-          <h3 className="text-sm font-semibold">US Treasury Yield Curve</h3>
+    <div className="rounded-lg bg-card overflow-hidden w-full" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+      {/* Panel header */}
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="flex items-center gap-2" style={{ borderLeft: "2px solid var(--accent)", paddingLeft: "10px" }}>
+          <LineChart className="h-3.5 w-3.5 text-accent" />
+          <span className="text-[13px] font-[500] uppercase tracking-[0.05em] text-muted">
+            US Treasury Yield Curve
+          </span>
         </div>
-        <span className="text-xs text-muted">
+        <span className="text-[11px] font-[400] text-muted" style={{ opacity: 0.7 }}>
           {new Date(asOf).toLocaleTimeString()}
         </span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-        <div className="p-5">
-          <h4 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
+      {/* 65% chart / 35% table layout */}
+      <div className="flex flex-col md:flex-row" style={{ minHeight: "200px" }}>
+        <div className="p-4 md:p-5" style={{ flex: "0 0 65%" }}>
+          <h4 className="text-[11px] font-[400] text-muted uppercase tracking-wide mb-3" style={{ opacity: 0.7 }}>
             10Y Treasury yield — Quarterly
           </h4>
           {history && history.points.length > 0 ? (
             <TenYearHistoryChart points={history.points} />
           ) : (
-            <div className="h-48 flex items-center justify-center text-xs text-muted">
+            <div className="h-40 flex items-center justify-center text-[11px] text-muted">
               Historical data unavailable
             </div>
           )}
         </div>
-        <div className="p-5">
-          <h4 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
+        <div
+          className="p-4 md:p-5"
+          style={{ flex: "0 0 35%", borderTop: "1px solid rgba(255,255,255,0.08)", borderLeft: "1px solid rgba(255,255,255,0.08)" }}
+        >
+          <h4 className="text-[11px] font-[400] text-muted uppercase tracking-wide mb-3" style={{ opacity: 0.7 }}>
             Current curve
           </h4>
-          <table className="w-full text-sm">
+          <table className="w-full">
             <thead>
-              <tr className="text-muted border-b border-border">
-                <th className="text-left py-2 font-medium">Tenor</th>
-                <th className="text-right py-2 font-medium font-mono">
+              <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <th className="text-left py-2 text-[13px] font-[400] text-muted">Tenor</th>
+                <th className="text-right py-2 text-[13px] font-[400] text-muted font-mono">
                   Yield
                 </th>
               </tr>
             </thead>
             <tbody>
-              {tenors.map((t) => (
+              {tenors.map((t, i) => (
                 <tr
                   key={t.label}
-                  className="border-b border-border/50 last:border-0"
+                  style={{
+                    backgroundColor: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.04)",
+                  }}
                 >
-                  <td className="py-1.5 text-sm">{t.label}</td>
-                  <td className="py-1.5 text-right font-mono text-sm">
+                  <td className="py-1.5 text-[13px] font-[400]">{t.label}</td>
+                  <td className="py-1.5 text-right font-mono text-[13px] font-[400]">
                     {t.yield.toFixed(2)}%
                   </td>
                 </tr>

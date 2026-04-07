@@ -16,6 +16,7 @@ type MacroHistoryResponse = {
 const PERIODS = ["1Y", "2Y", "5Y", "10Y", "20Y", "MAX"] as const;
 type Period = (typeof PERIODS)[number];
 
+// Consistent color palette: amber=inflation/rates, red=risk, teal=activity, purple=money
 const CHART_CONFIGS: {
   key: string;
   color: string;
@@ -24,43 +25,43 @@ const CHART_CONFIGS: {
 }[] = [
   {
     key: "cpiYoY",
-    color: "#f59e0b",
+    color: "#f59e0b", // amber — price/inflation category
     format: (v) => `${v.toFixed(1)}%`,
   },
   {
     key: "unemployment",
-    color: "#ef4444",
+    color: "#ef4444", // red — risk/negative indicator
     format: (v) => `${v.toFixed(1)}%`,
   },
   {
     key: "fedFunds",
-    color: "#3b82f6",
+    color: "#f59e0b", // amber — rate/policy (same category as inflation)
     format: (v) => `${v.toFixed(2)}%`,
   },
   {
     key: "industrialProduction",
-    color: "#10b981",
+    color: "#14b8a6", // teal — activity/production
     format: (v) => v.toFixed(1),
   },
   {
     key: "m2",
-    color: "#8b5cf6",
+    color: "#a78bfa", // purple — money/liquidity
     format: (v) => `$${(v / 1000).toFixed(1)}T`,
   },
   {
     key: "recessionProb",
-    color: "#ec4899",
+    color: "#ef4444", // red — recession risk
     format: (v) => `${v.toFixed(1)}%`,
   },
   {
     key: "ismManufacturing",
-    color: "#f97316",
+    color: "#14b8a6", // teal — activity/confidence
     format: (v) => v.toFixed(1),
     threshold: 0,
   },
   {
     key: "consumerSentiment",
-    color: "#06b6d4",
+    color: "#14b8a6", // teal — activity/confidence
     format: (v) => v.toFixed(1),
   },
 ];
@@ -107,10 +108,15 @@ export default function MacroCharts() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-muted uppercase tracking-wide">
-          Historical Trends
-        </h3>
+      <div className="flex flex-wrap items-center justify-between gap-2 mt-6 mb-1">
+        <div
+          className="flex items-center gap-2"
+          style={{ borderLeft: "2px solid var(--accent)", paddingLeft: "10px" }}
+        >
+          <span className="text-[13px] font-[500] uppercase tracking-[0.05em] text-muted">
+            Historical Trends
+          </span>
+        </div>
         <div className="flex items-center gap-1">
           {PERIODS.map((p) => (
             <button
@@ -129,16 +135,17 @@ export default function MacroCharts() {
       </div>
 
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {CHART_CONFIGS.map((c) => (
             <div
               key={c.key}
-              className="h-56 rounded-xl bg-card border border-border animate-pulse"
+              className="h-48 rounded-lg bg-card animate-pulse"
+              style={{ border: "1px solid rgba(255,255,255,0.12)" }}
             />
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {CHART_CONFIGS.map((cfg) => {
             const series = seriesMap[cfg.key];
             if (!series || series.data.length === 0) return null;
@@ -202,7 +209,7 @@ function MiniChart({
 
     const chart = createChart(container, {
       width,
-      height: 160,
+      height: 120,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: "#8b949e",
@@ -211,7 +218,7 @@ function MiniChart({
       },
       grid: {
         vertLines: { visible: false },
-        horzLines: { color: "#2d333b40" },
+        horzLines: { color: "#ffffff14" },
       },
       crosshair: { mode: CrosshairMode.Magnet },
       rightPriceScale: {
@@ -284,33 +291,38 @@ function MiniChart({
   }, [renderChart]);
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="px-4 pt-3 pb-1 flex items-center justify-between">
-        <span className="text-xs font-semibold text-muted">{label}</span>
+    <div
+      className="rounded-lg bg-card overflow-hidden"
+      style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+    >
+      {/* Card header: label + value callout outside chart area */}
+      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+        <span className="text-[13px] font-[400] text-muted">{label}</span>
         <div className="flex items-center gap-2">
           {threshold !== undefined && (
             <span
-              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                latest.value >= threshold
-                  ? "bg-green-500/15 text-green-500"
-                  : "bg-red-500/15 text-red-500"
+              className={`text-[11px] font-[400] ${
+                latest.value >= threshold ? "text-green" : "text-red"
               }`}
             >
               {latest.value >= threshold ? "Expanding" : "Contracting"}
             </span>
           )}
-          <span className="text-sm font-bold tabular-nums">
+          <span className="text-[30px] font-[500] tabular-nums font-mono leading-none">
             {format(latest.value)}
           </span>
           <span
-            className={`text-[11px] font-medium tabular-nums ${changePct >= 0 ? "text-green-500" : "text-red-500"}`}
+            className={`text-[13px] font-[400] tabular-nums ${changePct >= 0 ? "text-green" : "text-red"}`}
           >
             {changePct >= 0 ? "+" : ""}
             {changePct.toFixed(1)}%
           </span>
         </div>
       </div>
-      <div ref={containerRef} className="w-full" style={{ height: 160 }} />
+      {/* Chart plot area with 8px margin */}
+      <div className="px-2 pb-2">
+        <div ref={containerRef} className="w-full" style={{ height: 120 }} />
+      </div>
     </div>
   );
 }

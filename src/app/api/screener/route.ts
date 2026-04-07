@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getQuoteSummary } from "@/lib/yahoo";
-import type { QuoteSummaryData } from "@/lib/types";
+import { getScreenerQuote } from "@/lib/yahoo";
+import type { ScreenerQuote } from "@/lib/yahoo";
 
 const SP500_SAMPLE = [
   "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK-B",
@@ -36,7 +36,7 @@ export interface ScreenerResult {
 }
 
 function passesFilters(
-  d: QuoteSummaryData,
+  d: ScreenerQuote,
   filters: Record<string, string>
 ): boolean {
   if (filters.sector && d.sector !== filters.sector) return false;
@@ -98,6 +98,9 @@ function passesFilters(
   return true;
 }
 
+// Allow up to 60s on Vercel (default is 10s, screener is inherently slow)
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
@@ -111,45 +114,48 @@ export async function GET(request: NextRequest) {
       if (val) filters[key] = val;
     }
 
-    const batchSize = 10;
+    const settled = await Promise.allSettled(
+      SP500_SAMPLE.map((sym) => getScreenerQuote(sym))
+    );
+
+    const nullCount = settled.filter(
+      (r) => r.status === "rejected" || !r.value
+    ).length;
+    if (nullCount > 0) {
+      console.warn(`[screener] ${nullCount}/${SP500_SAMPLE.length} symbols returned null`);
+    }
+
     const results: ScreenerResult[] = [];
 
-    for (let i = 0; i < SP500_SAMPLE.length; i += batchSize) {
-      const batch = SP500_SAMPLE.slice(i, i + batchSize);
-      const summaries = await Promise.allSettled(
-        batch.map((sym) => getQuoteSummary(sym))
-      );
+    settled.forEach((res) => {
+      if (res.status !== "fulfilled" || !res.value) return;
+      const d = res.value;
 
-      summaries.forEach((result) => {
-        if (result.status !== "fulfilled" || !result.value) return;
-        const d = result.value;
+      if (!passesFilters(d, filters)) return;
 
-        if (!passesFilters(d, filters)) return;
-
-        results.push({
-          symbol: d.symbol,
-          name: d.shortName || d.longName || d.symbol,
-          sector: d.sector || "Other",
-          industry: d.industry || "",
-          marketCap: d.marketCap,
-          price: d.regularMarketPrice,
-          dayChangePct: d.regularMarketChangePercent,
-          pe: d.trailingPE,
-          forwardPE: d.forwardPE,
-          dividendYield: d.dividendYield * 100,
-          beta: d.beta,
-          revenueGrowth: d.revenueGrowth * 100,
-          profitMargins: d.profitMargins * 100,
-          fiftyTwoWeekHigh: d.fiftyTwoWeekHigh,
-          fiftyTwoWeekLow: d.fiftyTwoWeekLow,
-          recommendationMean: d.recommendationMean ?? 0,
-          recommendationKey: d.recommendationKey ?? "",
-          debtToEquity: d.debtToEquity ?? 0,
-          currentRatio: d.currentRatio ?? 0,
-          priceToBook: d.priceToBook ?? 0,
-        });
+      results.push({
+        symbol: d.symbol,
+        name: d.shortName || d.symbol,
+        sector: d.sector || "Other",
+        industry: d.industry || "",
+        marketCap: d.marketCap,
+        price: d.regularMarketPrice,
+        dayChangePct: d.regularMarketChangePercent,
+        pe: d.trailingPE,
+        forwardPE: d.forwardPE,
+        dividendYield: d.dividendYield * 100,
+        beta: d.beta,
+        revenueGrowth: d.revenueGrowth * 100,
+        profitMargins: d.profitMargins * 100,
+        fiftyTwoWeekHigh: d.fiftyTwoWeekHigh,
+        fiftyTwoWeekLow: d.fiftyTwoWeekLow,
+        recommendationMean: d.recommendationMean,
+        recommendationKey: d.recommendationKey,
+        debtToEquity: d.debtToEquity,
+        currentRatio: d.currentRatio,
+        priceToBook: d.priceToBook,
       });
-    }
+    });
 
     results.sort((a, b) => b.marketCap - a.marketCap);
 

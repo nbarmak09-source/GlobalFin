@@ -151,11 +151,12 @@ export default function MacroIndicators() {
 
   if (loading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div
             key={i}
-            className="h-32 rounded-xl bg-card border border-border animate-pulse"
+            className="h-32 rounded-lg bg-card animate-pulse"
+            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
           />
         ))}
       </div>
@@ -164,7 +165,7 @@ export default function MacroIndicators() {
 
   if (error || !data) {
     return (
-      <div className="rounded-xl bg-card border border-border p-5 text-center text-sm text-muted">
+      <div className="rounded-lg bg-card p-4 text-center text-sm text-muted" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
         Macro indicator data unavailable. Make sure FRED_API_KEY is set in your
         .env file.
       </div>
@@ -184,206 +185,209 @@ export default function MacroIndicators() {
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {/* Industrial Production */}
         <button
           type="button"
           onClick={() => setSelectedMacro("ip")}
-          className="rounded-xl border border-border bg-card p-5 text-left w-full hover:bg-card-hover hover:border-accent/30 transition-colors cursor-pointer group"
+          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
+          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted font-medium flex items-center gap-1.5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
               <Activity className="h-3.5 w-3.5 text-accent" />
               Industrial Production
             </span>
             <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
           </div>
-        <div className="text-2xl font-bold font-mono">
-          {ip.value != null ? ip.value.toFixed(1) : "—"}
-        </div>
-        <div className="flex items-center gap-2 mt-1 flex-wrap">
-          {ip.yoyChange != null && (
-            <span
-              className={`inline-flex items-center gap-1 text-xs font-mono ${
-                ip.yoyChange >= 0 ? "text-green" : "text-red"
-              }`}
-            >
-              {ip.yoyChange >= 0 ? (
-                <TrendingUp className="h-3 w-3" />
-              ) : (
-                <TrendingDown className="h-3 w-3" />
-              )}
-              {ip.yoyChange >= 0 ? "+" : ""}
-              {ip.yoyChange.toFixed(1)}% YoY
-            </span>
-          )}
-          {ip.change != null && (
-            <span
-              className={`text-xs font-mono ${
-                ip.change >= 0 ? "text-green" : "text-red"
-              }`}
-            >
-              {ip.change >= 0 ? "+" : ""}
-              {ip.change.toFixed(2)} MoM
-            </span>
-          )}
-        </div>
-        <div className="text-[10px] text-muted mt-2">
-          Fed index (2017 = 100)
-          {ip.date &&
-            ` · ${new Date(ip.date).toLocaleDateString(undefined, {
-              month: "short",
-              year: "numeric",
-            })}`}
-        </div>
+          <div className="text-[30px] font-[500] font-mono leading-none">
+            {ip.value != null ? ip.value.toFixed(1) : "—"}
+          </div>
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {ip.yoyChange != null && (
+              <span
+                className={`inline-flex items-center gap-1 text-[13px] font-[400] font-mono ${
+                  ip.yoyChange >= 0 ? "text-green" : "text-red"
+                }`}
+              >
+                {ip.yoyChange >= 0 ? (
+                  <TrendingUp className="h-3 w-3" />
+                ) : (
+                  <TrendingDown className="h-3 w-3" />
+                )}
+                {ip.yoyChange >= 0 ? "+" : ""}
+                {ip.yoyChange.toFixed(1)}% YoY
+              </span>
+            )}
+            {ip.change != null && (
+              <span
+                className={`text-[13px] font-[400] font-mono ${
+                  ip.change >= 0 ? "text-green" : "text-red"
+                }`}
+              >
+                {ip.change >= 0 ? "+" : ""}
+                {ip.change.toFixed(2)} MoM
+              </span>
+            )}
+          </div>
+          <div className="text-[11px] font-[400] text-muted mt-2" style={{ color: "var(--muted)", opacity: 0.7 }}>
+            Fed index (2017 = 100)
+            {ip.date &&
+              ` · ${new Date(ip.date).toLocaleDateString(undefined, {
+                month: "short",
+                year: "numeric",
+              })}`}
+          </div>
         </button>
 
         {/* CPI */}
         <button
           type="button"
           onClick={() => setSelectedMacro("cpi")}
-          className="rounded-xl border border-border bg-card p-5 text-left w-full hover:bg-card-hover hover:border-accent/30 transition-colors cursor-pointer group"
+          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
+          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted font-medium flex items-center gap-1.5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
               <TrendingUp className="h-3.5 w-3.5 text-accent" />
               CPI (Inflation)
             </span>
             <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
           </div>
-        <div className="text-2xl font-bold font-mono">
-          {cpi.yoyChange != null ? `${cpi.yoyChange.toFixed(1)}%` : "—"}
-        </div>
-        <div className="text-xs text-muted mt-1">Year-over-year change</div>
-        {cpi.value != null && (
-          <div className="text-[10px] text-muted mt-1">
-            Index: {cpi.value.toFixed(1)}
+          <div className="text-[30px] font-[500] font-mono leading-none">
+            {cpi.yoyChange != null ? `${cpi.yoyChange.toFixed(1)}%` : "—"}
           </div>
-        )}
-        {cpi.date && (
-          <div className="text-[10px] text-muted mt-1">
-            {new Date(cpi.date).toLocaleDateString(undefined, {
-              month: "short",
-              year: "numeric",
-            })}
-          </div>
-        )}
+          <div className="text-[13px] font-[400] text-muted mt-2">Year-over-year change</div>
+          {cpi.value != null && (
+            <div className="text-[11px] font-[400] text-muted mt-1" style={{ opacity: 0.7 }}>
+              Index: {cpi.value.toFixed(1)}
+            </div>
+          )}
+          {cpi.date && (
+            <div className="text-[11px] font-[400] text-muted mt-1" style={{ opacity: 0.7 }}>
+              {new Date(cpi.date).toLocaleDateString(undefined, {
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          )}
         </button>
 
         {/* M2 Money Supply */}
         <button
           type="button"
           onClick={() => setSelectedMacro("m2")}
-          className="rounded-xl border border-border bg-card p-5 text-left w-full hover:bg-card-hover hover:border-accent/30 transition-colors cursor-pointer group"
+          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
+          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted font-medium flex items-center gap-1.5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
               <DollarSign className="h-3.5 w-3.5 text-accent" />
               M2 Money Supply
             </span>
             <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
           </div>
-        <div className="text-2xl font-bold font-mono">
-          {m2.value != null
-            ? `$${(m2.value / 1000).toFixed(1)}T`
-            : "—"}
-        </div>
-        {m2.yoyChange != null && (
-          <div className="flex items-center gap-1 mt-1">
-            {m2.yoyChange >= 0 ? (
-              <TrendingUp className="h-3 w-3 text-green" />
-            ) : (
-              <TrendingDown className="h-3 w-3 text-red" />
-            )}
-            <span
-              className={`text-xs font-mono ${
-                m2.yoyChange >= 0 ? "text-green" : "text-red"
-              }`}
-            >
-              {m2.yoyChange >= 0 ? "+" : ""}
-              {m2.yoyChange.toFixed(1)}% YoY
-            </span>
+          <div className="text-[30px] font-[500] font-mono leading-none">
+            {m2.value != null
+              ? `$${(m2.value / 1000).toFixed(1)}T`
+              : "—"}
           </div>
-        )}
-        {m2.date && (
-          <div className="text-[10px] text-muted mt-2">
-            {new Date(m2.date).toLocaleDateString(undefined, {
-              month: "short",
-              year: "numeric",
-            })}
-          </div>
-        )}
+          {m2.yoyChange != null && (
+            <div className="flex items-center gap-1 mt-2">
+              {m2.yoyChange >= 0 ? (
+                <TrendingUp className="h-3 w-3 text-green" />
+              ) : (
+                <TrendingDown className="h-3 w-3 text-red" />
+              )}
+              <span
+                className={`text-[13px] font-[400] font-mono ${
+                  m2.yoyChange >= 0 ? "text-green" : "text-red"
+                }`}
+              >
+                {m2.yoyChange >= 0 ? "+" : ""}
+                {m2.yoyChange.toFixed(1)}% YoY
+              </span>
+            </div>
+          )}
+          {m2.date && (
+            <div className="text-[11px] font-[400] text-muted mt-2" style={{ opacity: 0.7 }}>
+              {new Date(m2.date).toLocaleDateString(undefined, {
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          )}
         </button>
 
         {/* Business Cycle */}
         <button
           type="button"
           onClick={() => setSelectedMacro("businessCycle")}
-          className="rounded-xl border border-border bg-card p-5 text-left w-full hover:bg-card-hover hover:border-accent/30 transition-colors cursor-pointer group"
+          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
+          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted font-medium flex items-center gap-1.5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
               <BarChart3 className="h-3.5 w-3.5 text-accent" />
               Business Cycle
             </span>
             <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
           </div>
-        <div className="flex items-center gap-2 mb-2">
-          <span
-            className={`text-sm font-semibold px-2 py-1 rounded ${
-              businessCycle.inRecession
-                ? "bg-red/15 text-red"
-                : "bg-green/15 text-green"
-            }`}
-          >
-            {businessCycle.inRecession ? "Recession" : "Expansion"}
-          </span>
-        </div>
-        {businessCycle.recessionProbability != null && (
-          <>
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-muted flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" />
-                Recession probability
-              </span>
-              <span className="font-mono">
-                {businessCycle.recessionProbability.toFixed(1)}%
-              </span>
-            </div>
-            <div className="h-2 rounded-full bg-card-hover overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${
-                  businessCycle.recessionProbability > 50
-                    ? "bg-red"
-                    : businessCycle.recessionProbability > 20
-                      ? "bg-accent"
-                      : "bg-green"
-                }`}
-                style={{
-                  width: `${Math.min(businessCycle.recessionProbability, 100)}%`,
-                }}
-              />
-            </div>
-          </>
-        )}
-        {businessCycle.date && (
-          <div className="text-[10px] text-muted mt-2">
-            {new Date(businessCycle.date).toLocaleDateString(undefined, {
-              month: "short",
-              year: "numeric",
-            })}
+          <div className="flex items-center gap-2 mb-2">
+            <span
+              className={`text-[30px] font-[500] leading-none ${
+                businessCycle.inRecession ? "text-red" : "text-green"
+              }`}
+            >
+              {businessCycle.inRecession ? "Recession" : "Expansion"}
+            </span>
           </div>
-        )}
+          {businessCycle.recessionProbability != null && (
+            <>
+              <div className="flex items-center justify-between text-[13px] font-[400] mb-1">
+                <span className="text-muted flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Recession probability
+                </span>
+                <span className="font-mono">
+                  {businessCycle.recessionProbability.toFixed(1)}%
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-card-hover overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    businessCycle.recessionProbability > 50
+                      ? "bg-red"
+                      : businessCycle.recessionProbability > 20
+                        ? "bg-accent"
+                        : "bg-green"
+                  }`}
+                  style={{
+                    width: `${Math.min(businessCycle.recessionProbability, 100)}%`,
+                  }}
+                />
+              </div>
+            </>
+          )}
+          {businessCycle.date && (
+            <div className="text-[11px] font-[400] text-muted mt-2" style={{ opacity: 0.7 }}>
+              {new Date(businessCycle.date).toLocaleDateString(undefined, {
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          )}
         </button>
 
         {/* Manufacturing Confidence (PMI proxy) */}
         <button
           type="button"
           onClick={() => setSelectedMacro("ism")}
-          className="rounded-xl border border-border bg-card p-5 text-left w-full hover:bg-card-hover hover:border-accent/30 transition-colors cursor-pointer group"
+          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
+          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted font-medium flex items-center gap-1.5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
               <Factory className="h-3.5 w-3.5 text-accent" />
               Mfg. Confidence (PMI)
             </span>
@@ -401,55 +405,54 @@ export default function MacroIndicators() {
               <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
             </span>
           </div>
-        <div className="text-2xl font-bold font-mono">
-          {ismMfg.value != null ? ismMfg.value.toFixed(1) : "—"}
-        </div>
-        {ismMfg.value != null && (
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span
-              className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
-                ismMfg.value >= 0
-                  ? "bg-green-500/15 text-green-500"
-                  : "bg-red-500/15 text-red-500"
-              }`}
-            >
-              {ismMfg.value >= 0 ? "Expanding" : "Contracting"}
-            </span>
-            {ismMfg.change != null && (
+          <div className="text-[30px] font-[500] font-mono leading-none">
+            {ismMfg.value != null ? ismMfg.value.toFixed(1) : "—"}
+          </div>
+          {ismMfg.value != null && (
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
               <span
-                className={`inline-flex items-center gap-1 text-xs font-mono ${
-                  ismMfg.change >= 0 ? "text-green" : "text-red"
+                className={`text-[13px] font-[400] font-mono ${
+                  ismMfg.value >= 0 ? "text-green" : "text-red"
                 }`}
               >
-                {ismMfg.change >= 0 ? (
-                  <TrendingUp className="h-3 w-3" />
-                ) : (
-                  <TrendingDown className="h-3 w-3" />
-                )}
-                {ismMfg.change >= 0 ? "+" : ""}
-                {ismMfg.change.toFixed(1)} pts
+                {ismMfg.value >= 0 ? "Expanding" : "Contracting"}
               </span>
-            )}
+              {ismMfg.change != null && (
+                <span
+                  className={`inline-flex items-center gap-1 text-[13px] font-[400] font-mono ${
+                    ismMfg.change >= 0 ? "text-green" : "text-red"
+                  }`}
+                >
+                  {ismMfg.change >= 0 ? (
+                    <TrendingUp className="h-3 w-3" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3" />
+                  )}
+                  {ismMfg.change >= 0 ? "+" : ""}
+                  {ismMfg.change.toFixed(1)} pts
+                </span>
+              )}
+            </div>
+          )}
+          <div className="text-[11px] font-[400] text-muted mt-2" style={{ opacity: 0.7 }}>
+            OECD · 0 = neutral · &gt;0 expansion
+            {ismMfg.date &&
+              ` · ${new Date(ismMfg.date).toLocaleDateString(undefined, {
+                month: "short",
+                year: "numeric",
+              })}`}
           </div>
-        )}
-        <div className="text-[10px] text-muted mt-2">
-          OECD · 0 = neutral · &gt;0 expansion
-          {ismMfg.date &&
-            ` · ${new Date(ismMfg.date).toLocaleDateString(undefined, {
-              month: "short",
-              year: "numeric",
-            })}`}
-        </div>
         </button>
 
         {/* Consumer Sentiment */}
         <button
           type="button"
           onClick={() => setSelectedMacro("sentiment")}
-          className="rounded-xl border border-border bg-card p-5 text-left w-full hover:bg-card-hover hover:border-accent/30 transition-colors cursor-pointer group"
+          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
+          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted font-medium flex items-center gap-1.5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
               <Handshake className="h-3.5 w-3.5 text-accent" />
               Consumer Sentiment
             </span>
@@ -467,14 +470,13 @@ export default function MacroIndicators() {
               <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
             </span>
           </div>
-        <div className="text-2xl font-bold font-mono">
-          {sentiment.value != null ? sentiment.value.toFixed(1) : "—"}
-        </div>
-        {sentiment.value != null && (
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            {sentiment.change != null && (
+          <div className="text-[30px] font-[500] font-mono leading-none">
+            {sentiment.value != null ? sentiment.value.toFixed(1) : "—"}
+          </div>
+          {sentiment.value != null && sentiment.change != null && (
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
               <span
-                className={`inline-flex items-center gap-1 text-xs font-mono ${
+                className={`inline-flex items-center gap-1 text-[13px] font-[400] font-mono ${
                   sentiment.change >= 0 ? "text-green" : "text-red"
                 }`}
               >
@@ -486,17 +488,16 @@ export default function MacroIndicators() {
                 {sentiment.change >= 0 ? "+" : ""}
                 {sentiment.change.toFixed(1)} pts
               </span>
-            )}
+            </div>
+          )}
+          <div className="text-[11px] font-[400] text-muted mt-2" style={{ opacity: 0.7 }}>
+            UMich index · avg ≈ 85
+            {sentiment.date &&
+              ` · ${new Date(sentiment.date).toLocaleDateString(undefined, {
+                month: "short",
+                year: "numeric",
+              })}`}
           </div>
-        )}
-        <div className="text-[10px] text-muted mt-2">
-          UMich index · avg ≈ 85
-          {sentiment.date &&
-            ` · ${new Date(sentiment.date).toLocaleDateString(undefined, {
-              month: "short",
-              year: "numeric",
-            })}`}
-        </div>
         </button>
       </div>
 

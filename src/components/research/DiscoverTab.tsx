@@ -19,11 +19,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { NewsArticle } from "@/lib/types";
+import PowerTierBadge from "@/components/research/PowerTierBadge";
+import { getTierBySymbol } from "@/lib/tiers";
 
 interface ScreenerResult {
   symbol: string;
   name: string;
-  sector: string;
   marketCap: number;
   price: number;
   dayChangePct: number;
@@ -56,10 +57,10 @@ const IDEA_CARDS = [
   },
   {
     id: "growth-tech",
-    title: "High Growth Tech",
-    desc: "Technology names with strong revenue growth.",
+    title: "High revenue growth",
+    desc: "Names with strong top-line growth (any sector).",
     icon: Zap,
-    filters: "sector=Technology&minRevenueGrowth=10",
+    filters: "minRevenueGrowth=10",
     color: "text-accent",
     bg: "bg-accent/10",
   },
@@ -255,6 +256,7 @@ export default function DiscoverTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {topPicks.map((s) => {
               const badge = recBadge(s.recommendationKey);
+              const tier = getTierBySymbol(s.symbol);
               return (
                 <Link
                   key={s.symbol}
@@ -267,6 +269,11 @@ export default function DiscoverTab() {
                         {s.symbol}
                       </p>
                       <p className="text-xs text-muted truncate">{s.name}</p>
+                      {tier && (
+                        <div className="mt-1.5">
+                          <PowerTierBadge tier={tier.tier} />
+                        </div>
+                      )}
                     </div>
                     <span
                       className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full ${badge.cls}`}

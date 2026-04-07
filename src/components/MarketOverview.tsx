@@ -51,11 +51,12 @@ export default function MarketOverview() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="h-28 rounded-xl bg-card border border-border animate-pulse"
+            className="h-28 rounded-lg bg-card animate-pulse"
+            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
           />
         ))}
       </div>
@@ -63,30 +64,31 @@ export default function MarketOverview() {
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
       {indices.map((index) => {
         const isPositive = index.change >= 0;
         const isUSD = index.currency === "USD";
         return (
           <div
             key={index.symbol}
-            className="rounded-xl bg-card border border-border p-4 hover:bg-card-hover transition-colors"
+            className="rounded-lg bg-card p-4 hover:bg-card-hover transition-colors"
+            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[13px] font-[400] text-muted leading-tight">
                 {index.name}
               </span>
               {isPositive ? (
-                <TrendingUp className="h-4 w-4 text-green" />
+                <TrendingUp className="h-4 w-4 text-green shrink-0" />
               ) : (
-                <TrendingDown className="h-4 w-4 text-red" />
+                <TrendingDown className="h-4 w-4 text-red shrink-0" />
               )}
             </div>
-            <div className="text-xl font-bold font-mono">
+            <div className="text-[30px] font-[500] font-mono leading-none">
               {fmtCurrency(index.price, index.currency)}
             </div>
             <div
-              className={`text-sm font-mono mt-1 ${
+              className={`text-[13px] font-[400] font-mono mt-2 ${
                 isPositive ? "text-green" : "text-red"
               }`}
             >
@@ -94,7 +96,7 @@ export default function MarketOverview() {
               {index.changePercent.toFixed(2)}%
             </div>
             {!isUSD && (
-              <div className="text-xs font-mono text-muted mt-1">
+              <div className="text-[11px] font-[400] font-mono text-muted mt-1" style={{ opacity: 0.7 }}>
                 ${index.priceUSD.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,

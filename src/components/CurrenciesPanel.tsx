@@ -38,11 +38,12 @@ export default function CurrenciesPanel() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div
             key={i}
-            className="h-24 rounded-xl bg-card border border-border animate-pulse"
+            className="h-24 rounded-lg bg-card animate-pulse"
+            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
           />
         ))}
       </div>
@@ -51,7 +52,7 @@ export default function CurrenciesPanel() {
 
   if (error) {
     return (
-      <div className="rounded-xl bg-card border border-border p-6 text-center text-muted text-sm">
+      <div className="rounded-lg bg-card p-6 text-center text-muted text-sm" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
         {error}
       </div>
     );
@@ -59,43 +60,43 @@ export default function CurrenciesPanel() {
 
   if (currencies.length === 0) {
     return (
-      <div className="rounded-xl bg-card border border-border p-6 text-center text-muted text-sm">
+      <div className="rounded-lg bg-card p-6 text-center text-muted text-sm" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
         No currency data available
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       {currencies.map((q) => {
         const isPositive = q.change >= 0;
         return (
           <div
             key={q.pair}
-            className="rounded-xl bg-card border border-border p-4 hover:bg-card-hover transition-colors"
+            className="rounded-lg bg-card p-4 hover:bg-card-hover transition-colors"
+            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted">{q.pair}</span>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[13px] font-[400] text-muted">{q.pair}</span>
               {isPositive ? (
                 <TrendingUp className="h-4 w-4 text-green" />
               ) : (
                 <TrendingDown className="h-4 w-4 text-red" />
               )}
             </div>
-            <div className="text-xl font-bold font-mono">
+            <div className="text-[28px] font-[500] font-mono leading-none">
               {q.price.toLocaleString(undefined, {
                 minimumFractionDigits: 4,
                 maximumFractionDigits: 4,
               })}
             </div>
             <div
-              className={`text-sm font-mono mt-1 ${
+              className={`text-[13px] font-[400] font-mono mt-2 ${
                 isPositive ? "text-green" : "text-red"
               }`}
             >
               {isPositive ? "+" : ""}
-              {q.change.toFixed(4)} ({isPositive ? "+" : ""}
-              {q.changePercent.toFixed(2)}%)
+              {q.changePercent.toFixed(2)}%
             </div>
           </div>
         );

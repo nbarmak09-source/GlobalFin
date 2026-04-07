@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { usePathname } from "next/navigation";
 import type { TickerItem } from "@/lib/types";
+import { getSupplyChainByTicker } from "@/lib/supplyChainLookup";
+
+function isSupplyChainTapePath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return (
+    pathname === "/supply-chain" || pathname.startsWith("/supply-chain/")
+  );
+}
 
 const SCROLL_SPEED = 0.5; // pixels per frame (~30px/sec)
 
@@ -22,6 +31,9 @@ function fmtCurrency(value: number, currency: string): string {
 }
 
 export default function TickerTape() {
+  const pathname = usePathname();
+  const supplyChainMode = isSupplyChainTapePath(pathname);
+
   const [items, setItems] = useState<TickerItem[]>([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -134,32 +146,60 @@ export default function TickerTape() {
       onMouseMove={handleMouseMove}
     >
       <div className="flex h-full items-center whitespace-nowrap min-w-max">
-        {duplicated.map((item, idx) => (
-          <div
-            key={`${item.symbol}-${idx}`}
-            className="inline-flex items-center gap-2 px-4 border-r border-border/50"
-          >
-            <span className="text-xs font-semibold text-foreground">
-              {item.name}
-            </span>
-            <span className="text-xs font-mono text-foreground/80">
-              {fmtCurrency(item.price, item.currency)}
-            </span>
-            {item.currency !== "USD" && (
-              <span className="text-[10px] font-mono text-muted">
-                ${item.priceUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-            )}
-            <span
-              className={`text-xs font-mono font-medium ${
-                item.change >= 0 ? "text-green" : "text-red"
-              }`}
+        {duplicated.map((item, idx) => {
+          const sc = supplyChainMode
+            ? getSupplyChainByTicker(item.symbol)
+            : undefined;
+          return (
+            <div
+              key={`${item.symbol}-${idx}`}
+              className="inline-flex items-center gap-2 px-4 border-r border-border/50"
+              title={
+                supplyChainMode && sc
+                  ? `Layer ${sc.layerId} — ${sc.layerName}`
+                  : undefined
+              }
             >
-              {item.changePercent >= 0 ? "+" : ""}
-              {item.changePercent.toFixed(2)}%
-            </span>
-          </div>
-        ))}
+              {supplyChainMode ? (
+                <>
+                  {sc && (
+                    <span
+                      className="h-2 w-2 rounded-full shrink-0"
+                      style={{ backgroundColor: sc.dotColor }}
+                      aria-hidden
+                    />
+                  )}
+                  <span className="text-xs font-mono font-semibold text-foreground/90">
+                    {item.symbol}
+                  </span>
+                  <span className="text-xs font-[500] text-foreground">
+                    {item.name}
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs font-[500] text-foreground">
+                  {item.name}
+                </span>
+              )}
+              <span className="text-xs font-mono text-foreground/60">
+                {fmtCurrency(item.price, item.currency)}
+              </span>
+              {item.currency !== "USD" && (
+                <span className="text-[10px] font-mono text-muted">
+                  ${item.priceUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              )}
+              <span
+                className={`text-xs font-mono font-medium ${
+                  item.change >= 0 ? "text-green" : "text-red"
+                }`}
+              >
+                {item.changePercent >= 0 ? "+" : ""}
+                {item.changePercent.toFixed(2)}%
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
