@@ -1,62 +1,6 @@
 {
-  "fetchedDate": "2026-03-13",
+  "fetchedDate": "2026-03-24",
   "entries": [
-    {
-      "symbol": "AAPL",
-      "cik": "0000320193",
-      "annualData": [
-        {
-          "fiscalYear": "2025",
-          "revenue": null,
-          "capex": 2373000000,
-          "depreciation": 3214000000,
-          "currentAssets": 158104000000,
-          "currentLiabilities": 162367000000,
-          "workingCapital": -4263000000,
-          "operatingCashflow": 53925000000
-        },
-        {
-          "fiscalYear": "2024",
-          "revenue": null,
-          "capex": 2940000000,
-          "depreciation": 3080000000,
-          "currentAssets": 133240000000,
-          "currentLiabilities": 144365000000,
-          "workingCapital": -11125000000,
-          "operatingCashflow": 29935000000
-        },
-        {
-          "fiscalYear": "2023",
-          "revenue": null,
-          "capex": 2392000000,
-          "depreciation": 2848000000,
-          "currentAssets": 143692000000,
-          "currentLiabilities": 133973000000,
-          "workingCapital": 9719000000,
-          "operatingCashflow": 39895000000
-        },
-        {
-          "fiscalYear": "2022",
-          "revenue": null,
-          "capex": 3787000000,
-          "depreciation": 2916000000,
-          "currentAssets": 128777000000,
-          "currentLiabilities": 137286000000,
-          "workingCapital": -8509000000,
-          "operatingCashflow": 34005000000
-        },
-        {
-          "fiscalYear": "2021",
-          "revenue": null,
-          "capex": 2803000000,
-          "depreciation": 2697000000,
-          "currentAssets": 153154000000,
-          "currentLiabilities": 147574000000,
-          "workingCapital": 5580000000,
-          "operatingCashflow": 46966000000
-        }
-      ]
-    },
     {
       "symbol": "MSFT",
       "cik": "0000789019",
@@ -148,6 +92,68 @@
           "operatingCashflow": 5729000
         }
       ]
+    },
+    {
+      "symbol": "AAPL",
+      "cik": "",
+      "annualData": [
+        {
+          "fiscalYear": "2025",
+          "revenue": 416161000000,
+          "ebitda": 144748000000,
+          "capex": -12715000000,
+          "depreciation": 11698000000,
+          "currentAssets": 147957000000,
+          "currentLiabilities": 165631000000,
+          "workingCapital": -17674000000,
+          "operatingCashflow": 111482000000
+        },
+        {
+          "fiscalYear": "2024",
+          "revenue": 391035000000,
+          "ebitda": 134661000000,
+          "capex": -9447000000,
+          "depreciation": 11445000000,
+          "currentAssets": 152987000000,
+          "currentLiabilities": 176392000000,
+          "workingCapital": -23405000000,
+          "operatingCashflow": 118254000000
+        },
+        {
+          "fiscalYear": "2023",
+          "revenue": 383285000000,
+          "ebitda": 125820000000,
+          "capex": -10959000000,
+          "depreciation": 11519000000,
+          "currentAssets": 143566000000,
+          "currentLiabilities": 145308000000,
+          "workingCapital": -1742000000,
+          "operatingCashflow": 110543000000
+        },
+        {
+          "fiscalYear": "2022",
+          "revenue": 394328000000,
+          "ebitda": 130541000000,
+          "capex": -10708000000,
+          "depreciation": 11104000000,
+          "currentAssets": 135405000000,
+          "currentLiabilities": 153982000000,
+          "workingCapital": -18577000000,
+          "operatingCashflow": 122151000000
+        },
+        {
+          "fiscalYear": "2021",
+          "revenue": null,
+          "ebitda": null,
+          "capex": null,
+          "depreciation": null,
+          "currentAssets": null,
+          "currentLiabilities": null,
+          "workingCapital": null,
+          "operatingCashflow": null
+        }
+      ],
+      "dataSource": "yahoo"
     }
   ]
 }
