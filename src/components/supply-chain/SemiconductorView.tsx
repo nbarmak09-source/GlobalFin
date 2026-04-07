@@ -12,6 +12,7 @@ import type {
   SupplyChainLayersFile,
 } from "@/types/supplyChain";
 import CompanyDetailPanel from "@/components/supply-chain/CompanyDetailPanel";
+import BottleneckMonitor from "@/components/dashboard/BottleneckMonitor";
 
 const EcosystemMap = dynamic(
   () => import("@/components/supply-chain/EcosystemMap"),
@@ -219,7 +220,6 @@ function LayerBand({
           <span className="inline-flex items-center rounded-full border border-border bg-card-hover px-2.5 py-0.5 text-xs font-mono font-semibold text-foreground">
             {layer.id}
           </span>
-          <BottleneckBadge risk={layer.bottleneckRisk} />
         </div>
         <h2 className="text-[20px] font-semibold font-serif text-foreground leading-tight">
           {layer.name}
@@ -227,7 +227,10 @@ function LayerBand({
         <p className="text-[13px] text-muted mt-1.5 leading-relaxed">{layer.nickname}</p>
       </div>
 
-      <div className="md:w-[70%] min-w-0 flex-1 p-3 sm:p-4">
+      <div className="md:w-[70%] min-w-0 flex-1 p-3 sm:p-4 flex flex-col gap-3">
+        <div className="flex items-center justify-end shrink-0">
+          <BottleneckBadge risk={layer.bottleneckRisk} />
+        </div>
         <div className="flex gap-3 overflow-x-auto pb-1 ticker-scrollbar-hide">
           {layer.companies.map((c) => {
             const t = c.ticker?.toUpperCase();
@@ -318,22 +321,6 @@ function LayersView({
     }
   }, [layerScroll, data]);
 
-  if (loadError) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted">
-        {loadError}
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-12 text-center text-muted">
-        Loading supply chain…
-      </div>
-    );
-  }
-
   const selectedQuote =
     selected?.company.ticker
       ? quotesBySymbol[selected.company.ticker.toUpperCase()]
@@ -341,26 +328,40 @@ function LayersView({
 
   return (
     <>
-      <div className="flex flex-col gap-4">
-        {data.layers.map((layer) => (
-          <LayerBand
-            key={layer.id}
-            layer={layer}
-            quotesBySymbol={quotesBySymbol}
-            highlightParam={highlightParam}
-            selectedKey={selected?.key ?? null}
-            onSelectCompany={handleSelect}
-          />
-        ))}
-      </div>
+      <BottleneckMonitor />
 
-      {selected && (
-        <CompanyDetailPanel
-          company={selected.company}
-          layer={selected.layer}
-          quote={selectedQuote}
-          onClose={() => setSelected(null)}
-        />
+      {loadError ? (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-muted">
+          {loadError}
+        </div>
+      ) : !data ? (
+        <div className="rounded-xl border border-border bg-card p-12 text-center text-muted">
+          Loading supply chain…
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col gap-4">
+            {data.layers.map((layer) => (
+              <LayerBand
+                key={layer.id}
+                layer={layer}
+                quotesBySymbol={quotesBySymbol}
+                highlightParam={highlightParam}
+                selectedKey={selected?.key ?? null}
+                onSelectCompany={handleSelect}
+              />
+            ))}
+          </div>
+
+          {selected && (
+            <CompanyDetailPanel
+              company={selected.company}
+              layer={selected.layer}
+              quote={selectedQuote}
+              onClose={() => setSelected(null)}
+            />
+          )}
+        </>
       )}
     </>
   );

@@ -8,7 +8,6 @@ import CurrenciesPanel from "@/components/CurrenciesPanel";
 import YieldCurveMonitor from "@/components/YieldCurveMonitor";
 import MacroIndicators from "@/components/MacroIndicators";
 import MacroCharts from "@/components/MacroCharts";
-import BottleneckMonitor from "@/components/dashboard/BottleneckMonitor";
 import DashboardMarketsPanel from "@/components/markets/DashboardMarketsPanel";
 import {
   ImageIcon,
@@ -106,8 +105,6 @@ function DashboardInner() {
               <MacroCharts />
             </div>
           </section>
-
-          <BottleneckMonitor />
 
           <section aria-label="Market indices" className="mt-6">
             <MarketOverview />
