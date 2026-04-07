@@ -19,6 +19,7 @@ const TICKER_SYMBOLS = [
   "AAPL",
   "MSFT",
   "GOOGL",
+  "GOOG",
   "AMZN",
   "NVDA",
   "TSLA",
@@ -30,6 +31,20 @@ const TICKER_SYMBOLS = [
   "XOM",
   "JNJ",
   "WMT",
+  // Supply chain / Bottleneck Monitor (also on ticker tape)
+  "SNPS",
+  "CDNS",
+  "ARM",
+  "ASML",
+  "TSM",
+  "MU",
+  "AVGO",
+  "MRVL",
+  "VRT",
+  "ETN",
+  "SBGSY",
+  "CEG",
+  "VST",
 ];
 
 const INDEX_DISPLAY_NAMES: Record<string, string> = {
@@ -516,6 +531,101 @@ export async function getQuoteSummary(
   } catch (error) {
     console.error("quoteSummary error:", error);
     return null;
+  }
+}
+
+export interface ScreenerQuote {
+  symbol: string;
+  shortName: string;
+  sector: string;
+  industry: string;
+  marketCap: number;
+  regularMarketPrice: number;
+  regularMarketChangePercent: number;
+  trailingPE: number;
+  forwardPE: number;
+  dividendYield: number;
+  beta: number;
+  revenueGrowth: number;
+  profitMargins: number;
+  fiftyTwoWeekHigh: number;
+  fiftyTwoWeekLow: number;
+  recommendationMean: number;
+  recommendationKey: string;
+  debtToEquity: number;
+  currentRatio: number;
+  priceToBook: number;
+}
+
+export async function getScreenerQuote(symbol: string): Promise<ScreenerQuote | null> {
+  try {
+    const result = await yf.quoteSummary(
+      symbol,
+      { modules: ["assetProfile", "summaryDetail", "financialData", "defaultKeyStatistics", "price"] },
+      // Skip strict schema validation — Yahoo occasionally returns unexpected
+      // shapes for certain fields (especially on non-US or holding-company tickers)
+      // which would throw and silently return null.
+      { validateResult: false }
+    ) as { assetProfile?: Record<string, unknown>; summaryDetail?: Record<string, unknown>; financialData?: Record<string, unknown>; defaultKeyStatistics?: Record<string, unknown>; price?: Record<string, unknown> };
+
+    const profile = result.assetProfile;
+    const detail = result.summaryDetail;
+    const fin = result.financialData;
+    const stats = result.defaultKeyStatistics;
+    const price = result.price;
+
+    return {
+      symbol: (price?.symbol as string | undefined) || symbol,
+      shortName: (price?.shortName as string | undefined) || (price?.longName as string | undefined) || symbol,
+      sector: (profile?.sector as string | undefined) || "",
+      industry: (profile?.industry as string | undefined) || "",
+      marketCap: (price?.marketCap as number | undefined) ?? (detail?.marketCap as number | undefined) ?? 0,
+      regularMarketPrice: (price?.regularMarketPrice as number | undefined) ?? 0,
+      regularMarketChangePercent: (price?.regularMarketChangePercent as number | undefined) ?? 0,
+      trailingPE: (detail?.trailingPE as number | undefined) ?? 0,
+      forwardPE: (detail?.forwardPE as number | undefined) ?? (stats?.forwardPE as number | undefined) ?? 0,
+      dividendYield: (detail?.dividendYield as number | undefined) ?? 0,
+      beta: (detail?.beta as number | undefined) ?? (stats?.beta as number | undefined) ?? 0,
+      revenueGrowth: (fin?.revenueGrowth as number | undefined) ?? 0,
+      profitMargins: (fin?.profitMargins as number | undefined) ?? (stats?.profitMargins as number | undefined) ?? 0,
+      fiftyTwoWeekHigh: (detail?.fiftyTwoWeekHigh as number | undefined) ?? 0,
+      fiftyTwoWeekLow: (detail?.fiftyTwoWeekLow as number | undefined) ?? 0,
+      recommendationMean: (fin?.recommendationMean as number | undefined) ?? 0,
+      recommendationKey: (fin?.recommendationKey as string | undefined) ?? "",
+      debtToEquity: (fin?.debtToEquity as number | undefined) ?? 0,
+      currentRatio: (fin?.currentRatio as number | undefined) ?? 0,
+      priceToBook: (stats?.priceToBook as number | undefined) ?? 0,
+    };
+  } catch {
+    // Fall back to a simple quote call which is more reliable
+    try {
+      const q = await yf.quote(symbol);
+      if (!q?.regularMarketPrice) return null;
+      return {
+        symbol: q.symbol || symbol,
+        shortName: q.shortName || q.longName || symbol,
+        sector: "",
+        industry: "",
+        marketCap: q.marketCap ?? 0,
+        regularMarketPrice: q.regularMarketPrice ?? 0,
+        regularMarketChangePercent: q.regularMarketChangePercent ?? 0,
+        trailingPE: q.trailingPE ?? 0,
+        forwardPE: 0,
+        dividendYield: q.dividendYield ?? 0,
+        beta: q.beta ?? 0,
+        revenueGrowth: 0,
+        profitMargins: 0,
+        fiftyTwoWeekHigh: q.fiftyTwoWeekHigh ?? 0,
+        fiftyTwoWeekLow: q.fiftyTwoWeekLow ?? 0,
+        recommendationMean: 0,
+        recommendationKey: "",
+        debtToEquity: 0,
+        currentRatio: 0,
+        priceToBook: q.priceToBook ?? 0,
+      };
+    } catch {
+      return null;
+    }
   }
 }
 
