@@ -1,0 +1,60 @@
+{
+  "schema": "1.0",
+  "description": "Round-trip events: equity investment (Capital Out) paired with elevated cloud/API spend (Revenue In) within 24 months. Monetary values in USD billions.",
+  "loops": [
+    {
+      "id": "microsoft-openai",
+      "investorId": "azure",
+      "investeeId": "openai",
+      "investorLabel": "Microsoft",
+      "investeeLabel": "OpenAI",
+      "roundTripDetected": true,
+      "capitalOutDate": "2023-01-23",
+      "capitalOutAmountBn": 10.0,
+      "monthsToSpendLift": 14,
+      "spendLiftPctVsPrior": 32,
+      "cloudSpendDelta12mBn": 4.2,
+      "reportedRevenueBn": 3.4,
+      "roundTripRevenueEstimateBn": 2.1,
+      "organicRevenueEstimateBn": 1.3,
+      "investorSegmentOrganicBn": 108.4,
+      "notes": "Multi-year Azure commitment and dedicated capacity following strategic investment."
+    },
+    {
+      "id": "google-anthropic",
+      "investorId": "google",
+      "investeeId": "anthropic",
+      "investorLabel": "Google",
+      "investeeLabel": "Anthropic",
+      "roundTripDetected": true,
+      "capitalOutDate": "2023-10-01",
+      "capitalOutAmountBn": 2.0,
+      "monthsToSpendLift": 8,
+      "spendLiftPctVsPrior": 22,
+      "cloudSpendDelta12mBn": 0.9,
+      "reportedRevenueBn": 1.6,
+      "roundTripRevenueEstimateBn": 0.6,
+      "organicRevenueEstimateBn": 0.2,
+      "investorSegmentOrganicBn": 32.7,
+      "notes": "Google Cloud preferred partner status and TPU allocation post-equity tranche."
+    },
+    {
+      "id": "amazon-anthropic",
+      "investorId": "aws",
+      "investeeId": "anthropic",
+      "investorLabel": "Amazon",
+      "investeeLabel": "Anthropic",
+      "roundTripDetected": true,
+      "capitalOutDate": "2023-09-25",
+      "capitalOutAmountBn": 4.0,
+      "monthsToSpendLift": 6,
+      "spendLiftPctVsPrior": 18,
+      "cloudSpendDelta12mBn": 1.4,
+      "reportedRevenueBn": 1.6,
+      "roundTripRevenueEstimateBn": 0.6,
+      "organicRevenueEstimateBn": 0.2,
+      "investorSegmentOrganicBn": 57.2,
+      "notes": "Primary training and inference workloads on AWS; spend uplift within partnership window."
+    }
+  ]
+}

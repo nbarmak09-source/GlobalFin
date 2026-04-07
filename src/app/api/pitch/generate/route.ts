@@ -1,6 +1,14 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 
+// Template-specific system prompts appended to the base system message
+export const TEMPLATE_SYSTEM_ADDONS: Record<string, string> = {
+  growth: `You are writing a GROWTH-focused pitch. Emphasize: revenue growth trajectory, TAM expansion, reinvestment rate, Rule of 40 (for software), long-term earnings power, and why the current multiple is justified by the growth runway. De-emphasize near-term profitability concerns if growth is strong.`,
+  value: `You are writing a VALUE-focused pitch. Emphasize: discount to intrinsic value, margin of safety, asset value, normalized earnings power, mean-reversion thesis, and dividend/buyback yield. Highlight any catalysts that could close the discount. Use conservative assumptions.`,
+  special_situations: `You are writing a SPECIAL SITUATIONS pitch. Emphasize: the specific event or catalyst driving the opportunity (merger, spin-off, restructuring, regulatory change, bankruptcy emergence, activist involvement), the timeline, the probability-weighted outcome, and the downside scenario if the event does not materialize.`,
+  short: `You are writing a SHORT THESIS. Emphasize: overvaluation, deteriorating fundamentals, competitive threats, accounting red flags, insider selling, high short interest, debt concerns, and what the bear case looks like. Frame the recommendation section as a Sell with a downside price target. Be skeptical of management guidance.`,
+};
+
 const SECTION_PROMPTS: Record<string, string> = {
   thesis: `Write a compelling investment thesis (2-3 paragraphs) for this stock. Include the core bull/bear case, key value drivers, and what makes this a timely opportunity. Be specific with metrics.`,
 
@@ -124,7 +132,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { section, stockData, existingContent } = body;
+    const { section, stockData, existingContent, template } = body;
 
     if (!section || typeof section !== "string") {
       return new Response(
@@ -163,10 +171,17 @@ export async function POST(request: NextRequest) {
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
+    const templateAddon =
+      template != null &&
+      typeof template === "string" &&
+      Object.prototype.hasOwnProperty.call(TEMPLATE_SYSTEM_ADDONS, template)
+        ? "\n\n" + TEMPLATE_SYSTEM_ADDONS[template as keyof typeof TEMPLATE_SYSTEM_ADDONS]
+        : "";
+
     const stream = await client.messages.stream({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4096,
-      system: `You are an expert equity research analyst writing professional stock pitches. Write in a clear, authoritative, data-driven style. Use specific numbers from the data provided. Format with markdown. Do NOT include any preamble or meta-commentary — just write the section content directly.`,
+      system: `You are an expert equity research analyst writing professional stock pitches. Write in a clear, authoritative, data-driven style. Use specific numbers from the data provided. Format with markdown. Do NOT include any preamble or meta-commentary — just write the section content directly.${templateAddon}`,
       messages: [{ role: "user", content: userMessage }],
     });
 

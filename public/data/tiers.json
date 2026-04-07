@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "companies": [
+    {
+      "id": "nvidia",
+      "displayName": "NVIDIA",
+      "symbols": ["NVDA"],
+      "tier": "lord",
+      "tetherScore": null,
+      "primaryLordId": null,
+      "primaryDependency": "Proprietary silicon; self-operated supply partnerships",
+      "selfOwnership": 95
+    },
+    {
+      "id": "azure",
+      "displayName": "Microsoft Azure",
+      "symbols": ["MSFT"],
+      "tier": "lord",
+      "tetherScore": null,
+      "primaryLordId": null,
+      "primaryDependency": "Global data-center fabric and proprietary stack",
+      "selfOwnership": 88
+    },
+    {
+      "id": "aws",
+      "displayName": "Amazon Web Services",
+      "symbols": ["AMZN"],
+      "tier": "lord",
+      "tetherScore": null,
+      "primaryLordId": null,
+      "primaryDependency": "Owned regions, networking, and custom silicon roadmap",
+      "selfOwnership": 90
+    },
+    {
+      "id": "google",
+      "displayName": "Google Cloud",
+      "symbols": ["GOOGL", "GOOG"],
+      "tier": "lord",
+      "tetherScore": null,
+      "primaryLordId": null,
+      "primaryDependency": "TPUs, data centers, and global backbone",
+      "selfOwnership": 92
+    },
+    {
+      "id": "openai",
+      "displayName": "OpenAI",
+      "symbols": [],
+      "tier": "vassal",
+      "tetherScore": 78,
+      "primaryLordId": "azure",
+      "primaryDependency": "Training and inference capacity via Microsoft Azure",
+      "selfOwnership": 5
+    },
+    {
+      "id": "anthropic",
+      "displayName": "Anthropic",
+      "symbols": [],
+      "tier": "vassal",
+      "tetherScore": 72,
+      "primaryLordId": "aws",
+      "primaryDependency": "Primary capacity on Amazon Web Services",
+      "selfOwnership": 5
+    },
+    {
+      "id": "mistral",
+      "displayName": "Mistral AI",
+      "symbols": [],
+      "tier": "vassal",
+      "tetherScore": 65,
+      "primaryLordId": "azure",
+      "primaryDependency": "European deployments anchored on Azure capacity",
+      "selfOwnership": 8
+    },
+    {
+      "id": "cohere",
+      "displayName": "Cohere",
+      "symbols": [],
+      "tier": "vassal",
+      "tetherScore": 55,
+      "primaryLordId": "aws",
+      "primaryDependency": "Multi-cloud with AWS-weighted training runs",
+      "selfOwnership": 6
+    },
+    {
+      "id": "adept",
+      "displayName": "Adept AI",
+      "symbols": [],
+      "tier": "vassal",
+      "tetherScore": 48,
+      "primaryLordId": "google",
+      "primaryDependency": "GCP-forward research and product inference",
+      "selfOwnership": 4
+    },
+    {
+      "id": "wrapperflow",
+      "displayName": "Wrapperflow",
+      "symbols": ["WRPF"],
+      "tier": "serf",
+      "tetherScore": null,
+      "primaryLordId": null,
+      "primaryDependency": "Public APIs; no owned models or data-center footprint",
+      "selfOwnership": 2
+    },
+    {
+      "id": "promptcheap",
+      "displayName": "PromptCheap",
+      "symbols": ["PCHP"],
+      "tier": "serf",
+      "tetherScore": null,
+      "primaryLordId": null,
+      "primaryDependency": "Thin UI over third-party model endpoints",
+      "selfOwnership": 1
+    },
+    {
+      "id": "chainrelay",
+      "displayName": "ChainRelay Labs",
+      "symbols": ["CRLY"],
+      "tier": "serf",
+      "tetherScore": null,
+      "primaryLordId": null,
+      "primaryDependency": "Reseller-style routing to hosted inference APIs",
+      "selfOwnership": 3
+    },
+    {
+      "id": "microagent",
+      "displayName": "MicroAgent Inc",
+      "symbols": ["MAGT"],
+      "tier": "serf",
+      "tetherScore": null,
+      "primaryLordId": null,
+      "primaryDependency": "No proprietary weights; orchestration layer only",
+      "selfOwnership": 2
+    }
+  ]
+}

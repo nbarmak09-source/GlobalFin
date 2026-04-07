@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "description": "Semiconductor and AI supply-chain layers (design through foundational models). Complements power-tier and ecosystem data in tiers.json; tickers link to listed equities where applicable.",
+  "layers": [
+    {
+      "id": "L1",
+      "name": "Design & Logic",
+      "nickname": "The Software that Builds Hardware",
+      "color": "purple",
+      "bottleneckRisk": "critical",
+      "companies": [
+        {
+          "ticker": "SNPS",
+          "name": "Synopsys",
+          "role": "EDA Software",
+          "moatType": "duopoly",
+          "moatSummary": "~90% EDA market share. License revocation halts all chip design globally.",
+          "concentrationNote": "EDA Duopoly"
+        },
+        {
+          "ticker": "CDNS",
+          "name": "Cadence Design Systems",
+          "role": "EDA Software",
+          "moatType": "duopoly",
+          "moatSummary": "EDA duopoly partner. Together with SNPS, controls chip design tooling.",
+          "concentrationNote": "EDA Duopoly"
+        },
+        {
+          "ticker": "ARM",
+          "name": "Arm Holdings",
+          "role": "Architecture Licensor",
+          "moatType": "toll",
+          "moatSummary": "Royalty tax on every chip using its blueprint — Apple, Amazon, NVIDIA custom silicon all pay.",
+          "concentrationNote": "Architectural Toll"
+        }
+      ]
+    },
+    {
+      "id": "L2",
+      "name": "Lithography & Foundry",
+      "nickname": "The Physical Bottleneck",
+      "color": "blue",
+      "bottleneckRisk": "critical",
+      "companies": [
+        {
+          "ticker": "ASML",
+          "name": "ASML",
+          "role": "EUV Monopoly",
+          "moatType": "monopoly",
+          "moatSummary": "Sole manufacturer of EUV machines ($350M+ each). No 2nm/3nm chip can exist without them.",
+          "concentrationNote": "Global Monopoly"
+        },
+        {
+          "ticker": "TSM",
+          "name": "TSMC",
+          "role": "Advanced Foundry + CoWoS Packaging",
+          "moatType": "monopoly",
+          "moatSummary": "Only foundry for advanced AI chips. CoWoS packaging tech is the #1 current cause of GPU shortages.",
+          "concentrationNote": "CoWoS Bottleneck"
+        }
+      ]
+    },
+    {
+      "id": "L3",
+      "name": "Specialty Components",
+      "nickname": "Memory & Networking",
+      "color": "teal",
+      "bottleneckRisk": "high",
+      "companies": [
+        {
+          "ticker": "MU",
+          "name": "Micron",
+          "role": "HBM Memory",
+          "moatType": "oligopoly",
+          "moatSummary": "HBM3 memory is required for every AI GPU. Supply failure halts GPU production.",
+          "concentrationNote": "HBM Race"
+        },
+        {
+          "ticker": "AVGO",
+          "name": "Broadcom",
+          "role": "Networking ASICs",
+          "moatType": "oligopoly",
+          "moatSummary": "Custom ASICs and Ethernet switching — the spinal cord connecting GPU clusters.",
+          "concentrationNote": "Networking Fabric"
+        },
+        {
+          "ticker": "MRVL",
+          "name": "Marvell",
+          "role": "Networking ASICs",
+          "moatType": "oligopoly",
+          "moatSummary": "InfiniBand/Ethernet switching and custom silicon for hyperscalers.",
+          "concentrationNote": "Networking Fabric"
+        }
+      ]
+    },
+    {
+      "id": "L4",
+      "name": "Physical Layer",
+      "nickname": "Thermal & Power",
+      "color": "amber",
+      "bottleneckRisk": "high",
+      "companies": [
+        {
+          "ticker": "VRT",
+          "name": "Vertiv",
+          "role": "Liquid Cooling",
+          "moatType": "leader",
+          "moatSummary": "Air cooling cannot handle H100/Blackwell density. Vertiv dominates liquid-to-chip thermal management.",
+          "concentrationNote": "Cooling Leader"
+        },
+        {
+          "ticker": "ETN",
+          "name": "Eaton",
+          "role": "Electrical Infrastructure",
+          "moatType": "oligopoly",
+          "moatSummary": "Transformers and switchgear with 2–3 year lead times — a bigger near-term bottleneck than chips.",
+          "concentrationNote": "2–3yr Lead Time"
+        },
+        {
+          "ticker": "SBGSY",
+          "name": "Schneider Electric",
+          "role": "Electrical Infrastructure",
+          "moatType": "oligopoly",
+          "moatSummary": "Data center power distribution and UPS systems.",
+          "concentrationNote": "2–3yr Lead Time"
+        },
+        {
+          "ticker": "CEG",
+          "name": "Constellation Energy",
+          "role": "Base-Load Power",
+          "moatType": "utility",
+          "moatSummary": "AI needs 24/7/365 power. Nuclear is the only viable source at scale. CEG is the new AI utility.",
+          "concentrationNote": "AI Utility"
+        },
+        {
+          "ticker": "VST",
+          "name": "Vistra",
+          "role": "Base-Load Power",
+          "moatType": "utility",
+          "moatSummary": "Nuclear and gas peaker plants serving hyperscale data center demand.",
+          "concentrationNote": "AI Utility"
+        }
+      ]
+    },
+    {
+      "id": "L5",
+      "name": "Hyperscale Cloud",
+      "nickname": "The Landlords",
+      "color": "coral",
+      "bottleneckRisk": "medium",
+      "companies": [
+        {
+          "ticker": "MSFT",
+          "name": "Microsoft",
+          "role": "Infrastructure Lord",
+          "moatType": "lord",
+          "moatSummary": "Only entities with $100B+ annual capex to buy all of layers 1–4. Azure owns the land AI vassals live on.",
+          "concentrationNote": "Azure"
+        },
+        {
+          "ticker": "GOOG",
+          "name": "Alphabet",
+          "role": "Infrastructure Lord",
+          "moatType": "lord",
+          "moatSummary": "GCP + TPU custom silicon + DeepMind. Vertically integrated from L1 to L6.",
+          "concentrationNote": "GCP + TPU"
+        },
+        {
+          "ticker": "AMZN",
+          "name": "Amazon",
+          "role": "Infrastructure Lord",
+          "moatType": "lord",
+          "moatSummary": "AWS is the largest cloud. Trainium/Inferentia custom chips reduce NVIDIA dependence.",
+          "concentrationNote": "AWS + Trainium"
+        }
+      ]
+    },
+    {
+      "id": "L6",
+      "name": "Foundational Models",
+      "nickname": "The Interface",
+      "color": "pink",
+      "bottleneckRisk": "low",
+      "companies": [
+        {
+          "ticker": null,
+          "name": "OpenAI",
+          "role": "Foundational Model",
+          "moatType": "vassal",
+          "moatSummary": "Tethered to Microsoft Azure. Capital from MSFT is spent back on Azure compute — round-trip capital.",
+          "concentrationNote": "MSFT Vassal"
+        },
+        {
+          "ticker": null,
+          "name": "Anthropic",
+          "role": "Foundational Model",
+          "moatType": "vassal",
+          "moatSummary": "Tethered to AWS and Google. Dual-landlord dependency.",
+          "concentrationNote": "AWS + GCP Vassal"
+        },
+        {
+          "ticker": "META",
+          "name": "Meta",
+          "role": "Foundational Model",
+          "moatType": "partial-lord",
+          "moatSummary": "Unique: builds its own infra (L4/L5) while also being an L6 model producer. Most vertically integrated AI company after Google.",
+          "concentrationNote": "Partial Lord"
+        }
+      ]
+    }
+  ]
+}

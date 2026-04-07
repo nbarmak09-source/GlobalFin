@@ -1,0 +1,69 @@
+{
+  "schema": "1.0",
+  "description": "Estimated AI compute reserves per company. GPU counts in thousands of H100-equivalent units. Power in Megawatts of data-center capacity.",
+  "companies": [
+    {
+      "id": "azure",
+      "label": "Microsoft Azure",
+      "gpuClusterSizeK": 300,
+      "gpuNote": "~300k H100-class GPUs across global Azure AI fleet, including OpenAI-dedicated superclusters",
+      "powerCapacityMw": 10000,
+      "ownershipType": "landlord",
+      "notes": "Owns and operates data centers globally; co-designed Maia 100 AI accelerator"
+    },
+    {
+      "id": "google",
+      "label": "Google",
+      "gpuClusterSizeK": 280,
+      "gpuNote": "~280k H100-equivalent units plus proprietary TPU v5p fleet",
+      "powerCapacityMw": 8500,
+      "ownershipType": "landlord",
+      "notes": "Owns data centers and designs TPU ASICs in-house; partial H100 fleet for GCP customers"
+    },
+    {
+      "id": "aws",
+      "label": "AWS",
+      "gpuClusterSizeK": 250,
+      "gpuNote": "~250k H100-class GPUs plus Trainium 2 and Inferentia 3 custom silicon",
+      "powerCapacityMw": 9000,
+      "ownershipType": "landlord",
+      "notes": "Owns data centers globally; AWS Trainium/Inferentia are proprietary AI chips"
+    },
+    {
+      "id": "nvidia",
+      "label": "NVIDIA",
+      "gpuClusterSizeK": 35,
+      "gpuNote": "~35k H100/H200/B200 units used internally for R&D, DGX Cloud, and simulation",
+      "powerCapacityMw": 1200,
+      "ownershipType": "partial",
+      "notes": "Designs its own silicon but relies on TSMC for fabrication; operates limited DGX Cloud infrastructure"
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "gpuClusterSizeK": 25,
+      "gpuNote": "~25k H100-class GPUs allocated from Microsoft Azure dedicated capacity",
+      "powerCapacityMw": 800,
+      "ownershipType": "tenant",
+      "notes": "Exclusively on Azure infrastructure; no owned data centers or custom silicon as of 2025"
+    },
+    {
+      "id": "anthropic",
+      "label": "Anthropic",
+      "gpuClusterSizeK": 20,
+      "gpuNote": "~20k H100-class GPUs from AWS dedicated capacity",
+      "powerCapacityMw": 600,
+      "ownershipType": "tenant",
+      "notes": "Primary infra on AWS; Google Cloud provides secondary compute via equity partnership"
+    },
+    {
+      "id": "mistral",
+      "label": "Mistral",
+      "gpuClusterSizeK": 5,
+      "gpuNote": "~5k H100-class GPUs via Microsoft Azure and NVIDIA partnerships",
+      "powerCapacityMw": 150,
+      "ownershipType": "tenant",
+      "notes": "No owned infrastructure; relies on Azure for training and deployment at scale"
+    }
+  ]
+}
