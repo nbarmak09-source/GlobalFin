@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Globe2 } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -34,17 +33,8 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="w-full max-w-sm space-y-6 sm:space-y-8">
-      <div className="flex flex-col items-center gap-2">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-xl font-bold font-serif text-accent"
-        >
-          <Globe2 className="h-6 w-6" />
-          Global Capital Markets HQ
-        </Link>
-        <p className="text-sm text-muted">Reset your password</p>
-      </div>
+    <div className="w-full space-y-6 sm:space-y-8">
+      <p className="text-sm text-muted text-center">Reset your password</p>
 
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
         {submitted ? (

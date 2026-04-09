@@ -37,12 +37,16 @@ export default function FilingsPage() {
           return;
         }
 
-        const payload: any = {
-          source: {
-            kind: "edgar" as const,
-            symbol: trimmedSymbol,
-            formType,
-          },
+        const source: {
+          kind: "edgar";
+          symbol: string;
+          formType: FilingFormType;
+          year?: number;
+          quarter?: 1 | 2 | 3 | 4;
+        } = {
+          kind: "edgar",
+          symbol: trimmedSymbol,
+          formType,
         };
 
         if (year) {
@@ -52,7 +56,7 @@ export default function FilingsPage() {
             setLoading(false);
             return;
           }
-          payload.source.year = y;
+          source.year = y;
         }
 
         if (quarter) {
@@ -62,8 +66,10 @@ export default function FilingsPage() {
             setLoading(false);
             return;
           }
-          payload.source.quarter = q as 1 | 2 | 3 | 4;
+          source.quarter = q as 1 | 2 | 3 | 4;
         }
+
+        const payload = { source };
 
         const res = await fetch("/api/filings/summarize", {
           method: "POST",

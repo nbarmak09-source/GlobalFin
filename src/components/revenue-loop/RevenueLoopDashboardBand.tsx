@@ -15,6 +15,12 @@ import type { RevenueLoopsFile } from "@/lib/revenueLoopTypes";
 import { useOrganicRevenueOnly } from "@/lib/revenue-loop-context";
 import { fmtBn } from "@/lib/formatBn";
 
+const LABEL_MAP: Record<string, string> = {
+  "Mic→Ope": "Microsoft → OpenAI",
+  "Goo→Ant": "Google → Anthropic",
+  "Ama→Ant": "Amazon → Anthropic",
+};
+
 interface RevenueLoopDashboardBandProps {
   /** When true, shows the organic-revenue toggle in the card header (e.g. Research → Ecosystem Map). */
   showOrganicToggle?: boolean;
@@ -78,12 +84,14 @@ export default function RevenueLoopDashboardBand({
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
-            margin={{ top: 8, right: 8, left: 4, bottom: 0 }}
+            margin={{ top: 8, right: 8, left: 4, bottom: 8 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#2d333b" vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fill: "#8b949e", fontSize: 10 }}
+              height={60}
+              tick={{ fill: "#8b949e", fontSize: 10, angle: -25, textAnchor: "end" }}
+              tickFormatter={(value) => LABEL_MAP[value] ?? value}
               axisLine={{ stroke: "#2d333b" }}
             />
             <YAxis
@@ -92,20 +100,15 @@ export default function RevenueLoopDashboardBand({
               axisLine={{ stroke: "#2d333b" }}
             />
             <Tooltip
-              content={({ active, payload }) => {
-                if (!active || !payload?.length) return null;
-                const row = payload[0].payload as (typeof chartData)[0];
-                return (
-                  <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-lg">
-                    <p className="font-medium text-foreground mb-1">{row.fullLabel}</p>
-                    <p className="text-muted">
-                      Organic: {fmtBn(row.organic)}
-                    </p>
-                    <p className="text-red-400/90">
-                      Round-trip (inferred): {fmtBn(row.roundTrip)}
-                    </p>
-                  </div>
-                );
+              labelFormatter={(label) =>
+                LABEL_MAP[String(label)] ?? String(label)
+              }
+              formatter={(value, name) => {
+                const n =
+                  typeof value === "number"
+                    ? value
+                    : Number(value ?? 0);
+                return [fmtBn(n), String(name)];
               }}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />

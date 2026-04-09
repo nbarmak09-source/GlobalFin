@@ -3,7 +3,6 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Globe2 } from "lucide-react";
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -132,17 +131,8 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="w-full max-w-sm space-y-6 sm:space-y-8">
-      <div className="flex flex-col items-center gap-2">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-xl font-bold font-serif text-accent"
-        >
-          <Globe2 className="h-6 w-6" />
-          Global Capital Markets HQ
-        </Link>
-        <p className="text-sm text-muted">Set a new password</p>
-      </div>
+    <div className="w-full space-y-6 sm:space-y-8">
+      <p className="text-sm text-muted text-center">Set a new password</p>
 
       <Suspense fallback={<div className="text-muted text-sm">Loading…</div>}>
         <ResetPasswordForm />

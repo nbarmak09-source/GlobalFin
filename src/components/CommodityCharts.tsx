@@ -297,6 +297,7 @@ export default function CommodityCharts() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAll(period);
   }, [period, fetchAll]);
 

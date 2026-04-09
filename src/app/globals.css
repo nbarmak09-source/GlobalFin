@@ -39,6 +39,20 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
 @keyframes ticker-scroll {
   0% {
     transform: translateX(0);

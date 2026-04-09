@@ -9,7 +9,7 @@ import {
   TIER_COLORS,
   EDGE_COLORS,
 } from "@/lib/ecosystemData";
-import type { EcoNode, EcoEdge, EdgeType } from "@/lib/ecosystemData";
+import type { EcoNode, EdgeType } from "@/lib/ecosystemData";
 import PowerTierBadge from "@/components/research/PowerTierBadge";
 import AiCompanyList from "@/components/research/AiCompanyList";
 import {
@@ -703,6 +703,7 @@ function EcosystemMapInner() {
       svg.on("click", null);
       svg.on(".zoom", null);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dimensions, roundTripDepKey]);
 
   // Legend data

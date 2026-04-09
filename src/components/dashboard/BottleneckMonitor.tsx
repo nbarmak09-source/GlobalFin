@@ -75,6 +75,7 @@ export default function BottleneckMonitor() {
   }, [tickers]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadQuotes();
     const id = window.setInterval(loadQuotes, 60_000);
     return () => window.clearInterval(id);

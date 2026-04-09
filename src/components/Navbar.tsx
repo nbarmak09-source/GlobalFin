@@ -173,9 +173,14 @@ export default function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const account = useDropdown();
+  const {
+    open: accountOpen,
+    setOpen: setAccountOpen,
+    ref: accountRef,
+  } = useDropdown();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMobileOpen(false);
   }, [pathname]);
 
@@ -186,15 +191,8 @@ export default function Navbar() {
     };
   }, [mobileOpen]);
 
-  // ── mobile: flat list of all links ────────────────────────────────────────
-  const allMobileLinks = [
-    ...TOP_LINKS,
-    ...INVESTING_ITEMS.map((i) => ({ ...i, exact: false })),
-    ...TOOLS_ITEMS.map((i) => ({ ...i, exact: false })),
-  ];
-
   // Group labels for mobile
-  const mobileGroups: { label: string; links: typeof allMobileLinks }[] = [
+  const mobileGroups = [
     {
       label: "Navigation",
       links: TOP_LINKS.map((l) => ({ ...l })),
@@ -252,12 +250,12 @@ export default function Navbar() {
 
           {/* Account */}
           <div
-            ref={account.ref}
+            ref={accountRef}
             className="ml-2 flex items-center gap-1 border-l border-border pl-2 relative"
           >
             <button
               type="button"
-              onClick={() => account.setOpen((v) => !v)}
+              onClick={() => setAccountOpen((v) => !v)}
               className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted hover:text-foreground hover:bg-card-hover transition-colors"
               title={session?.user?.email ?? "Account"}
             >
@@ -266,15 +264,15 @@ export default function Navbar() {
                 {session?.user?.name ?? session?.user?.email ?? "Account"}
               </span>
               <ChevronDown
-                className={`h-3 w-3 transition-transform ${account.open ? "rotate-180" : ""}`}
+                className={`h-3 w-3 transition-transform ${accountOpen ? "rotate-180" : ""}`}
               />
             </button>
-            {account.open && (
+            {accountOpen && (
               <div className="absolute right-0 top-full mt-2 w-44 rounded-lg border border-border bg-card shadow-lg z-50">
                 <Link
                   href="/account"
                   className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:bg-card-hover hover:text-foreground"
-                  onClick={() => account.setOpen(false)}
+                  onClick={() => setAccountOpen(false)}
                 >
                   <User className="h-4 w-4" />
                   <span>View account</span>
@@ -282,7 +280,7 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={() => {
-                    account.setOpen(false);
+                    setAccountOpen(false);
                     signOut({ callbackUrl: "/login" });
                   }}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted hover:bg-card-hover hover:text-foreground"

@@ -245,11 +245,11 @@ export default function PortfolioPage() {
         </button>
       </div>
 
-      {loading ? (
+      {activeTab === "holdings" ? (
         <div className="space-y-4">
-          {activeTab === "holdings" && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
+          {loading && (
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+              {[1, 2, 3, 4, 5].map((i) => (
                 <div
                   key={i}
                   className="h-20 rounded-xl bg-card border border-border animate-pulse"
@@ -257,17 +257,17 @@ export default function PortfolioPage() {
               ))}
             </div>
           )}
-          <div className="h-64 rounded-xl bg-card border border-border animate-pulse" />
-        </div>
-      ) : activeTab === "holdings" ? (
-        <div className="space-y-4">
-          <PortfolioPerformanceChart />
+          {!loading && <PortfolioPerformanceChart />}
+          {loading && (
+            <div className="h-64 rounded-xl bg-card border border-border animate-pulse" />
+          )}
           <PortfolioTable
             positions={positions}
             onDelete={handleDeletePosition}
             onReorder={handleReorderPositions}
             valuesVisible={valuesVisible}
             onEdit={handleEditPositionRequest}
+            loading={loading}
           />
         </div>
       ) : (
@@ -276,6 +276,7 @@ export default function PortfolioPage() {
           onRemove={handleRemoveWatchlist}
           onReorder={handleReorderWatchlist}
           valuesVisible={valuesVisible}
+          loading={loading}
         />
       )}
 

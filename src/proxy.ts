@@ -26,11 +26,9 @@ const PUBLIC_API_ROUTES = [
   "/api/health",
   "/api/news",
   "/api/stocks",
-  "/api/fmp",
   "/api/sec-financials",
   "/api/sec-filings",
   "/api/vc-daily",
-  "/api/vc-image",
   "/api/currencies",
   "/api/yield-curve",
   "/api/fixed-income",
@@ -59,7 +57,14 @@ const authHandler = auth(async (req) => {
   const pathname = req.nextUrl.pathname;
 
   // Auth, register, and verify-email: no session required
-  if (pathname.startsWith("/api/auth") || pathname === "/api/register" || pathname === "/api/verify-email") {
+  if (
+    pathname.startsWith("/api/auth") ||
+    pathname === "/api/register" ||
+    pathname === "/api/verify-email" ||
+    pathname === "/api/forgot-password" ||
+    pathname === "/api/reset-password" ||
+    pathname === "/api/resend-verification"
+  ) {
     return withSecurityHeaders(NextResponse.next());
   }
 

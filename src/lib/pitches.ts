@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import type { StockPitch, PitchSections } from "./types";
+import type { StockPitch } from "./types";
 
 function toStockPitch(row: {
   id: string;

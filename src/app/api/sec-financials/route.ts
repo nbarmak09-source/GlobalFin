@@ -15,7 +15,7 @@ function secUserAgent(): string {
   return "GlobalCapitalMarkets/1.0 (https://github.com/nbarmak09-source/Global-Capital-Markets; support@example.com)";
 }
 
-interface CachedSECEntry extends SECFinancials {}
+type CachedSECEntry = SECFinancials;
 
 interface SECCacheFile {
   fetchedDate: string;

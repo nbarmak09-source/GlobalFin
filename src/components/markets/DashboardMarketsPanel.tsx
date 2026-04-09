@@ -3,13 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
-  Loader2,
   BarChart3,
   TrendingDown,
   ExternalLink,
   Clock,
   ChevronRight,
 } from "lucide-react";
+import { SkeletonCard, SkeletonText } from "@/components/Skeleton";
 import SectorPerformance from "@/components/markets/SectorPerformance";
 import MarketValuations from "@/components/markets/MarketValuations";
 import type { NewsArticle } from "@/lib/types";
@@ -91,14 +91,32 @@ export default function DashboardMarketsPanel() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 gap-2 text-muted">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        Loading markets data...
+      <div className="space-y-8 sm:space-y-10 min-w-0">
+        <div className="space-y-2 max-w-2xl">
+          <SkeletonText width="w-full" />
+          <SkeletonText width="w-5/6" />
+        </div>
+        <section>
+          <SkeletonText width="w-40 mb-3" />
+          <SkeletonCard rows={4} />
+        </section>
+        <section>
+          <div className="flex items-center justify-between mb-3 gap-4">
+            <SkeletonText width="w-24" />
+            <SkeletonText width="w-28" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <SkeletonCard key={i} rows={4} />
+            ))}
+          </div>
+        </section>
       </div>
     );
   }

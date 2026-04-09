@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { QuoteSummaryData } from "@/lib/types";
 import TradingViewChart from "@/components/TradingViewChart";
 import PowerTierBadge from "@/components/research/PowerTierBadge";
@@ -45,6 +46,7 @@ interface OverviewTabProps {
 }
 
 export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabProps) {
+  const [expanded, setExpanded] = useState(false);
   const powerTier = getTierBySymbol(symbol);
   const supplyChainMatch = getSupplyChainByTicker(symbol);
 
@@ -74,9 +76,24 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
               <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">
                 About
               </h3>
-              <p className="text-sm leading-relaxed text-foreground/80">
+              <div
+                className="text-sm leading-relaxed text-foreground/80"
+                style={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: expanded ? "unset" : 4,
+                  WebkitBoxOrient: "vertical",
+                  overflow: expanded ? "visible" : "hidden",
+                }}
+              >
                 {data.longBusinessSummary}
-              </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExpanded((prev) => !prev)}
+                className="text-accent text-sm font-medium hover:opacity-80 transition-opacity mt-1"
+              >
+                {expanded ? "Show less" : "Read more →"}
+              </button>
             </div>
           )}
 

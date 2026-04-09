@@ -4,7 +4,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -23,16 +22,13 @@ const OrganicRevenueContext = createContext<OrganicRevenueContextValue | null>(
 );
 
 export function OrganicRevenueProvider({ children }: { children: ReactNode }) {
-  const [organicOnly, setOrganicOnlyState] = useState(false);
-
-  useEffect(() => {
+  const [organicOnly, setOrganicOnlyState] = useState(() => {
     try {
-      const v = localStorage.getItem(STORAGE_KEY);
-      if (v === "1") setOrganicOnlyState(true);
+      return localStorage.getItem(STORAGE_KEY) === "1";
     } catch {
-      /* ignore */
+      return false;
     }
-  }, []);
+  });
 
   const setOrganicOnly = useCallback((value: boolean) => {
     setOrganicOnlyState(value);

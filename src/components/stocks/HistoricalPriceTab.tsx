@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import TradingViewChart from "@/components/TradingViewChart";
 import type { StockQuote } from "@/lib/types";
 import { BarChart3, DollarSign, Activity } from "lucide-react";
@@ -27,18 +27,17 @@ function formatNumber(value: number): string {
 export default function HistoricalPriceTab({ symbol }: { symbol: string }) {
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>(PERIODS[6]); // 1Y
   const [quote, setQuote] = useState<StockQuote | null>(null);
-  const [chartHeight, setChartHeight] = useState(720);
-
-  const updateChartHeight = useCallback(() => {
-    const reserved = 240;
-    setChartHeight(Math.max(700, typeof window !== "undefined" ? window.innerHeight - reserved : 800));
-  }, []);
+  const [chartHeight, setChartHeight] = useState(() =>
+    typeof window !== "undefined" ? Math.max(700, window.innerHeight - 240) : 800
+  );
 
   useEffect(() => {
-    updateChartHeight();
-    window.addEventListener("resize", updateChartHeight);
-    return () => window.removeEventListener("resize", updateChartHeight);
-  }, [updateChartHeight]);
+    function handleResize() {
+      setChartHeight(Math.max(700, window.innerHeight - 240));
+    }
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     async function fetchQuote() {

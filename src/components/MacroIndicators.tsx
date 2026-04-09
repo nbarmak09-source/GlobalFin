@@ -14,6 +14,7 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
+import { SkeletonCard } from "@/components/Skeleton";
 
 type MacroId = "ip" | "cpi" | "m2" | "businessCycle" | "ism" | "sentiment";
 
@@ -175,11 +176,7 @@ export default function MacroIndicators() {
     return (
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div
-            key={i}
-            className="h-32 rounded-lg bg-card animate-pulse"
-            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
-          />
+          <SkeletonCard key={i} rows={3} />
         ))}
       </div>
     );

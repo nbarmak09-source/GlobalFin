@@ -32,9 +32,6 @@ function fmtM(n: number): string {
   return n.toFixed(0);
 }
 
-function pctStr(n: number): string {
-  return (n >= 0 ? "+" : "") + n.toFixed(1) + "%";
-}
 
 function deriveDefaults(
   data: QuoteSummaryData,
@@ -217,7 +214,7 @@ export default function LBOModel({
       const sweepAmount = afterMandatory * (cashSweepPct / 100);
 
       // Apply sweep to senior first, then sub
-      let srPaydown = Math.min(sweepAmount, srBal - mandatoryAmort > 0 ? srBal - mandatoryAmort : 0);
+      const srPaydown = Math.min(sweepAmount, srBal - mandatoryAmort > 0 ? srBal - mandatoryAmort : 0);
       let subPaydown = Math.min(sweepAmount - srPaydown, subBal);
       if (subPaydown < 0) subPaydown = 0;
 

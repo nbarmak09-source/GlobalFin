@@ -6,7 +6,19 @@ import { sendPasswordResetEmail } from "@/lib/email";
 const RESET_EXPIRY_HOURS = 1;
 
 function baseUrl(request: NextRequest): string {
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "localhost:3000";
+  const fromEnv = process.env.NEXTAUTH_URL?.trim();
+  if (fromEnv) {
+    return fromEnv.replace(/\/+$/, "");
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "NEXTAUTH_URL must be set in production. It is required to build trusted absolute URLs (e.g. password reset links)."
+    );
+  }
+  const host =
+    request.headers.get("x-forwarded-host") ??
+    request.headers.get("host") ??
+    "localhost:3000";
   const proto = request.headers.get("x-forwarded-proto") ?? "http";
   return `${proto}://${host}`;
 }

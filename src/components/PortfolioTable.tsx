@@ -32,6 +32,7 @@ interface PortfolioTableProps {
   onReorder: (positions: EnrichedPosition[]) => void;
   valuesVisible?: boolean;
   onEdit?: (position: EnrichedPosition) => void;
+  loading?: boolean;
 }
 
 function formatCurrency(value: number): string {
@@ -202,17 +203,8 @@ export default function PortfolioTable({
   onReorder,
   valuesVisible = true,
   onEdit,
+  loading = false,
 }: PortfolioTableProps) {
-  const totalValue = positions.reduce((sum, p) => sum + p.marketValue, 0);
-  const totalCost = positions.reduce(
-    (sum, p) => sum + p.avgCost * p.shares,
-    0
-  );
-  const totalPL = totalValue - totalCost;
-  const totalPLPercent = totalCost > 0 ? (totalPL / totalCost) * 100 : 0;
-  const totalDayChange = positions.reduce((sum, p) => sum + p.dayChange * p.shares, 0);
-  const startOfDayValue = totalValue - totalDayChange;
-  const totalDayChangePercent = startOfDayValue !== 0 ? (totalDayChange / startOfDayValue) * 100 : 0;
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -232,6 +224,39 @@ export default function PortfolioTable({
     }
   }
 
+  if (loading && positions.length === 0) {
+    return (
+      <div className="rounded-xl bg-card border border-border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
+                <th className="px-2 py-3 w-8"></th>
+                <th className="px-4 py-3">Symbol</th>
+                <th className="px-4 py-3">Shares</th>
+                <th className="px-4 py-3 text-right">Avg Cost</th>
+                <th className="px-4 py-3 text-right">Current</th>
+                <th className="px-4 py-3 text-right">Mkt Value</th>
+                <th className="px-4 py-3 text-right">Day Chg</th>
+                <th className="px-4 py-3 text-right">Total P&L</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3].map((i) => (
+                <tr key={i} className="border-b border-border/50">
+                  <td colSpan={9} className="px-4 py-3">
+                    <div className="h-12 w-full rounded-lg bg-card animate-pulse" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   if (positions.length === 0) {
     return (
       <div className="text-center py-16 text-muted">
@@ -242,6 +267,15 @@ export default function PortfolioTable({
       </div>
     );
   }
+
+  const totalValue = positions.reduce((sum, p) => sum + p.marketValue, 0);
+  const totalCost = positions.reduce((sum, p) => sum + p.avgCost * p.shares, 0);
+  const totalPL = totalValue - totalCost;
+  const totalPLPercent = totalCost > 0 ? (totalPL / totalCost) * 100 : 0;
+  const totalDayChange = positions.reduce((sum, p) => sum + p.dayChange * p.shares, 0);
+  const startOfDayValue = totalValue - totalDayChange;
+  const totalDayChangePercent =
+    startOfDayValue !== 0 ? (totalDayChange / startOfDayValue) * 100 : 0;
 
   return (
     <div className="space-y-4">

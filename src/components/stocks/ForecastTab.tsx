@@ -42,7 +42,7 @@ export default function ForecastTab({ data }: { data: QuoteSummaryData }) {
       : 50;
 
   const currentRec = data.recommendationTrend?.[0];
-  const totalRec = currentRec
+  const totalAnalysts = currentRec
     ? currentRec.strongBuy +
       currentRec.buy +
       currentRec.hold +
@@ -107,7 +107,7 @@ export default function ForecastTab({ data }: { data: QuoteSummaryData }) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {currentRec && totalRec > 0 && (
+        {currentRec && totalAnalysts > 0 && (
           <div className="rounded-xl bg-card border border-border p-5">
             <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">
               Analyst Recommendations
@@ -119,23 +119,36 @@ export default function ForecastTab({ data }: { data: QuoteSummaryData }) {
                 { label: "Hold", count: currentRec.hold, color: "bg-yellow-500/60" },
                 { label: "Sell", count: currentRec.sell, color: "bg-red/60" },
                 { label: "Strong Sell", count: currentRec.strongSell, color: "bg-red" },
-              ].map((r) => (
-                <div key={r.label} className="flex items-center gap-3">
-                  <span className="text-xs text-muted w-20">{r.label}</span>
-                  <div className="flex-1 h-4 bg-background rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${r.color} rounded-full transition-all`}
-                      style={{
-                        width: `${(r.count / totalRec) * 100}%`,
-                      }}
-                    />
+              ].map((r) => {
+                const pct =
+                  totalAnalysts > 0
+                    ? Math.round((r.count / totalAnalysts) * 100)
+                    : 0;
+                return (
+                  <div key={r.label} className="flex items-center gap-3">
+                    <span className="text-xs text-muted w-20">{r.label}</span>
+                    <div className="flex-1 h-4 bg-background rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${r.color} rounded-full transition-all`}
+                        style={{
+                          width: `${pct}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-baseline justify-end shrink-0">
+                      <span className="text-xs font-mono font-medium text-right">
+                        {r.count}
+                      </span>
+                      <span className="text-xs text-muted ml-1">({pct}%)</span>
+                    </div>
                   </div>
-                  <span className="text-xs font-mono font-medium w-6 text-right">
-                    {r.count}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
+            <p className="text-xs text-muted mt-2">
+              Based on {totalAnalysts} analyst
+              {totalAnalysts !== 1 ? "s" : ""}
+            </p>
             {data.recommendationKey && (
               <div className="mt-3 text-center">
                 <span className="text-xs text-muted">Consensus: </span>

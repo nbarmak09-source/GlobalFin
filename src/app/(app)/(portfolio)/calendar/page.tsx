@@ -71,7 +71,6 @@ export default function CalendarPage() {
 
   useEffect(() => {
     load(scope);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope]);
 
   const grouped = groupByDate(events);

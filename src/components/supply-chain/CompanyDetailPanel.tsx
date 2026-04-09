@@ -8,7 +8,6 @@ import {
   getTierBySymbol,
   getLordDisplayName,
   isHighTetherDependency,
-  POWER_TIER_LABELS,
 } from "@/lib/tiers";
 import PowerTierBadge from "@/components/research/PowerTierBadge";
 import { SUPPLY_CHAIN_LAYERS_DATA } from "@/lib/supplyChainLookup";

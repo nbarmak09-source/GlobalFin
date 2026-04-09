@@ -35,6 +35,7 @@ interface WatchlistTableProps {
   onRemove: (id: string) => void;
   onReorder: (items: EnrichedWatchlistItem[]) => void;
   valuesVisible?: boolean;
+  loading?: boolean;
 }
 
 function formatCurrency(value: number): string {
@@ -176,6 +177,7 @@ export default function WatchlistTable({
   items,
   onRemove,
   onReorder,
+  loading = false,
 }: WatchlistTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -194,6 +196,38 @@ export default function WatchlistTable({
       const reordered = arrayMove(items, oldIndex, newIndex);
       onReorder(reordered);
     }
+  }
+
+  if (loading && items.length === 0) {
+    return (
+      <div className="rounded-xl bg-card border border-border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
+                <th className="px-2 py-3 w-8"></th>
+                <th className="px-4 py-3">Symbol</th>
+                <th className="px-4 py-3 text-right">Price</th>
+                <th className="px-4 py-3 text-right">Day Change</th>
+                <th className="px-4 py-3 text-right">52W High</th>
+                <th className="px-4 py-3 text-right">52W Low</th>
+                <th className="px-4 py-3 text-right">Mkt Cap</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3].map((i) => (
+                <tr key={i} className="border-b border-border/50">
+                  <td colSpan={8} className="px-4 py-3">
+                    <div className="h-12 w-full rounded-lg bg-card animate-pulse" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   }
 
   if (items.length === 0) {

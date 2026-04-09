@@ -75,10 +75,11 @@ export default function TradingViewChart({
     containerRef.current.appendChild(widgetDiv);
     containerRef.current.appendChild(script);
 
+    const container = containerRef.current;
     return () => {
       script.remove();
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
+      if (container) {
+        container.innerHTML = "";
       }
     };
   }, [symbol, height, interval, containerWidth, tvOpts]);

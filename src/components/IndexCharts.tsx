@@ -340,6 +340,7 @@ export default function IndexCharts() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAll(period);
   }, [period, fetchAll]);
 

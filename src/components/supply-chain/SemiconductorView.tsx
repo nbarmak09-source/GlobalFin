@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+
 import { Layers, Network, Loader2 } from "lucide-react";
 import type { StockQuote } from "@/lib/types";
 import type {

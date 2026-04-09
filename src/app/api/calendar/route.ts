@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const scope = searchParams.get("scope") || "holdings";
 
-    let symbols: { symbol: string; name: string }[] = [];
+    const symbols: { symbol: string; name: string }[] = [];
 
     if (scope === "holdings" || scope === "all") {
       const positions = await getPositions(session.user.id);

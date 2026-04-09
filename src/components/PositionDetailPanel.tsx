@@ -24,6 +24,7 @@ export default function PositionDetailPanel({ symbol, onClose }: PositionDetailP
 
   useEffect(() => {
     if (!symbol) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     Promise.all([
       fetch(`/api/stocks?action=summary&symbol=${encodeURIComponent(symbol)}`).then((r) =>

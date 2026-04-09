@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LineChart, TrendingUp, TrendingDown } from "lucide-react";
+import { LineChart, TrendingUp } from "lucide-react";
 import YieldCurveMonitor from "@/components/YieldCurveMonitor";
 
 type SovereignRow = { country: string; symbol: string; level: number; changePercent: number };

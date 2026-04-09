@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { PieChart, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
+import {
+  Cell,
+  Pie,
+  PieChart as RechartsPieChart,
+  ResponsiveContainer,
+  type PieLabelRenderProps,
+} from "recharts";
 import type { EnrichedPosition, QuoteSummaryData } from "@/lib/types";
 
 interface AllocationEntry {
@@ -41,40 +48,78 @@ function getColor(sector: string) {
   return SECTOR_COLORS[sector] || SECTOR_COLORS.Other;
 }
 
+/** Accessible donut palette — applied in order per segment (index). */
+const DONUT_PALETTE = [
+  "#c9a227",
+  "#22c55e",
+  "#3b82f6",
+  "#f97316",
+  "#a855f7",
+  "#06b6d4",
+] as const;
+
+function donutSliceFill(index: number) {
+  return DONUT_PALETTE[index % DONUT_PALETTE.length];
+}
+
+function DonutChartLabel(props: PieLabelRenderProps) {
+  const { cx, cy, midAngle, innerRadius, outerRadius, percent, name } = props;
+  if (
+    cx == null ||
+    cy == null ||
+    midAngle == null ||
+    innerRadius == null ||
+    outerRadius == null ||
+    percent == null
+  ) {
+    return null;
+  }
+  const label =
+    name != null && name !== ""
+      ? `${String(name)} ${(percent * 100).toFixed(1)}%`
+      : `${(percent * 100).toFixed(1)}%`;
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.52;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text
+      x={x}
+      y={y}
+      textAnchor="middle"
+      dominantBaseline="central"
+      fill="currentColor"
+      className="text-foreground"
+      style={{ fontSize: 12 }}
+    >
+      {label}
+    </text>
+  );
+}
+
 function DonutChart({
   slices,
   label,
 }: {
-  slices: { name: string; value: number; color: string }[];
+  slices: { name: string; value: number }[];
   label: string;
 }) {
   const total = slices.reduce((s, sl) => s + sl.value, 0);
   if (total === 0) return null;
 
-  let cumulative = 0;
-  const arcs = slices.map((sl) => {
-    const pct = sl.value / total;
-    const start = cumulative;
-    cumulative += pct;
-    return { ...sl, start, end: cumulative, pct };
-  });
+  const data = slices.map((sl) => ({
+    name: sl.name,
+    value: sl.value,
+  }));
 
-  const SIZE = 160;
-  const R = 60;
-  const INNER = 40;
-  const CX = SIZE / 2;
-  const CY = SIZE / 2;
-
-  function arcPath(startPct: number, endPct: number, r: number) {
-    const startAngle = startPct * 2 * Math.PI - Math.PI / 2;
-    const endAngle = endPct * 2 * Math.PI - Math.PI / 2;
-    const x1 = CX + r * Math.cos(startAngle);
-    const y1 = CY + r * Math.sin(startAngle);
-    const x2 = CX + r * Math.cos(endAngle);
-    const y2 = CY + r * Math.sin(endAngle);
-    const largeArc = endPct - startPct > 0.5 ? 1 : 0;
-    return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
-  }
+  const legendRows = data
+    .map((row, index) => ({
+      ...row,
+      pct: row.value / total,
+      fill: donutSliceFill(index),
+    }))
+    .filter((row) => row.pct >= 0.001)
+    .sort((a, b) => b.pct - a.pct);
 
   return (
     <div className="space-y-3">
@@ -82,38 +127,47 @@ function DonutChart({
         {label}
       </h3>
       <div className="flex items-start gap-6">
-        <svg
-          viewBox={`0 0 ${SIZE} ${SIZE}`}
-          className="w-40 h-40 shrink-0"
-        >
-          {arcs.map((a, i) => {
-            if (a.pct < 0.001) return null;
-            const adjustedEnd = Math.min(a.end, 0.9999);
-            return (
-              <path
-                key={i}
-                d={`${arcPath(a.start, adjustedEnd, R)} L ${CX + INNER * Math.cos(adjustedEnd * 2 * Math.PI - Math.PI / 2)} ${CY + INNER * Math.sin(adjustedEnd * 2 * Math.PI - Math.PI / 2)} ${arcPath(adjustedEnd, a.start, INNER).replace("M", "A " + INNER + " " + INNER + " 0 " + (a.pct > 0.5 ? 1 : 0) + " 0 ").replace(/A \d+ \d+ 0 [01] 1/, `A ${INNER} ${INNER} 0 ${a.pct > 0.5 ? 1 : 0} 0`)} Z`}
-                className={a.color.replace("bg-", "fill-")}
-                opacity={0.85}
-              />
-            );
-          })}
-        </svg>
+        <div className="h-40 w-40 shrink-0 [&_.recharts-layer]:outline-none">
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsPieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius="58%"
+                outerRadius="82%"
+                paddingAngle={3}
+                label={DonutChartLabel}
+                labelLine={false}
+                isAnimationActive={false}
+              >
+                {data.map((_, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={donutSliceFill(index)}
+                    stroke="transparent"
+                    strokeWidth={0}
+                  />
+                ))}
+              </Pie>
+            </RechartsPieChart>
+          </ResponsiveContainer>
+        </div>
         <div className="space-y-1.5 min-w-0">
-          {arcs
-            .filter((a) => a.pct >= 0.001)
-            .sort((a, b) => b.pct - a.pct)
-            .map((a, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs">
-                <span
-                  className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 ${a.color}`}
-                />
-                <span className="truncate text-foreground">{a.name}</span>
-                <span className="ml-auto text-muted tabular-nums">
-                  {(a.pct * 100).toFixed(1)}%
-                </span>
-              </div>
-            ))}
+          {legendRows.map((a, i) => (
+            <div key={`${a.name}-${i}`} className="flex items-center gap-2 text-xs">
+              <span
+                className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: a.fill }}
+              />
+              <span className="truncate text-foreground">{a.name}</span>
+              <span className="ml-auto tabular-nums text-muted">
+                {(a.pct * 100).toFixed(1)}%
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -174,7 +228,6 @@ export default function AllocationPage() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const sectorSlices = useMemo(() => {
@@ -185,7 +238,6 @@ export default function AllocationPage() {
     return Array.from(map.entries()).map(([name, value]) => ({
       name,
       value,
-      color: getColor(name),
     }));
   }, [entries]);
 
@@ -195,19 +247,9 @@ export default function AllocationPage() {
       const geo = e.country === "United States" || e.country === "US" ? "US" : e.country || "Other";
       map.set(geo, (map.get(geo) || 0) + e.marketValue);
     });
-    return Array.from(map.entries()).map(([name, value], i) => ({
+    return Array.from(map.entries()).map(([name, value]) => ({
       name,
       value,
-      color:
-        [
-          "bg-blue-500",
-          "bg-emerald-500",
-          "bg-amber-500",
-          "bg-purple-500",
-          "bg-pink-500",
-          "bg-cyan-500",
-          "bg-orange-500",
-        ][i % 7],
     }));
   }, [entries]);
 
@@ -215,21 +257,13 @@ export default function AllocationPage() {
     const sorted = [...entries].sort((a, b) => b.marketValue - a.marketValue);
     const top5 = sorted.slice(0, 5);
     const rest = sorted.slice(5);
-    const colors = [
-      "bg-blue-500",
-      "bg-emerald-500",
-      "bg-amber-500",
-      "bg-purple-500",
-      "bg-pink-500",
-    ];
-    const slices = top5.map((e, i) => ({
+    const slices = top5.map((e) => ({
       name: e.symbol,
       value: e.marketValue,
-      color: colors[i],
     }));
     const restValue = rest.reduce((s, e) => s + e.marketValue, 0);
     if (restValue > 0) {
-      slices.push({ name: "Others", value: restValue, color: "bg-gray-500" });
+      slices.push({ name: "Others", value: restValue });
     }
     return slices;
   }, [entries]);
