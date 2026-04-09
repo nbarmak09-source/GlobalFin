@@ -36,7 +36,7 @@ const TOP_LINKS = [
   { href: "/research", label: "Research", icon: Search, exact: false },
   { href: "/fixed-income", label: "Fixed Income", icon: LineChart, exact: false },
   { href: "/alternatives", label: "Alternatives", icon: Building2, exact: false },
-  { href: "/ecm", label: "Deal Flow", icon: Briefcase, exact: false },
+  { href: "/ecm", label: "Equities", icon: Briefcase, exact: false },
 ];
 
 // ── dropdown groups ─────────────────────────────────────────────────────────

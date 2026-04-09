@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth.config";
-import { checkRateLimit, pruneStore, type LimitTier } from "@/lib/rate-limit";
+import { checkRateLimit, type LimitTier } from "@/lib/rate-limit";
 
 /** Apply security headers to a response. */
 function withSecurityHeaders(res: NextResponse): NextResponse {
@@ -50,7 +50,7 @@ function getRateLimitTier(pathname: string): LimitTier {
   return "default";
 }
 
-const authHandler = auth((req) => {
+const authHandler = auth(async (req) => {
   const pathname = req.nextUrl.pathname;
 
   // Auth, register, and verify-email: no session required
@@ -71,7 +71,7 @@ const authHandler = auth((req) => {
 
     const ip = getClientIp(req);
     const tier = getRateLimitTier(pathname);
-    const { allowed, remaining, resetAt } = checkRateLimit(ip, tier);
+    const { allowed, remaining, resetAt } = await checkRateLimit(ip, tier);
 
     if (!allowed) {
       const res = NextResponse.json(
@@ -91,7 +91,6 @@ const authHandler = auth((req) => {
     const response = withSecurityHeaders(NextResponse.next());
     response.headers.set("X-RateLimit-Remaining", String(remaining));
     response.headers.set("X-RateLimit-Reset", String(Math.ceil(resetAt / 1000)));
-    pruneStore();
     return response;
   }
 
