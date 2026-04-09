@@ -95,7 +95,11 @@ export async function GET() {
       return NextResponse.json({ error: "No items parsed from feed" }, { status: 502 });
     }
 
-    saveCache({ items, fetchedDate: todayStr() });
+    try {
+      saveCache({ items, fetchedDate: todayStr() });
+    } catch {
+      // Serverless / read-only FS (e.g. Vercel): RSS still works without a persisted cache
+    }
 
     const idx = new Date().getDate() % items.length;
     return NextResponse.json(items[idx]);

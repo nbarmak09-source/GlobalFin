@@ -68,6 +68,10 @@ export default function VisualCapitalistCard() {
     );
   }
 
+  const proxiedImageSrc = data
+    ? `/api/vc-image?url=${encodeURIComponent(data.imageUrl)}`
+    : "";
+
   if (error || !data) {
     return (
       <div className="rounded-xl bg-card border border-border p-6 text-center">
@@ -93,9 +97,8 @@ export default function VisualCapitalistCard() {
           <div className="w-full max-w-4xl mx-auto bg-muted/20 rounded-lg overflow-hidden cursor-pointer hover:opacity-95 transition-opacity">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={data.imageUrl}
+              src={proxiedImageSrc}
               alt={data.title}
-              referrerPolicy="no-referrer"
               className="block w-full h-auto object-contain"
             />
           </div>
@@ -139,9 +142,8 @@ export default function VisualCapitalistCard() {
               <div className="bg-muted/20 rounded-lg overflow-hidden mb-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={data.imageUrl}
+                  src={proxiedImageSrc}
                   alt={data.title}
-                  referrerPolicy="no-referrer"
                   className="block w-full h-auto object-contain"
                 />
               </div>

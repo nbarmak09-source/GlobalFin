@@ -30,6 +30,7 @@ const PUBLIC_API_ROUTES = [
   "/api/sec-financials",
   "/api/sec-filings",
   "/api/vc-daily",
+  "/api/vc-image",
   "/api/currencies",
   "/api/yield-curve",
   "/api/fixed-income",
