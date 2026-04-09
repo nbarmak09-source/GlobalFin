@@ -139,6 +139,9 @@ export async function getQuote(symbol: string): Promise<StockQuote | null> {
     const quote = await yf.quote(symbol);
     return {
       symbol: quote.symbol,
+      exchange: quote.exchange != null ? String(quote.exchange) : "",
+      exchangeName:
+        quote.fullExchangeName != null ? String(quote.fullExchangeName) : "",
       shortName: quote.shortName || quote.longName || symbol,
       regularMarketPrice: quote.regularMarketPrice ?? 0,
       regularMarketChange: quote.regularMarketChange ?? 0,
@@ -336,6 +339,11 @@ export async function getQuoteSummary(
       shortName: price?.shortName || "",
       longName: price?.longName || "",
       symbol: price?.symbol || symbol,
+      exchange: price?.exchange != null ? String(price.exchange) : "",
+      exchangeName:
+        price?.exchangeName != null || price?.fullExchangeName != null
+          ? String(price.exchangeName ?? price.fullExchangeName)
+          : "",
       longBusinessSummary: profile?.longBusinessSummary || summary?.longBusinessSummary || "",
       sector: profile?.sector || summary?.sector || "",
       industry: profile?.industry || summary?.industry || "",

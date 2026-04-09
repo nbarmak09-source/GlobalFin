@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, type SignInResponse } from "next-auth/react";
 import { Globe2 } from "lucide-react";
 
 function LoginForm() {
@@ -11,20 +11,55 @@ function LoginForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "/";
   const verified = searchParams.get("verified") === "1";
   const errorParam = searchParams.get("error");
+  const codeParam = searchParams.get("code");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [unverifiedSignIn, setUnverifiedSignIn] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendFeedback, setResendFeedback] = useState("");
 
   const errorMessage =
     error ||
+    (codeParam === "email_not_verified" &&
+      "Please verify your email before signing in. Check your inbox or use the button below.") ||
+    (errorParam === "OAuthAccountNotLinked" &&
+      "An account with this email already exists. Please sign in with your email and password.") ||
     (errorParam === "expired_or_invalid" && "Verification link expired or invalid. Please sign up again or request a new link.") ||
     (errorParam === "invalid_token" && "Invalid verification link.") ||
     (errorParam === "verification_failed" && "Verification failed. Please try again.");
 
+  const showResendVerification =
+    unverifiedSignIn ||
+    (codeParam === "email_not_verified" && !error);
+
+  async function handleResendVerification() {
+    if (!email.trim()) return;
+    setResendLoading(true);
+    setResendFeedback("");
+    try {
+      const res = await fetch("/api/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { message?: string };
+      setResendFeedback(
+        data.message ??
+          "If an account needs verification, check your email for a link."
+      );
+    } catch {
+      setResendFeedback("Something went wrong. Please try again.");
+    }
+    setResendLoading(false);
+  }
+
   async function handleCredentialsSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setUnverifiedSignIn(false);
+    setResendFeedback("");
     setLoading(true);
     try {
       const res = await signIn("credentials", {
@@ -33,17 +68,21 @@ function LoginForm() {
         redirect: false,
         callbackUrl,
       });
-      // NextAuth v5 can return { url, error } or sometimes a string; treat string as redirect URL
-      const result = res as { url?: string; error?: string } | string | undefined;
-      const err = typeof result === "object" && result && "error" in result ? result.error : null;
-      const url = typeof result === "string" ? result : (typeof result === "object" && result && "url" in result ? result.url : undefined);
-
-      if (err) {
+      const result = res as SignInResponse | undefined;
+      if (result && !result.ok) {
+        if (result.code === "email_not_verified") {
+          setUnverifiedSignIn(true);
+          setError(
+            "Please verify your email before signing in. Check your inbox or use the button below."
+          );
+          setLoading(false);
+          return;
+        }
         setError("Invalid email or password");
         setLoading(false);
         return;
       }
-      // Always redirect on success; fallback to callbackUrl if url missing
+      const url = result?.url ?? undefined;
       window.location.href = url || callbackUrl;
       return;
     } catch {
@@ -81,6 +120,21 @@ function LoginForm() {
               {errorMessage}
             </p>
           )}
+          {showResendVerification && (
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendLoading || !email.trim()}
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-card-hover transition-colors disabled:opacity-50 min-h-[44px]"
+              >
+                {resendLoading ? "Sending…" : "Resend verification email"}
+              </button>
+              {resendFeedback && (
+                <p className="text-sm text-muted">{resendFeedback}</p>
+              )}
+            </div>
+          )}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
               Email
@@ -92,7 +146,10 @@ function LoginForm() {
               autoComplete="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setUnverifiedSignIn(false);
+              }}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
               placeholder="you@example.com"
             />

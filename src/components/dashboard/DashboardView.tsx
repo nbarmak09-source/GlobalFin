@@ -8,6 +8,7 @@ import CurrenciesPanel from "@/components/CurrenciesPanel";
 import YieldCurveMonitor from "@/components/YieldCurveMonitor";
 import MacroIndicators from "@/components/MacroIndicators";
 import MacroCharts from "@/components/MacroCharts";
+import GlobalMacroPanel from "@/components/GlobalMacroPanel";
 import DashboardMarketsPanel from "@/components/markets/DashboardMarketsPanel";
 import {
   ImageIcon,
@@ -16,6 +17,7 @@ import {
   LayoutGrid,
   BarChart3,
   Loader2,
+  Globe,
 } from "lucide-react";
 
 function SectionHeader({
@@ -101,9 +103,26 @@ function DashboardInner() {
           <section aria-label="Macro indicators">
             <SectionHeader icon={Activity} label="Macro Indicators" />
             <MacroIndicators />
+            <p className="mt-3 text-[11px] text-[#8b949e]">
+              Macro data sourced from{" "}
+              <a
+                href="https://fred.stlouisfed.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-[#c9a227] transition-colors"
+              >
+                FRED®
+              </a>{" "}
+              (Federal Reserve Bank of St. Louis)
+            </p>
             <div className="mt-3">
               <MacroCharts />
             </div>
+          </section>
+
+          <section aria-label="Global macro">
+            <SectionHeader icon={Globe} label="Global Macro" />
+            <GlobalMacroPanel />
           </section>
 
           <section aria-label="Market indices" className="mt-6">

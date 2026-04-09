@@ -1,5 +1,9 @@
 export interface StockQuote {
   symbol: string;
+  /** Yahoo Finance exchange code (e.g. NMS, NYQ); used for TradingView routing */
+  exchange?: string;
+  /** Yahoo `fullExchangeName` / quoteSummary `exchangeName`; fallback for TradingView routing */
+  exchangeName?: string;
   shortName: string;
   regularMarketPrice: number;
   regularMarketChange: number;
@@ -228,6 +232,10 @@ export interface QuoteSummaryData {
   shortName: string;
   longName: string;
   symbol: string;
+  /** Yahoo Finance exchange code from quote summary (e.g. NMS, NYQ) */
+  exchange: string;
+  /** Yahoo `exchangeName` on price module; used with `exchange` for TradingView */
+  exchangeName: string;
   longBusinessSummary: string;
   sector: string;
   industry: string;

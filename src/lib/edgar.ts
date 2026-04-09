@@ -49,6 +49,33 @@ async function getCIK(symbol: string): Promise<string | null> {
   return match ? match.cik_str.toString().padStart(10, "0") : null;
 }
 
+/**
+ * EDGAR browse URL for a company. With `accessionNumber` set (any non-empty
+ * string), returns the 10-K search view with date/owner filters; otherwise the
+ * base company page filtered to 10-K filings.
+ */
+export function getEdgarFilingUrl(
+  cik: string,
+  accessionNumber?: string,
+): string {
+  const cikParam = encodeURIComponent(cik.replace(/^0+/, "") || cik);
+  if (accessionNumber != null && accessionNumber !== "") {
+    return `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${cikParam}&type=10-K&dateb=&owner=include&count=10`;
+  }
+  return `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${cikParam}&type=10-K`;
+}
+
+/** Direct URL to the primary document on SEC Archives (accession-based path). */
+export function getEdgarArchivesDocumentUrl(
+  cik: string,
+  accessionNumber: string,
+  primaryDocument: string,
+): string {
+  const cikNum = cik.replace(/^0+/, "");
+  const accession = accessionNumber.replace(/-/g, "");
+  return `https://www.sec.gov/Archives/edgar/data/${cikNum}/${accession}/${primaryDocument}`;
+}
+
 function pickQuarterFromDate(dateStr: string): 1 | 2 | 3 | 4 {
   const month = Number(dateStr.slice(5, 7));
   if (month <= 3) return 1;
@@ -131,8 +158,12 @@ export async function fetchEdgarFilingText(
     );
   }
 
-  const accession = recent.accessionNumber[chosenIndex].replace(/-/g, "");
-  const url = `https://www.sec.gov/Archives/edgar/data/${cikNum}/${accession}/${recent.primaryDocument[chosenIndex]}`;
+  const accession = recent.accessionNumber[chosenIndex];
+  const url = getEdgarArchivesDocumentUrl(
+    cikNum,
+    accession,
+    recent.primaryDocument[chosenIndex],
+  );
 
   const res = await fetch(url, {
     headers: {

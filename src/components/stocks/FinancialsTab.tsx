@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Activity,
   AlertCircle,
@@ -13,8 +13,10 @@ import {
   TrendingUp,
   Wallet,
   XCircle,
+  ExternalLink,
 } from "lucide-react";
-import type { QuoteSummaryData } from "@/lib/types";
+import type { QuoteSummaryData, SECFinancials } from "@/lib/types";
+import { getEdgarFilingUrl } from "@/lib/edgar";
 import { StockDataCitation } from "./StockDataCitation";
 
 function formatLarge(value: number | undefined | null): string {
@@ -29,6 +31,92 @@ function formatLarge(value: number | undefined | null): string {
 function pct(val: number | undefined | null): string {
   if (val == null || Number.isNaN(val)) return "—";
   return `${(val * 100).toFixed(2)}%`;
+}
+
+function pickNumber(row: Record<string, unknown>, keys: string[]): number | undefined {
+  for (const k of keys) {
+    const v = row[k];
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+  }
+  return undefined;
+}
+
+function firstRecord(rows: unknown[] | undefined): Record<string, unknown> | undefined {
+  const r = rows?.[0];
+  if (r && typeof r === "object" && !Array.isArray(r)) {
+    return r as Record<string, unknown>;
+  }
+  return undefined;
+}
+
+/** Treat 0 as missing for headline totals (Yahoo often sends 0 when absent). */
+function yahooTotalMissing(v: number | undefined | null): boolean {
+  return v == null || Number.isNaN(v) || v === 0;
+}
+
+interface FmpFinancialsPayload {
+  symbol: string;
+  incomeStatement: {
+    data: unknown[];
+    _source: "FMP";
+    _sourceUrl: string;
+  } | null;
+  balanceSheet: {
+    data: unknown[];
+    _source: "FMP";
+    _sourceUrl: string;
+  } | null;
+  keyMetrics: {
+    data: unknown[];
+    _source: "FMP";
+    _sourceUrl: string;
+  } | null;
+}
+
+function FmpSourceBadge() {
+  return (
+    <span className="inline-flex items-center rounded-md border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent shrink-0">
+      Source: FMP
+    </span>
+  );
+}
+
+function FmpMetricRow({
+  label,
+  yahooDisplay,
+  fmpDisplay,
+  yahooIncomplete,
+}: {
+  label: string;
+  yahooDisplay: string;
+  fmpDisplay: string | null;
+  yahooIncomplete: boolean;
+}) {
+  const fmpOk = fmpDisplay != null && fmpDisplay !== "—";
+  const showFmpPrimary = yahooIncomplete && fmpOk;
+  const showCompare = !yahooIncomplete && fmpOk;
+
+  return (
+    <div className="flex items-center justify-between gap-4 py-2.5 px-3 rounded-lg bg-background border border-border/70">
+      <dt className="text-muted">{label}</dt>
+      <dd className="text-right min-w-0">
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="font-mono font-medium tabular-nums">
+              {showFmpPrimary ? fmpDisplay : yahooDisplay}
+            </span>
+            {showFmpPrimary && <FmpSourceBadge />}
+          </div>
+          {showCompare && (
+            <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-muted">
+              <span className="font-mono tabular-nums">FMP: {fmpDisplay}</span>
+              <FmpSourceBadge />
+            </div>
+          )}
+        </div>
+      </dd>
+    </div>
+  );
 }
 
 interface HealthCheck {
@@ -153,8 +241,178 @@ function healthVerdict(checks: HealthCheck[]): {
   };
 }
 
+/** FMP often returns margins as decimals; sometimes as whole percentages. */
+function fmpMarginToFraction(v: number | undefined): number | undefined {
+  if (v == null || !Number.isFinite(v)) return undefined;
+  if (Math.abs(v) <= 1) return v;
+  return v / 100;
+}
+
+function deriveFmpSnapshot(payload: FmpFinancialsPayload | null) {
+  if (!payload) return null;
+  const hasAny =
+    (payload.incomeStatement?.data?.length ?? 0) > 0 ||
+    (payload.balanceSheet?.data?.length ?? 0) > 0 ||
+    (payload.keyMetrics?.data?.length ?? 0) > 0;
+  if (!hasAny) return null;
+  const inc = firstRecord(payload.incomeStatement?.data);
+  const bal = firstRecord(payload.balanceSheet?.data);
+  const km = firstRecord(payload.keyMetrics?.data);
+
+  const shares = pickNumber(inc ?? {}, [
+    "weightedAverageShsOutDil",
+    "weightedAverageShsOut",
+  ]);
+
+  const revenue = pickNumber(inc ?? {}, ["revenue"]);
+  const grossProfit = pickNumber(inc ?? {}, ["grossProfit"]);
+  const ebitda = pickNumber(inc ?? {}, ["ebitda"]);
+
+  const cash = pickNumber(bal ?? {}, [
+    "cashAndCashEquivalents",
+    "cashAndShortTermInvestments",
+  ]);
+  const totalDebt = pickNumber(bal ?? {}, ["totalDebt"]);
+
+  const ocfPerShare = pickNumber(km ?? {}, [
+    "operatingCashFlowPerShareTTM",
+    "operatingCashFlowPerShare",
+  ]);
+  const fcfPerShare = pickNumber(km ?? {}, [
+    "freeCashFlowPerShareTTM",
+    "freeCashFlowPerShare",
+  ]);
+  const operatingCashflow =
+    shares != null && ocfPerShare != null ? shares * ocfPerShare : undefined;
+  const freeCashflow =
+    shares != null && fcfPerShare != null ? shares * fcfPerShare : undefined;
+
+  const debtToEquity = pickNumber(km ?? {}, [
+    "debtToEquityRatioTTM",
+    "debtToEquityRatio",
+  ]);
+  const currentRatio = pickNumber(km ?? {}, [
+    "currentRatioTTM",
+    "currentRatio",
+  ]);
+  const quickRatio = pickNumber(km ?? {}, ["quickRatioTTM", "quickRatio"]);
+
+  const grossMargins = fmpMarginToFraction(
+    pickNumber(km ?? {}, ["grossProfitMarginTTM", "grossProfitMargin"])
+  );
+  const ebitdaMargins = fmpMarginToFraction(
+    pickNumber(km ?? {}, ["ebitdaMarginTTM", "ebitdaMargin"])
+  );
+  const operatingMargins = fmpMarginToFraction(
+    pickNumber(km ?? {}, [
+      "operatingProfitMarginTTM",
+      "operatingProfitMargin",
+    ])
+  );
+  const profitMargins = fmpMarginToFraction(
+    pickNumber(km ?? {}, ["netProfitMarginTTM", "netProfitMargin"])
+  );
+  const returnOnAssets = fmpMarginToFraction(
+    pickNumber(km ?? {}, ["returnOnAssetsTTM", "returnOnAssets"])
+  );
+  const returnOnEquity = fmpMarginToFraction(
+    pickNumber(km ?? {}, ["returnOnEquityTTM", "returnOnEquity"])
+  );
+
+  const revenueGrowth = fmpMarginToFraction(
+    pickNumber(km ?? {}, ["revenueGrowthTTM", "revenueGrowth"])
+  );
+  const earningsGrowth = fmpMarginToFraction(
+    pickNumber(km ?? {}, [
+      "epsgrowthTTM",
+      "epsGrowthTTM",
+      "netIncomeGrowthTTM",
+    ])
+  );
+
+  return {
+    revenue,
+    grossProfit,
+    ebitda,
+    operatingCashflow,
+    freeCashflow,
+    cash,
+    totalDebt,
+    debtToEquity,
+    currentRatio,
+    quickRatio,
+    grossMargins,
+    ebitdaMargins,
+    operatingMargins,
+    profitMargins,
+    returnOnAssets,
+    returnOnEquity,
+    revenueGrowth,
+    earningsGrowth,
+  };
+}
+
 export default function FinancialsTab({ data }: { data: QuoteSummaryData }) {
   const [chartView, setChartView] = useState<"yearly" | "quarterly">("yearly");
+  const [fmpPayload, setFmpPayload] = useState<FmpFinancialsPayload | null>(null);
+  const [secMeta, setSecMeta] = useState<Pick<SECFinancials, "cik"> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const sym = data.symbol?.trim();
+    if (!sym) return;
+
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/fmp/financials?symbol=${encodeURIComponent(sym)}`
+        );
+        if (!res.ok) return;
+        const json: FmpFinancialsPayload = await res.json();
+        if (!cancelled) setFmpPayload(json);
+      } catch {
+        if (!cancelled) setFmpPayload(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data.symbol]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const sym = data.symbol?.trim();
+    if (!sym) return;
+
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/sec-financials?symbol=${encodeURIComponent(sym)}`,
+        );
+        if (!res.ok) {
+          if (!cancelled) setSecMeta(null);
+          return;
+        }
+        const json: SECFinancials = await res.json();
+        if (!cancelled && json.cik) {
+          setSecMeta({ cik: json.cik });
+        } else if (!cancelled) {
+          setSecMeta(null);
+        }
+      } catch {
+        if (!cancelled) setSecMeta(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data.symbol]);
+
+  const fmp = useMemo(() => deriveFmpSnapshot(fmpPayload), [fmpPayload]);
 
   const chartData =
     chartView === "yearly"
@@ -166,45 +424,11 @@ export default function FinancialsTab({ data }: { data: QuoteSummaryData }) {
   const healthChecks = buildFinancialHealthChecks(data);
   const verdict = healthVerdict(healthChecks);
 
-  const profitabilityMetrics = [
-    { label: "Gross margin", value: pct(data.grossMargins) },
-    { label: "EBITDA margin", value: pct(data.ebitdaMargins) },
-    { label: "Operating margin", value: pct(data.operatingMargins) },
-    { label: "Net margin", value: pct(data.profitMargins) },
-    { label: "Return on assets", value: pct(data.returnOnAssets) },
-    { label: "Return on equity", value: pct(data.returnOnEquity) },
-  ];
-
-  const growthMetrics = [
-    { label: "Revenue growth (YoY)", value: pct(data.revenueGrowth) },
-    { label: "Earnings growth (YoY)", value: pct(data.earningsGrowth) },
-  ];
-
-  const incomeMetrics = [
-    { label: "Total revenue", value: formatLarge(data.totalRevenue) },
-    { label: "Gross profit", value: formatLarge(data.grossProfits) },
-    { label: "EBITDA", value: formatLarge(data.ebitda) },
-    { label: "Operating cash flow", value: formatLarge(data.operatingCashflow) },
-    { label: "Free cash flow", value: formatLarge(data.freeCashflow) },
-  ];
-
-  const balanceMetrics = [
-    { label: "Total cash", value: formatLarge(data.totalCash) },
-    { label: "Total debt", value: formatLarge(data.totalDebt) },
-    {
-      label: "Debt / equity",
-      value:
-        data.debtToEquity >= 0 ? `${data.debtToEquity.toFixed(2)}×` : "—",
-    },
-    {
-      label: "Current ratio",
-      value: data.currentRatio > 0 ? `${data.currentRatio.toFixed(2)}×` : "—",
-    },
-    {
-      label: "Quick ratio",
-      value: data.quickRatio > 0 ? `${data.quickRatio.toFixed(2)}×` : "—",
-    },
-  ];
+  const debtYahooIncomplete = !(
+    data.debtToEquity >= 0 && data.debtToEquity !== undefined
+  );
+  const currentYahooIncomplete = !(data.currentRatio > 0);
+  const quickYahooIncomplete = !(data.quickRatio > 0);
 
   return (
     <div className="space-y-8">
@@ -470,6 +694,19 @@ export default function FinancialsTab({ data }: { data: QuoteSummaryData }) {
 
       {/* Income + balance */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {secMeta?.cik && (
+          <div className="lg:col-span-2 flex flex-wrap items-center justify-end gap-2">
+            <a
+              href={getEdgarFilingUrl(secMeta.cik)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-card-hover transition-colors"
+            >
+              View SEC Filing
+              <ExternalLink className="h-3.5 w-3.5 text-muted shrink-0" />
+            </a>
+          </div>
+        )}
         <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
           <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
             <Coins className="h-4 w-4 text-accent" />
@@ -478,17 +715,54 @@ export default function FinancialsTab({ data }: { data: QuoteSummaryData }) {
           <p className="text-xs text-muted mb-4">
             <code className="text-[11px]">financialData</code> totals (TTM-style where
             provided).
+            {fmp && (
+              <>
+                {" "}
+                FMP statement and TTM metrics supplement missing Yahoo fields.
+              </>
+            )}
           </p>
           <dl className="space-y-2 text-sm">
-            {incomeMetrics.map((m) => (
-              <div
-                key={m.label}
-                className="flex items-center justify-between gap-4 py-2.5 px-3 rounded-lg bg-background border border-border/70"
-              >
-                <dt className="text-muted">{m.label}</dt>
-                <dd className="font-mono font-medium tabular-nums">{m.value}</dd>
-              </div>
-            ))}
+            <FmpMetricRow
+              label="Total revenue"
+              yahooDisplay={formatLarge(data.totalRevenue)}
+              fmpDisplay={
+                fmp?.revenue != null ? formatLarge(fmp.revenue) : null
+              }
+              yahooIncomplete={yahooTotalMissing(data.totalRevenue)}
+            />
+            <FmpMetricRow
+              label="Gross profit"
+              yahooDisplay={formatLarge(data.grossProfits)}
+              fmpDisplay={
+                fmp?.grossProfit != null ? formatLarge(fmp.grossProfit) : null
+              }
+              yahooIncomplete={yahooTotalMissing(data.grossProfits)}
+            />
+            <FmpMetricRow
+              label="EBITDA"
+              yahooDisplay={formatLarge(data.ebitda)}
+              fmpDisplay={fmp?.ebitda != null ? formatLarge(fmp.ebitda) : null}
+              yahooIncomplete={yahooTotalMissing(data.ebitda)}
+            />
+            <FmpMetricRow
+              label="Operating cash flow"
+              yahooDisplay={formatLarge(data.operatingCashflow)}
+              fmpDisplay={
+                fmp?.operatingCashflow != null
+                  ? formatLarge(fmp.operatingCashflow)
+                  : null
+              }
+              yahooIncomplete={yahooTotalMissing(data.operatingCashflow)}
+            />
+            <FmpMetricRow
+              label="Free cash flow"
+              yahooDisplay={formatLarge(data.freeCashflow)}
+              fmpDisplay={
+                fmp?.freeCashflow != null ? formatLarge(fmp.freeCashflow) : null
+              }
+              yahooIncomplete={yahooTotalMissing(data.freeCashflow)}
+            />
           </dl>
         </div>
 
@@ -499,20 +773,95 @@ export default function FinancialsTab({ data }: { data: QuoteSummaryData }) {
           </h3>
           <p className="text-xs text-muted mb-4">
             Cash, debt, and coverage ratios from{" "}
-            <code className="text-[11px]">financialData</code>.
+            <code className="text-[11px]">financialData</code>
+            {fmp && (
+              <>
+                ; FMP supplements when Yahoo data is incomplete (
+                <a
+                  href={
+                    fmpPayload?.balanceSheet?._sourceUrl ??
+                    `https://financialmodelingprep.com/financial-statements/${encodeURIComponent(data.symbol)}`
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-accent hover:underline"
+                >
+                  statements
+                </a>
+                ).
+              </>
+            )}
           </p>
           <dl className="space-y-2 text-sm">
-            {balanceMetrics.map((m) => (
-              <div
-                key={m.label}
-                className="flex items-center justify-between gap-4 py-2.5 px-3 rounded-lg bg-background border border-border/70"
-              >
-                <dt className="text-muted">{m.label}</dt>
-                <dd className="font-mono font-medium tabular-nums">{m.value}</dd>
-              </div>
-            ))}
+            <FmpMetricRow
+              label="Total cash"
+              yahooDisplay={formatLarge(data.totalCash)}
+              fmpDisplay={fmp?.cash != null ? formatLarge(fmp.cash) : null}
+              yahooIncomplete={yahooTotalMissing(data.totalCash)}
+            />
+            <FmpMetricRow
+              label="Total debt"
+              yahooDisplay={formatLarge(data.totalDebt)}
+              fmpDisplay={
+                fmp?.totalDebt != null ? formatLarge(fmp.totalDebt) : null
+              }
+              yahooIncomplete={yahooTotalMissing(data.totalDebt)}
+            />
+            <FmpMetricRow
+              label="Debt / equity"
+              yahooDisplay={
+                data.debtToEquity >= 0
+                  ? `${data.debtToEquity.toFixed(2)}×`
+                  : "—"
+              }
+              fmpDisplay={
+                fmp?.debtToEquity != null && fmp.debtToEquity >= 0
+                  ? `${fmp.debtToEquity.toFixed(2)}×`
+                  : null
+              }
+              yahooIncomplete={debtYahooIncomplete}
+            />
+            <FmpMetricRow
+              label="Current ratio"
+              yahooDisplay={
+                data.currentRatio > 0 ? `${data.currentRatio.toFixed(2)}×` : "—"
+              }
+              fmpDisplay={
+                fmp?.currentRatio != null && fmp.currentRatio > 0
+                  ? `${fmp.currentRatio.toFixed(2)}×`
+                  : null
+              }
+              yahooIncomplete={currentYahooIncomplete}
+            />
+            <FmpMetricRow
+              label="Quick ratio"
+              yahooDisplay={
+                data.quickRatio > 0 ? `${data.quickRatio.toFixed(2)}×` : "—"
+              }
+              fmpDisplay={
+                fmp?.quickRatio != null && fmp.quickRatio > 0
+                  ? `${fmp.quickRatio.toFixed(2)}×`
+                  : null
+              }
+              yahooIncomplete={quickYahooIncomplete}
+            />
           </dl>
         </div>
+
+        <p className="lg:col-span-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
+          <ExternalLink className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
+          <span>
+            Financial data sourced from{" "}
+            <a
+              href="https://www.sec.gov/cgi-bin/browse-edgar"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted underline-offset-2 hover:underline hover:text-foreground transition-colors"
+            >
+              SEC EDGAR filings
+            </a>
+          </span>
+        </p>
       </section>
 
       {/* Profitability & growth */}
@@ -523,15 +872,47 @@ export default function FinancialsTab({ data }: { data: QuoteSummaryData }) {
             Profitability
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {profitabilityMetrics.map((m) => (
-              <div
-                key={m.label}
-                className="rounded-lg bg-background border border-border px-3 py-2.5"
-              >
-                <p className="text-xs text-muted mb-0.5">{m.label}</p>
-                <p className="font-mono font-semibold tabular-nums">{m.value}</p>
-              </div>
-            ))}
+            {(
+              [
+                ["Gross margin", data.grossMargins, fmp?.grossMargins] as const,
+                ["EBITDA margin", data.ebitdaMargins, fmp?.ebitdaMargins] as const,
+                [
+                  "Operating margin",
+                  data.operatingMargins,
+                  fmp?.operatingMargins,
+                ] as const,
+                ["Net margin", data.profitMargins, fmp?.profitMargins] as const,
+                ["Return on assets", data.returnOnAssets, fmp?.returnOnAssets] as const,
+                ["Return on equity", data.returnOnEquity, fmp?.returnOnEquity] as const,
+              ] as const
+            ).map(([label, yahooVal, fmpV]) => {
+              const yInc =
+                yahooVal == null || Number.isNaN(yahooVal);
+              const fmpStr =
+                fmpV != null && Number.isFinite(fmpV) ? pct(fmpV) : null;
+              return (
+                <div
+                  key={label}
+                  className="rounded-lg bg-background border border-border px-3 py-2.5"
+                >
+                  <p className="text-xs text-muted mb-0.5">{label}</p>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-mono font-semibold tabular-nums">
+                        {yInc && fmpStr ? fmpStr : pct(yahooVal)}
+                      </p>
+                      {yInc && fmpStr && <FmpSourceBadge />}
+                    </div>
+                    {!yInc && fmpStr && (
+                      <p className="text-[11px] text-muted font-mono tabular-nums flex flex-wrap items-center gap-2">
+                        FMP: {fmpStr}
+                        <FmpSourceBadge />
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -541,17 +922,43 @@ export default function FinancialsTab({ data }: { data: QuoteSummaryData }) {
             Growth
           </h3>
           <div className="space-y-2">
-            {growthMetrics.map((m) => (
-              <div
-                key={m.label}
-                className="flex items-center justify-between gap-4 py-3 px-3 rounded-lg bg-background border border-border"
-              >
-                <span className="text-sm text-muted">{m.label}</span>
-                <span className="font-mono font-semibold tabular-nums">
-                  {m.value}
-                </span>
-              </div>
-            ))}
+            {(
+              [
+                ["Revenue growth (YoY)", data.revenueGrowth, fmp?.revenueGrowth] as const,
+                [
+                  "Earnings growth (YoY)",
+                  data.earningsGrowth,
+                  fmp?.earningsGrowth,
+                ] as const,
+              ] as const
+            ).map(([label, yahooVal, fmpV]) => {
+              const yInc =
+                yahooVal == null || Number.isNaN(yahooVal);
+              const fmpStr =
+                fmpV != null && Number.isFinite(fmpV) ? pct(fmpV) : null;
+              return (
+                <div
+                  key={label}
+                  className="flex flex-col gap-1 py-3 px-3 rounded-lg bg-background border border-border"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-sm text-muted">{label}</span>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <span className="font-mono font-semibold tabular-nums">
+                        {yInc && fmpStr ? fmpStr : pct(yahooVal)}
+                      </span>
+                      {yInc && fmpStr && <FmpSourceBadge />}
+                    </div>
+                  </div>
+                  {!yInc && fmpStr && (
+                    <p className="text-[11px] text-muted font-mono tabular-nums text-right flex flex-wrap items-center justify-end gap-2">
+                      FMP: {fmpStr}
+                      <FmpSourceBadge />
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

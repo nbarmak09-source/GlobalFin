@@ -3,6 +3,10 @@
 import { useState, useEffect, useMemo } from "react";
 import type { SECFinancials } from "@/lib/types";
 import {
+  getEdgarArchivesDocumentUrl,
+  getEdgarFilingUrl,
+} from "@/lib/edgar";
+import {
   Loader2,
   ExternalLink,
   FileText,
@@ -157,7 +161,7 @@ export default function SECFilingsTab({ symbol }: { symbol: string }) {
             </h3>
             {secData?.cik && (
               <a
-                href={`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${secData.cik}&type=10-K&dateb=&owner=include&count=10`}
+                href={getEdgarFilingUrl(secData.cik, "10k")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-xs text-accent hover:text-accent/80 transition-colors"
@@ -260,7 +264,11 @@ export default function SECFilingsTab({ symbol }: { symbol: string }) {
               return (
                 <a
                   key={f.accessionNumber + i}
-                  href={f.url}
+                  href={getEdgarArchivesDocumentUrl(
+                    filings.cik,
+                    f.accessionNumber,
+                    f.primaryDocument,
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-4 px-5 py-3 hover:bg-card-hover transition-colors group"
@@ -307,7 +315,10 @@ export default function SECFilingsTab({ symbol }: { symbol: string }) {
             <ExternalLink className="h-3 w-3 text-muted" />
           </a>
           <a
-            href={`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${filings.cik}&type=10-K&dateb=&owner=include&count=10`}
+            href={getEdgarFilingUrl(
+              filings.cik,
+              filings.filings[0]?.accessionNumber ?? "1",
+            )}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-card-hover transition-colors"

@@ -14,6 +14,8 @@ interface YieldCurveTenor {
 interface YieldCurveResponse {
   tenors: YieldCurveTenor[];
   asOf: string;
+  source?: string;
+  sourceUrl?: string;
 }
 
 interface HistoryPoint {
@@ -259,18 +261,52 @@ export default function YieldCurveMonitor() {
   const [history, setHistory] = useState<HistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [treasuryAttribution, setTreasuryAttribution] = useState<{
+    href: string;
+  } | null>(null);
 
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
       setError(null);
+      setTreasuryAttribution(null);
       try {
-        const [curveRes, histRes] = await Promise.all([
-          fetch("/api/yield-curve?country=US", { credentials: "include" }),
+        const [treasuryRes, histRes] = await Promise.all([
+          fetch("/api/fixed-income/treasury-curve"),
           fetch("/api/yield-curve/history", { credentials: "include" }),
         ]);
-        if (!curveRes.ok) throw new Error("Failed to load");
-        const curveJson: YieldCurveResponse = await curveRes.json();
+
+        let curveJson: YieldCurveResponse | null = null;
+
+        if (treasuryRes.ok) {
+          const treasuryJson: YieldCurveResponse & { error?: string } =
+            await treasuryRes.json();
+          if (
+            !treasuryJson.error &&
+            treasuryJson.tenors &&
+            treasuryJson.tenors.length > 0
+          ) {
+            curveJson = {
+              tenors: treasuryJson.tenors,
+              asOf: treasuryJson.asOf,
+            };
+            if (
+              treasuryJson.source === "US Treasury" &&
+              treasuryJson.sourceUrl
+            ) {
+              setTreasuryAttribution({ href: treasuryJson.sourceUrl });
+            }
+          }
+        }
+
+        if (!curveJson) {
+          const curveRes = await fetch("/api/yield-curve?country=US", {
+            credentials: "include",
+          });
+          if (!curveRes.ok) throw new Error("Failed to load");
+          curveJson = await curveRes.json();
+        }
+
         setData(curveJson);
         if (histRes.ok) {
           const histJson: HistoryResponse = await histRes.json();
@@ -366,6 +402,19 @@ export default function YieldCurveMonitor() {
               ))}
             </tbody>
           </table>
+          {treasuryAttribution && (
+            <p className="mt-3 text-[11px] text-muted" style={{ opacity: 0.85 }}>
+              <span style={{ opacity: 0.75 }}>Source: </span>
+              <a
+                href={treasuryAttribution.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:underline"
+              >
+                US Treasury
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </div>

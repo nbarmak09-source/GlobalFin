@@ -27,7 +27,7 @@ Set these on your host (Vercel, Railway, etc.); never commit real values.
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
 | `GITHUB_ID` / `GITHUB_SECRET` | GitHub OAuth |
 
-**Check:** Copy `.env.example` to `.env.local` (or host env), fill in production values, and confirm no secrets are in the repo.
+**Check:** Set variables on your host (e.g. Vercel project settings or `vercel env pull` for local), and confirm no secrets are committed to the repo.
 
 ---
 

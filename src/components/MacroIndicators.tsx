@@ -85,34 +85,56 @@ interface MacroData {
     change: number | null;
     yoyChange: number | null;
     date: string;
+    sourceUrl: string;
   };
   cpi: {
     value: number | null;
     yoyChange: number | null;
     date: string;
+    sourceUrl: string;
   };
   m2: {
     value: number | null;
     yoyChange: number | null;
     date: string;
+    sourceUrl: string;
   };
   businessCycle: {
     inRecession: boolean;
     recessionProbability: number | null;
     date: string;
+    sourceUrl: string;
   };
   ismManufacturing: {
     value: number | null;
     previous: number | null;
     change: number | null;
     date: string;
+    sourceUrl: string;
   };
   consumerSentiment: {
     value: number | null;
     previous: number | null;
     change: number | null;
     date: string;
+    sourceUrl: string;
   };
+}
+
+function FredSourceLink({ href }: { href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="shrink-0 p-0.5 transition-colors text-[#8b949e] hover:text-[#c9a227]"
+      title="View series on FRED"
+      aria-label="View series on FRED"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <ExternalLink className="h-3 w-3" aria-hidden />
+    </a>
+  );
 }
 
 export default function MacroIndicators() {
@@ -198,7 +220,10 @@ export default function MacroIndicators() {
               <Activity className="h-3.5 w-3.5 text-accent" />
               Industrial Production
             </span>
-            <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+            <span className="flex items-center gap-1">
+              <FredSourceLink href={ip.sourceUrl} />
+              <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+            </span>
           </div>
           <div className="text-[30px] font-[500] font-mono leading-none">
             {ip.value != null ? ip.value.toFixed(1) : "—"}
@@ -252,7 +277,10 @@ export default function MacroIndicators() {
               <TrendingUp className="h-3.5 w-3.5 text-accent" />
               CPI (Inflation)
             </span>
-            <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+            <span className="flex items-center gap-1">
+              <FredSourceLink href={cpi.sourceUrl} />
+              <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+            </span>
           </div>
           <div className="text-[30px] font-[500] font-mono leading-none">
             {cpi.yoyChange != null ? `${cpi.yoyChange.toFixed(1)}%` : "—"}
@@ -285,7 +313,10 @@ export default function MacroIndicators() {
               <DollarSign className="h-3.5 w-3.5 text-accent" />
               M2 Money Supply
             </span>
-            <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+            <span className="flex items-center gap-1">
+              <FredSourceLink href={m2.sourceUrl} />
+              <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+            </span>
           </div>
           <div className="text-[30px] font-[500] font-mono leading-none">
             {m2.value != null
@@ -331,7 +362,10 @@ export default function MacroIndicators() {
               <BarChart3 className="h-3.5 w-3.5 text-accent" />
               Business Cycle
             </span>
-            <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+            <span className="flex items-center gap-1">
+              <FredSourceLink href={businessCycle.sourceUrl} />
+              <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+            </span>
           </div>
           <div className="flex items-center gap-2 mb-2">
             <span
@@ -392,16 +426,7 @@ export default function MacroIndicators() {
               Mfg. Confidence (PMI)
             </span>
             <span className="flex items-center gap-1">
-              <a
-                href="https://tradingeconomics.com/united-states/business-confidence"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted hover:text-accent transition-colors p-1"
-                title="View on Trading Economics"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExternalLink className="h-3 w-3" />
-              </a>
+              <FredSourceLink href={ismMfg.sourceUrl} />
               <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
             </span>
           </div>
@@ -457,16 +482,7 @@ export default function MacroIndicators() {
               Consumer Sentiment
             </span>
             <span className="flex items-center gap-1">
-              <a
-                href="https://tradingeconomics.com/united-states/consumer-confidence"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted hover:text-accent transition-colors p-1"
-                title="View on Trading Economics"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExternalLink className="h-3 w-3" />
-              </a>
+              <FredSourceLink href={sentiment.sourceUrl} />
               <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
             </span>
           </div>

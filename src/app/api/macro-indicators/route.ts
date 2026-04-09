@@ -21,6 +21,10 @@ const SERIES = {
   consumerSentiment: "UMCSENT",
 };
 
+function fredSeriesUrl(seriesId: string) {
+  return `https://fred.stlouisfed.org/series/${seriesId}`;
+}
+
 async function fetchFredSeries(
   seriesId: string,
   apiKey: string,
@@ -105,21 +109,25 @@ export async function GET() {
         change: ipLatest != null && ipPrev != null ? ipLatest - ipPrev : null,
         yoyChange: ipYoY != null ? Math.round(ipYoY * 100) / 100 : null,
         date: ipObs[0]?.date,
+        sourceUrl: fredSeriesUrl(SERIES.industrialProd),
       },
       cpi: {
         value: cpiLatest,
         yoyChange: cpiYoY != null ? Math.round(cpiYoY * 100) / 100 : null,
         date: cpiObs[0]?.date,
+        sourceUrl: fredSeriesUrl(SERIES.cpi),
       },
       m2: {
         value: m2Latest,
         yoyChange: m2YoY != null ? Math.round(m2YoY * 100) / 100 : null,
         date: m2Obs[0]?.date,
+        sourceUrl: fredSeriesUrl(SERIES.m2),
       },
       businessCycle: {
         inRecession: recLatest === 1,
         recessionProbability: recProbLatest,
         date: recObs[0]?.date || recProbObs[0]?.date,
+        sourceUrl: fredSeriesUrl(SERIES.recession),
       },
       ismManufacturing: {
         value: ismMfgLatest,
@@ -129,6 +137,7 @@ export async function GET() {
             ? Math.round((ismMfgLatest - ismMfgPrev) * 100) / 100
             : null,
         date: ismMfgObs[0]?.date,
+        sourceUrl: fredSeriesUrl(SERIES.ismMfg),
       },
       consumerSentiment: {
         value: sentimentLatest,
@@ -138,6 +147,7 @@ export async function GET() {
             ? Math.round((sentimentLatest - sentimentPrev) * 100) / 100
             : null,
         date: sentimentObs[0]?.date,
+        sourceUrl: fredSeriesUrl(SERIES.consumerSentiment),
       },
     });
   } catch (error) {

@@ -10,6 +10,8 @@ export const LIMITS = {
   ai: { max: 10, windowMs: 60 * 1000 },
   /** General API routes: 60 requests per minute per IP */
   default: { max: 60, windowMs: 60 * 1000 },
+  /** Resend verification email: 1 request per 5 minutes per identifier (email) */
+  resendVerification: { max: 1, windowMs: 5 * 60 * 1000 },
 } as const;
 
 export type LimitTier = keyof typeof LIMITS;
@@ -53,6 +55,17 @@ async function getUpstashLimiters(): Promise<Map<LimitTier, import("@upstash/rat
         redis,
         limiter: Ratelimit.slidingWindow(LIMITS.default.max, "1 m"),
         prefix: "rl:default",
+      }),
+    ],
+    [
+      "resendVerification",
+      new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(
+          LIMITS.resendVerification.max,
+          `${LIMITS.resendVerification.windowMs / 60_000} m`
+        ),
+        prefix: "rl:resend-verification",
       }),
     ],
   ]);

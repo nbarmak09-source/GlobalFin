@@ -74,7 +74,13 @@ export default function HistoricalPriceTab({ symbol }: { symbol: string }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-w-0">
         <div className="lg:col-span-3">
-          <TradingViewChart symbol={symbol} height={chartHeight} interval={period.interval} />
+          <TradingViewChart
+            symbol={symbol}
+            height={chartHeight}
+            interval={period.interval}
+            yahooExchange={quote?.exchange}
+            yahooExchangeName={quote?.exchangeName}
+          />
         </div>
 
         {quote && (

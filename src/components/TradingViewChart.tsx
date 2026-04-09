@@ -1,44 +1,38 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
-const NASDAQ_SYMBOLS = new Set([
-  "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "NVDA", "TSLA", "META", "AMD",
-  "ADBE", "INTC", "CSCO", "AVGO", "NFLX", "PEP", "CMCSA", "COST", "QCOM",
-  "TMUS", "INTU", "AMGN", "AMAT", "HON", "SBUX", "VRTX", "GILD", "BKNG",
-  "LRCX", "ADP", "PANW", "REGN", "MDLZ", "ISRG", "SNPS", "KLAC", "CDNS",
-  "MAR", "ORLY", "ABNB", "DXCM", "ASML", "FTNT", "CHTR", "MNST", "MRVL",
-  "ADSK", "KDP", "PCAR", "PAYX", "AEP", "KHC", "CDW", "CTAS", "EXC",
-  "FANG", "MELI", "CTSH", "XEL", "FAST", "WDAY", "EA", "IDXX", "BKR",
-]);
-
-function getTradingViewSymbol(symbol: string): string {
-  const upper = symbol.toUpperCase();
-  if (upper.startsWith("^")) {
-    if (upper === "^GSPC") return "SP:SPX";
-    if (upper === "^DJI") return "DJ:DJI";
-    if (upper === "^IXIC") return "NASDAQ:NDX";
-    if (upper === "^RUT") return "TVC:RUT";
-    if (upper === "^GSPTSE") return "TSX:OSPTX";
-  }
-  if (NASDAQ_SYMBOLS.has(upper)) return `NASDAQ:${upper}`;
-  return `NYSE:${upper}`;
-}
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  getTradingViewSymbol,
+  type TradingViewSymbolOptions,
+} from "@/lib/tradingview";
 
 interface TradingViewChartProps {
   symbol: string;
   height?: number;
   interval?: string;
+  /** From Yahoo quote / summary — fixes wrong exchange (e.g. NASDAQ vs NYSE) for TradingView */
+  yahooExchange?: string;
+  yahooExchangeName?: string;
 }
 
 export default function TradingViewChart({
   symbol,
   height = 500,
   interval = "D",
+  yahooExchange,
+  yahooExchangeName,
 }: TradingViewChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+
+  const tvOpts = useMemo<TradingViewSymbolOptions | undefined>(
+    () =>
+      yahooExchange || yahooExchangeName
+        ? { yahooExchange, yahooExchangeName }
+        : undefined,
+    [yahooExchange, yahooExchangeName]
+  );
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -55,7 +49,7 @@ export default function TradingViewChart({
   useEffect(() => {
     if (!symbol || !containerRef.current) return;
 
-    const tvSymbol = getTradingViewSymbol(symbol);
+    const tvSymbol = getTradingViewSymbol(symbol, tvOpts);
 
     const script = document.createElement("script");
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
@@ -87,7 +81,11 @@ export default function TradingViewChart({
         containerRef.current.innerHTML = "";
       }
     };
-  }, [symbol, height, interval, containerWidth]);
+  }, [symbol, height, interval, containerWidth, tvOpts]);
+
+  const openHref = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(
+    getTradingViewSymbol(symbol, tvOpts)
+  )}`;
 
   return (
     <div ref={wrapperRef} className="rounded-xl overflow-hidden border border-border w-full min-w-0">
@@ -99,7 +97,7 @@ export default function TradingViewChart({
       <div className="px-3 py-1.5 border-t border-border bg-card-hover/30 flex items-center justify-between text-xs text-muted">
         <span>Live chart powered by TradingView</span>
         <a
-          href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(getTradingViewSymbol(symbol))}`}
+          href={openHref}
           target="_blank"
           rel="noopener noreferrer"
           className="text-accent hover:underline"

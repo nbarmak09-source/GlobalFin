@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getEdgarArchivesDocumentUrl } from "@/lib/edgar";
 
 const TICKERS_URL = "https://www.sec.gov/files/company_tickers.json";
 const SUBMISSIONS_BASE = "https://data.sec.gov/submissions";
@@ -91,14 +92,17 @@ export async function GET(request: NextRequest) {
       const form = recent.form[i];
       if (!RELEVANT_FORMS.has(form)) continue;
 
-      const accession = recent.accessionNumber[i].replace(/-/g, "");
       filings.push({
         form,
         filingDate: recent.filingDate[i],
         description: recent.primaryDocDescription[i] || form,
         accessionNumber: recent.accessionNumber[i],
         primaryDocument: recent.primaryDocument[i],
-        url: `https://www.sec.gov/Archives/edgar/data/${cikNum}/${accession}/${recent.primaryDocument[i]}`,
+        url: getEdgarArchivesDocumentUrl(
+          cikNum,
+          recent.accessionNumber[i],
+          recent.primaryDocument[i],
+        ),
       });
     }
 

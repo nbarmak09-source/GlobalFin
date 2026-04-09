@@ -93,7 +93,13 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
               </span>
             </div>
             <div className="pointer-events-none h-[200px]">
-              <TradingViewChart symbol={symbol} height={200} interval="D" />
+              <TradingViewChart
+                symbol={symbol}
+                height={200}
+                interval="D"
+                yahooExchange={data.exchange}
+                yahooExchangeName={data.exchangeName}
+              />
             </div>
           </div>
 

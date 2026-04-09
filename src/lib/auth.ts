@@ -1,9 +1,13 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { authConfig } from "@/lib/auth.config";
+
+class EmailNotVerifiedError extends CredentialsSignin {
+  code = "email_not_verified";
+}
 
 declare module "next-auth" {
   interface Session {
@@ -42,7 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // In production, require verified email before allowing sign-in.
         // In local development, allow sign-in even if email is not yet verified.
         if (!user.emailVerified && process.env.NODE_ENV === "production") {
-          return null;
+          throw new EmailNotVerifiedError();
         }
         return {
           id: user.id,

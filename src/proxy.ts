@@ -23,16 +23,20 @@ const AUTH_DISABLED =
 
 // Public APIs: no auth required (dashboard data, ticker, news, etc.)
 const PUBLIC_API_ROUTES = [
+  "/api/health",
   "/api/news",
   "/api/stocks",
+  "/api/fmp",
   "/api/sec-financials",
   "/api/sec-filings",
   "/api/vc-daily",
   "/api/currencies",
   "/api/yield-curve",
   "/api/fixed-income",
+  "/api/fixed-income/treasury-curve",
   "/api/alternatives",
   "/api/macro-indicators",
+  "/api/macro-indicators/global",
 ];
 
 function getClientIp(request: NextRequest): string {
@@ -67,6 +71,11 @@ const authHandler = auth(async (req) => {
         { status: 401, headers: { "Content-Type": "application/json" } }
       );
       return withSecurityHeaders(res);
+    }
+
+    // FMP routes enforce auth + rate limit in the route handler (avoid double counting).
+    if (pathname.startsWith("/api/fmp")) {
+      return withSecurityHeaders(NextResponse.next());
     }
 
     const ip = getClientIp(req);
