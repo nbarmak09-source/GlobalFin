@@ -173,7 +173,7 @@ function DropdownGroup({
 export default function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { startTour } = useTour(false);
+  const { openWelcome } = useTour(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const {
     open: accountOpen,
@@ -284,7 +284,7 @@ export default function Navbar() {
                   onClick={() => {
                     setAccountOpen(false);
                     localStorage.removeItem("gcm_tour_seen");
-                    startTour();
+                    openWelcome();
                   }}
                   className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-foreground w-full text-left transition-colors hover:bg-card-hover"
                 >
@@ -376,7 +376,7 @@ export default function Navbar() {
               onClick={() => {
                 setMobileOpen(false);
                 localStorage.removeItem("gcm_tour_seen");
-                startTour();
+                openWelcome();
               }}
               className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors min-h-[44px]"
             >

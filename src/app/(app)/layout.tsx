@@ -1,13 +1,12 @@
 import Navbar from "@/components/Navbar";
 import TickerTape from "@/components/TickerTape";
-import TourStarter from "@/components/TourStarter";
+import AppTourShell from "@/components/AppTourShell";
 
 export default function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <>
-      <TourStarter />
+    <AppTourShell>
       <div className="hidden sm:block">
         <TickerTape />
       </div>
@@ -30,6 +29,6 @@ export default function AppLayout({
           </a>
         </p>
       </footer>
-    </>
+    </AppTourShell>
   );
 }
