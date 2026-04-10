@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { useTour } from "@/lib/useTour";
 import {
   LayoutDashboard,
   Search,
@@ -172,6 +173,7 @@ function DropdownGroup({
 export default function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { startTour } = useTour(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const {
     open: accountOpen,
@@ -281,6 +283,18 @@ export default function Navbar() {
                   type="button"
                   onClick={() => {
                     setAccountOpen(false);
+                    localStorage.removeItem("gcm_tour_seen");
+                    startTour();
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-foreground w-full text-left transition-colors hover:bg-card-hover"
+                >
+                  <Wand2 className="h-4 w-4" />
+                  <span>Take a tour</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAccountOpen(false);
                     signOut({ callbackUrl: "/login" });
                   }}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted hover:bg-card-hover hover:text-foreground"
@@ -357,6 +371,18 @@ export default function Navbar() {
               <User className="h-4 w-4" />
               Account
             </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileOpen(false);
+                localStorage.removeItem("gcm_tour_seen");
+                startTour();
+              }}
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors min-h-[44px]"
+            >
+              <Wand2 className="h-4 w-4" />
+              Take a tour
+            </button>
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
