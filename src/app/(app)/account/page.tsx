@@ -116,7 +116,7 @@ function PrefToggle({
 
 export default function AccountPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const [activeSection, setActiveSection] = useState<SectionId>("profile");
   const sectionRefs = useRef<Partial<Record<SectionId, HTMLElement | null>>>({});
 
@@ -261,6 +261,8 @@ export default function AccountPage() {
         setEditMode(false);
         setSavedToast(true);
         setTimeout(() => setSavedToast(false), 2000);
+        // Refresh the JWT session so the Navbar shows the updated name
+        await update({ name: draftName || null });
         router.refresh();
       }
     } catch {

@@ -30,19 +30,28 @@ const authConfig = {
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         (token as { id?: string }).id = user.id;
         (token as { emailVerified?: Date | null }).emailVerified =
           "emailVerified" in user && user.emailVerified !== undefined
             ? (user.emailVerified as Date | null)
             : null;
+        // Ensure name is carried from the user object into the token on sign-in
+        if (user.name !== undefined) token.name = user.name;
+      }
+      // When the client calls update({ name }), propagate it into the token
+      if (trigger === "update" && session && typeof session === "object") {
+        const s = session as Record<string, unknown>;
+        if (s.name !== undefined) token.name = s.name as string | null;
       }
       return token;
     },
     session({ session, token }) {
       if (session.user) {
         session.user.id = (token as { id?: string }).id as string;
+        // Reflect any token-level name update back into the session
+        if (token.name !== undefined) session.user.name = token.name as string | null;
         session.user.emailVerified =
           (token as { emailVerified?: Date | null }).emailVerified ?? null;
       }

@@ -61,7 +61,7 @@ export default function RegisterPage() {
             )}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">
-                Name (optional)
+                Name
               </label>
               <input
                 id="name"
@@ -73,6 +73,9 @@ export default function RegisterPage() {
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors duration-200"
                 placeholder="Your name"
               />
+              <p className="text-[11px] text-muted mt-1">
+                Used as your display name across the app
+              </p>
             </div>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">

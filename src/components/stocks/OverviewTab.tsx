@@ -98,10 +98,10 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
           )}
 
           <div
-            className="rounded-xl bg-card border border-border p-5 cursor-pointer group relative overflow-hidden"
+            className="rounded-xl bg-card border border-border p-5 cursor-pointer group relative overflow-hidden flex flex-col h-[min(62vh,580px)] min-h-[320px]"
             onClick={onViewChart}
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 shrink-0">
               <h3 className="text-sm font-semibold text-muted uppercase tracking-wider">
                 Price Chart
               </h3>
@@ -109,10 +109,10 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
                 View Full Chart <ArrowRight className="h-3 w-3" />
               </span>
             </div>
-            <div className="pointer-events-none h-[300px]">
+            <div className="pointer-events-none flex-1 min-h-[280px] min-w-0 flex flex-col">
               <TradingViewChart
+                fill
                 symbol={symbol}
-                height={300}
                 interval="D"
                 yahooExchange={data.exchange}
                 yahooExchangeName={data.exchangeName}

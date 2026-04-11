@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe2 } from "lucide-react";
+import { LogoMark } from "@/components/Logo";
 
 export default function AuthLayout({
   children,
@@ -13,20 +13,33 @@ export default function AuthLayout({
       }}
     >
       <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-3 mb-8">
           <Link
             href="/"
-            className="flex items-center gap-2 text-xl font-bold font-serif text-accent transition-opacity duration-200 hover:opacity-80"
+            className="flex flex-col items-center gap-3 transition-opacity duration-200 hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-lg p-1"
           >
-            <Globe2 className="h-6 w-6" />
-            Global Capital Markets HQ
+            <LogoMark size={40} />
+            <span className="flex flex-col items-center gap-1">
+              <span
+                className="text-xl font-extrabold tracking-tight text-accent leading-none"
+                style={{ fontFamily: "var(--font-serif-display), sans-serif" }}
+              >
+                GCM HQ
+              </span>
+              <span
+                className="text-[9px] font-semibold uppercase tracking-[0.2em] text-muted/70 leading-none"
+                style={{ fontFamily: "var(--font-sans-pro), sans-serif" }}
+              >
+                Global Capital Markets
+              </span>
+            </span>
           </Link>
           <p className="text-sm text-muted text-center">
             Professional-grade market intelligence.
           </p>
         </div>
 
-        <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">{children}</div>
+        <div className="space-y-6 sm:space-y-8">{children}</div>
 
         <div className="flex items-center gap-3 text-[11px] text-muted mt-6">
           <span>Real-time market data</span>

@@ -10,12 +10,37 @@ import type {
 
 const yf = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
+/** Symbols for the header ticker tape: indices, commodities, then US mega-caps & supply-chain names. */
 const TICKER_SYMBOLS = [
+  // US & major global indices
   "^GSPC",
-  "000001.SS",
-  "^N225",
+  "^DJI",
+  "^IXIC",
+  "^RUT",
+  "^VIX",
+  "^GDAXI",
+  "^FCHI",
+  "^STOXX50E",
   "^FTSE",
   "^GSPTSE",
+  "000001.SS",
+  "^N225",
+  "^HSI",
+  "^NSEI",
+  "^AXJO",
+  "^BVSP",
+  "^KS11",
+  // Commodities & materials proxies
+  "GC=F",
+  "SI=F",
+  "HG=F",
+  "PA=F",
+  "CL=F",
+  "BZ=F",
+  "NG=F",
+  "ZC=F",
+  "LIT",
+  // US equities
   "AAPL",
   "MSFT",
   "GOOGL",
@@ -47,12 +72,34 @@ const TICKER_SYMBOLS = [
   "VST",
 ];
 
-const INDEX_DISPLAY_NAMES: Record<string, string> = {
+/** Short labels for indices, futures, and ETFs where Yahoo names are noisy. */
+const SYMBOL_DISPLAY_NAMES: Record<string, string> = {
   "^GSPC": "S&P 500",
-  "000001.SS": "SSE Composite",
-  "^N225": "Nikkei 225",
+  "^DJI": "Dow Jones",
+  "^IXIC": "Nasdaq Composite",
+  "^RUT": "Russell 2000",
+  "^VIX": "VIX",
+  "^GDAXI": "DAX",
+  "^FCHI": "CAC 40",
+  "^STOXX50E": "Euro Stoxx 50",
   "^FTSE": "FTSE 100",
   "^GSPTSE": "S&P/TSX",
+  "000001.SS": "SSE Composite",
+  "^N225": "Nikkei 225",
+  "^HSI": "Hang Seng",
+  "^NSEI": "Nifty 50",
+  "^AXJO": "ASX 200",
+  "^BVSP": "Bovespa",
+  "^KS11": "KOSPI",
+  "GC=F": "Gold",
+  "SI=F": "Silver",
+  "HG=F": "Copper",
+  "PA=F": "Palladium",
+  "CL=F": "WTI Crude",
+  "BZ=F": "Brent Crude",
+  "NG=F": "Natural Gas",
+  "ZC=F": "Corn",
+  "LIT": "Lithium (LIT ETF)",
 };
 
 const INDEX_CURRENCIES: Record<string, string> = {
@@ -60,6 +107,14 @@ const INDEX_CURRENCIES: Record<string, string> = {
   "^N225": "JPY",
   "^FTSE": "GBP",
   "^GSPTSE": "CAD",
+  "^GDAXI": "EUR",
+  "^FCHI": "EUR",
+  "^STOXX50E": "EUR",
+  "^HSI": "HKD",
+  "^NSEI": "INR",
+  "^AXJO": "AUD",
+  "^BVSP": "BRL",
+  "^KS11": "KRW",
 };
 
 export async function getExchangeRates(
@@ -87,34 +142,31 @@ export function getIndexCurrency(symbol: string): string | undefined {
 }
 
 export async function getTickerData(): Promise<TickerItem[]> {
-  const rawResults: {
-    symbol: string;
-    name: string;
-    price: number;
-    change: number;
-    changePercent: number;
-    currency: string;
-  }[] = [];
-
-  for (const symbol of TICKER_SYMBOLS) {
-    try {
-      const quote = await yf.quote(symbol);
-      rawResults.push({
-        symbol,
-        name:
-          INDEX_DISPLAY_NAMES[symbol] ||
-          quote.shortName ||
-          quote.longName ||
+  const rows = await Promise.all(
+    TICKER_SYMBOLS.map(async (symbol) => {
+      try {
+        const quote = await yf.quote(symbol);
+        return {
           symbol,
-        price: quote.regularMarketPrice ?? 0,
-        change: quote.regularMarketChange ?? 0,
-        changePercent: quote.regularMarketChangePercent ?? 0,
-        currency: quote.currency ?? "USD",
-      });
-    } catch {
-      // Skip symbols that fail
-    }
-  }
+          name:
+            SYMBOL_DISPLAY_NAMES[symbol] ||
+            quote.shortName ||
+            quote.longName ||
+            symbol,
+          price: quote.regularMarketPrice ?? 0,
+          change: quote.regularMarketChange ?? 0,
+          changePercent: quote.regularMarketChangePercent ?? 0,
+          currency: quote.currency ?? "USD",
+        };
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  const rawResults = rows.filter(
+    (r): r is NonNullable<(typeof rows)[number]> => r !== null
+  );
 
   const currencies = rawResults.map((r) => r.currency);
   const fxRates = await getExchangeRates(currencies);

@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import MarketOverview from "@/components/MarketOverview";
 import VisualCapitalistCard from "@/components/VisualCapitalistCard";
 import CurrenciesPanel from "@/components/CurrenciesPanel";
@@ -47,7 +48,17 @@ function SectionHeader({
 function DashboardInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const tab = searchParams.get("tab") === "markets" ? "markets" : "overview";
+
+  const firstName = session?.user?.name?.trim().split(/\s+/)[0] ?? null;
+
+  function getGreeting() {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  }
 
   function setTab(next: "overview" | "markets") {
     if (next === "markets") {
@@ -61,6 +72,11 @@ function DashboardInner() {
     <div className="space-y-0 min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
         <div>
+          {firstName && (
+            <p className="text-xs text-muted mb-1">
+              {getGreeting()}, {firstName}
+            </p>
+          )}
           <h1 className="text-xl sm:text-2xl font-bold font-serif mb-1">
             {tab === "overview" ? "Market Overview" : "Markets"}
           </h1>

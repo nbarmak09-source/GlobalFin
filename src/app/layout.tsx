@@ -25,6 +25,9 @@ export const metadata: Metadata = {
   title: "Global Capital Markets HQ",
   description:
     "Global Capital Markets HQ - Personal stock market dashboard with live data, research, and portfolio tracking",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 export const viewport: Viewport = {

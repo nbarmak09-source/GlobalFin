@@ -5,10 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useTour } from "@/lib/useTour";
+import { Logo } from "@/components/Logo";
 import {
   LayoutDashboard,
   Search,
-  Globe2,
   LogOut,
   User,
   LineChart,
@@ -217,11 +217,9 @@ export default function Navbar() {
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-2 text-base sm:text-lg font-bold font-serif text-accent min-h-[44px]"
+          className="flex items-center min-h-[44px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-lg"
         >
-          <Globe2 className="h-5 w-5 sm:h-6 sm:w-6 shrink-0" />
-          <span className="md:hidden truncate max-w-[120px]">GCM HQ</span>
-          <span className="hidden md:inline truncate">Global Capital Markets HQ</span>
+          <Logo />
         </Link>
 
         {/* Desktop nav */}

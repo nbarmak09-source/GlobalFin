@@ -71,11 +71,19 @@ html.gcm-hide-ticker [data-gcm-ticker] {
 }
 
 .ticker-animate {
-  animation: ticker-scroll 60s linear infinite;
+  animation: ticker-scroll 120s linear infinite;
+  will-change: transform;
 }
 
 .ticker-animate:hover {
   animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-animate {
+    animation: none;
+    transform: translateX(0);
+  }
 }
 
 ::-webkit-scrollbar {
@@ -102,6 +110,15 @@ html.gcm-hide-ticker [data-gcm-ticker] {
 }
 
 .ticker-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 

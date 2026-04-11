@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { TickerItem } from "@/lib/types";
 import { getSupplyChainByTicker } from "@/lib/supplyChainLookup";
@@ -12,7 +13,11 @@ function isSupplyChainTapePath(pathname: string | null): boolean {
   );
 }
 
-const SCROLL_SPEED = 0.5; // pixels per frame (~30px/sec)
+/** Auto-scroll speed (matches ~120s per full loop for a very wide strip). */
+const SCROLL_PX_PER_SEC = 95;
+
+/** Pixels of horizontal movement before a pointer gesture counts as a drag (suppress link click). */
+const DRAG_THRESHOLD_PX = 6;
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: "$",
@@ -39,16 +44,18 @@ export default function TickerTape() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDown = useRef(false);
   const startX = useRef(0);
-  const scrollLeft = useRef(0);
+  const scrollLeftStart = useRef(0);
+  const pointerMovedPastThreshold = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
 
   function handleMouseDown(e: React.MouseEvent) {
     if (!scrollRef.current) return;
     isDown.current = true;
+    pointerMovedPastThreshold.current = false;
     setIsDragging(true);
     startX.current = e.pageX;
-    scrollLeft.current = scrollRef.current.scrollLeft;
+    scrollLeftStart.current = scrollRef.current.scrollLeft;
   }
 
   function handleMouseLeave() {
@@ -69,8 +76,11 @@ export default function TickerTape() {
   function handleMouseMove(e: React.MouseEvent) {
     if (isDown.current && scrollRef.current) {
       e.preventDefault();
+      if (Math.abs(e.pageX - startX.current) > DRAG_THRESHOLD_PX) {
+        pointerMovedPastThreshold.current = true;
+      }
       const walk = (e.pageX - startX.current) * 1.5;
-      scrollRef.current.scrollLeft = scrollLeft.current - walk;
+      scrollRef.current.scrollLeft = scrollLeftStart.current - walk;
     }
   }
 
@@ -109,16 +119,25 @@ export default function TickerTape() {
     if (!scrollRef.current || isHovering || isDragging) return;
 
     let rafId: number;
-    function tick() {
-      const current = scrollRef.current;
-      if (!current) return;
-      const halfWidth = current.scrollWidth / 2;
-      current.scrollLeft += SCROLL_SPEED;
-      if (current.scrollLeft >= halfWidth) {
-        current.scrollLeft = 0;
+    let last = performance.now();
+
+    function tick(now: number) {
+      const el = scrollRef.current;
+      if (!el) return;
+      const dt = Math.min((now - last) / 1000, 0.1);
+      last = now;
+      const halfWidth = el.scrollWidth / 2;
+      if (halfWidth <= 0) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+      el.scrollLeft += SCROLL_PX_PER_SEC * dt;
+      if (el.scrollLeft >= halfWidth) {
+        el.scrollLeft = 0;
       }
       rafId = requestAnimationFrame(tick);
     }
+
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
   }, [items, isHovering, isDragging]);
@@ -150,15 +169,25 @@ export default function TickerTape() {
           const sc = supplyChainMode
             ? getSupplyChainByTicker(item.symbol)
             : undefined;
+          const href = `/stocks?symbol=${encodeURIComponent(item.symbol)}`;
+          const title =
+            supplyChainMode && sc
+              ? `Layer ${sc.layerId} — ${sc.layerName}`
+              : undefined;
           return (
-            <div
+            <Link
               key={`${item.symbol}-${idx}`}
-              className="inline-flex items-center gap-2 px-4 border-r border-border/50"
-              title={
-                supplyChainMode && sc
-                  ? `Layer ${sc.layerId} — ${sc.layerName}`
-                  : undefined
-              }
+              href={href}
+              prefetch={false}
+              draggable={false}
+              title={title}
+              aria-label={`Open ${item.name} (${item.symbol})`}
+              onClick={(e) => {
+                if (pointerMovedPastThreshold.current) {
+                  e.preventDefault();
+                }
+              }}
+              className="inline-flex items-center gap-2 px-4 border-r border-border/50 shrink-0 text-inherit no-underline transition-colors hover:bg-muted/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             >
               {supplyChainMode ? (
                 <>
@@ -197,7 +226,7 @@ export default function TickerTape() {
                 {item.changePercent >= 0 ? "+" : ""}
                 {item.changePercent.toFixed(2)}%
               </span>
-            </div>
+            </Link>
           );
         })}
       </div>
