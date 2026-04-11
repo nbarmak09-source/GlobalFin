@@ -1,13 +1,15 @@
 import Navbar from "@/components/Navbar";
 import TickerTape from "@/components/TickerTape";
 import AppTourShell from "@/components/AppTourShell";
+import TickerTapePreference from "@/components/TickerTapePreference";
 
 export default function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <AppTourShell>
-      <div className="hidden sm:block">
+      <TickerTapePreference />
+      <div className="hidden sm:block" data-gcm-ticker>
         <TickerTape />
       </div>
       <Navbar />

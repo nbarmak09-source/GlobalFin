@@ -33,12 +33,18 @@ const authConfig = {
     jwt({ token, user }) {
       if (user) {
         (token as { id?: string }).id = user.id;
+        (token as { emailVerified?: Date | null }).emailVerified =
+          "emailVerified" in user && user.emailVerified !== undefined
+            ? (user.emailVerified as Date | null)
+            : null;
       }
       return token;
     },
     session({ session, token }) {
       if (session.user) {
         session.user.id = (token as { id?: string }).id as string;
+        session.user.emailVerified =
+          (token as { emailVerified?: Date | null }).emailVerified ?? null;
       }
       return session;
     },

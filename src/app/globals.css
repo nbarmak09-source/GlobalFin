@@ -39,6 +39,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+html.gcm-hide-ticker [data-gcm-ticker] {
+  display: none !important;
+}
+
 @keyframes pulse {
   0%,
   100% {

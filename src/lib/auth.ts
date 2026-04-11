@@ -16,6 +16,7 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      emailVerified?: Date | null;
     };
   }
 }
@@ -53,6 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           email: user.email,
           image: user.image,
+          emailVerified: user.emailVerified,
         };
       },
     }),

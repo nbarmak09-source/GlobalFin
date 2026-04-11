@@ -16,6 +16,8 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  bio           String?   @db.Text
+  createdAt     DateTime  @default(now())
   hashedPassword String?  // for credentials provider
   accounts      Account[]
   sessions      Session[]

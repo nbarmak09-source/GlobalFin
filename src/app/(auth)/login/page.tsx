@@ -9,6 +9,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
   const verified = searchParams.get("verified") === "1";
+  const deleted = searchParams.get("deleted") === "1";
   const errorParam = searchParams.get("error");
   const codeParam = searchParams.get("code");
   const [email, setEmail] = useState("");
@@ -101,6 +102,11 @@ function LoginForm() {
       </p>
 
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        {deleted && (
+          <p className="text-sm text-muted bg-card-hover border border-border rounded-lg px-3 py-2">
+            Your account has been deleted.
+          </p>
+        )}
         {verified && (
           <p className="text-sm text-green-600 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">
             Email verified. You can sign in now.

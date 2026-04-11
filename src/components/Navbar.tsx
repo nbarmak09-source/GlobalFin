@@ -271,14 +271,6 @@ export default function Navbar() {
             </button>
             {accountOpen && (
               <div className="absolute right-0 top-full mt-2 w-44 rounded-lg border border-border bg-card shadow-lg z-50">
-                <Link
-                  href="/account"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:bg-card-hover hover:text-foreground"
-                  onClick={() => setAccountOpen(false)}
-                >
-                  <User className="h-4 w-4" />
-                  <span>View account</span>
-                </Link>
                 <button
                   type="button"
                   onClick={() => {
@@ -291,6 +283,14 @@ export default function Navbar() {
                   <Wand2 className="h-4 w-4" />
                   <span>Take a tour</span>
                 </button>
+                <Link
+                  href="/account"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-foreground transition-colors"
+                  onClick={() => setAccountOpen(false)}
+                >
+                  <User className="h-4 w-4" />
+                  Account
+                </Link>
                 <button
                   type="button"
                   onClick={() => {
@@ -364,13 +364,6 @@ export default function Navbar() {
               <User className="h-4 w-4" />
               {session?.user?.email ?? "Signed in"}
             </span>
-            <Link
-              href="/account"
-              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors min-h-[44px]"
-            >
-              <User className="h-4 w-4" />
-              Account
-            </Link>
             <button
               type="button"
               onClick={() => {
@@ -383,6 +376,14 @@ export default function Navbar() {
               <Wand2 className="h-4 w-4" />
               Take a tour
             </button>
+            <Link
+              href="/account"
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors min-h-[44px]"
+              onClick={() => setMobileOpen(false)}
+            >
+              <User className="h-4 w-4" />
+              Account
+            </Link>
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}

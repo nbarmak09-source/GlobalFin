@@ -137,6 +137,22 @@ function PitchPageContent() {
     }
   }, []);
 
+  const fetchStockData = useCallback(async (sym: string) => {
+    setLoadingData(true);
+    try {
+      const res = await fetch(`/api/stocks?action=summary&symbol=${sym}`);
+      if (res.ok) {
+        const data: QuoteSummaryData = await res.json();
+        setStockData(data);
+        setCompanyName(data.longName || data.shortName || sym);
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchSavedPitches();
   }, [fetchSavedPitches]);
@@ -147,7 +163,7 @@ function PitchPageContent() {
       setSymbol(urlSymbol);
       fetchStockData(urlSymbol);
     }
-  }, [searchParams]);
+  }, [searchParams, fetchStockData]);
 
   // Pre-fill DCF assumptions from live stock data when it loads
   useEffect(() => {
@@ -168,21 +184,32 @@ function PitchPageContent() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  async function fetchStockData(sym: string) {
-    setLoadingData(true);
-    try {
-      const res = await fetch(`/api/stocks?action=summary&symbol=${sym}`);
-      if (res.ok) {
-        const data: QuoteSummaryData = await res.json();
-        setStockData(data);
-        setCompanyName(data.longName || data.shortName || sym);
+  useEffect(() => {
+    const pitchIdParam = searchParams.get("pitch");
+    if (!pitchIdParam) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/pitches?id=${encodeURIComponent(pitchIdParam)}`
+        );
+        if (!res.ok || cancelled) return;
+        const pitch: StockPitch = await res.json();
+        if (cancelled) return;
+        setPitchId(pitch.id);
+        setSymbol(pitch.symbol);
+        setCompanyName(pitch.companyName);
+        setSections(pitch.sections);
+        setShowPitchList(false);
+        fetchStockData(pitch.symbol);
+      } catch {
+        /* silent */
       }
-    } catch {
-      /* silent */
-    } finally {
-      setLoadingData(false);
-    }
-  }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, fetchStockData]);
 
   function handleSymbolSelect(sym: string, name: string) {
     setSymbol(sym);
