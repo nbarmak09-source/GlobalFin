@@ -70,13 +70,13 @@ function DashboardInner() {
               : "Sectors, valuations, analyst activity, and headlines"}
           </p>
         </div>
-        <div className="flex items-center gap-1 rounded-lg bg-card border border-[rgba(255,255,255,0.12)] p-0.5 w-fit">
+        <div className="flex items-center gap-1 rounded-lg bg-card border border-border p-0.5 w-fit">
           <button
             type="button"
             onClick={() => setTab("overview")}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-[500] rounded-md transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-[500] rounded-md transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${
               tab === "overview"
-                ? "bg-accent text-white"
+                ? "bg-accent text-white shadow-[0_0_12px_rgba(201,162,39,0.3)]"
                 : "text-muted hover:text-foreground"
             }`}
           >
@@ -86,9 +86,9 @@ function DashboardInner() {
           <button
             type="button"
             onClick={() => setTab("markets")}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-[500] rounded-md transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-[500] rounded-md transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${
               tab === "markets"
-                ? "bg-accent text-white"
+                ? "bg-accent text-white shadow-[0_0_12px_rgba(201,162,39,0.3)]"
                 : "text-muted hover:text-foreground"
             }`}
           >
@@ -103,13 +103,13 @@ function DashboardInner() {
           <section aria-label="Macro indicators">
             <SectionHeader icon={Activity} label="Macro Indicators" />
             <MacroIndicators />
-            <p className="mt-3 text-[11px] text-[#8b949e]">
+            <p className="mt-3 text-[11px] text-muted">
               Macro data sourced from{" "}
               <a
                 href="https://fred.stlouisfed.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline underline-offset-2 hover:text-[#c9a227] transition-colors"
+                className="underline underline-offset-2 hover:text-accent transition-colors duration-200 cursor-pointer"
               >
                 FRED®
               </a>{" "}

@@ -323,7 +323,7 @@ export default function YieldCurveMonitor() {
 
   if (loading) {
     return (
-      <div className="rounded-lg bg-card overflow-hidden w-full" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+      <div className="rounded-xl bg-card border border-border overflow-hidden w-full shadow-lg shadow-black/20">
         <div className="px-5 py-4 space-y-4">
           <div className="h-4 bg-border rounded w-1/3 animate-pulse" />
           <div className="h-24 bg-border rounded animate-pulse" />
@@ -334,7 +334,7 @@ export default function YieldCurveMonitor() {
 
   if (error || !data || data.tenors.length === 0) {
     return (
-      <div className="rounded-lg bg-card p-6 text-center text-sm text-muted w-full" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+      <div className="rounded-xl bg-card border border-border p-6 text-center text-sm text-muted w-full">
         {error || "No yield curve data available"}
       </div>
     );
@@ -343,7 +343,7 @@ export default function YieldCurveMonitor() {
   const { tenors, asOf } = data;
 
   return (
-    <div className="rounded-lg bg-card overflow-hidden w-full" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+    <div className="rounded-xl bg-card border border-border overflow-hidden w-full shadow-lg shadow-black/20">
       {/* Panel header */}
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-2" style={{ borderLeft: "2px solid var(--accent)", paddingLeft: "10px" }}>

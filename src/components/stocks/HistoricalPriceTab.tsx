@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import TradingViewChart from "@/components/TradingViewChart";
 import type { StockQuote } from "@/lib/types";
 import { BarChart3, DollarSign, Activity } from "lucide-react";
@@ -27,17 +27,30 @@ function formatNumber(value: number): string {
 export default function HistoricalPriceTab({ symbol }: { symbol: string }) {
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>(PERIODS[6]); // 1Y
   const [quote, setQuote] = useState<StockQuote | null>(null);
-  const [chartHeight, setChartHeight] = useState(() =>
-    typeof window !== "undefined" ? Math.max(700, window.innerHeight - 240) : 800
-  );
+  const [chartHeight, setChartHeight] = useState(500);
+
+  const updateChartHeight = useCallback(() => {
+    if (typeof window === "undefined") {
+      setChartHeight(500);
+      return;
+    }
+    const isMobile = window.innerWidth < 768;
+    const reserved = isMobile ? 200 : 260;
+    const available = window.innerHeight - reserved;
+    // Mobile: use available space with a 280px floor
+    // Desktop: comfortable minimum of 500px, cap at 800px
+    setChartHeight(
+      isMobile
+        ? Math.max(280, available)
+        : Math.max(500, Math.min(available, 800))
+    );
+  }, []);
 
   useEffect(() => {
-    function handleResize() {
-      setChartHeight(Math.max(700, window.innerHeight - 240));
-    }
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    updateChartHeight();
+    window.addEventListener("resize", updateChartHeight);
+    return () => window.removeEventListener("resize", updateChartHeight);
+  }, [updateChartHeight]);
 
   useEffect(() => {
     async function fetchQuote() {
@@ -71,8 +84,8 @@ export default function HistoricalPriceTab({ symbol }: { symbol: string }) {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-w-0">
-        <div className="lg:col-span-3">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-w-0 overflow-hidden">
+        <div className="lg:col-span-3 min-w-0">
           <TradingViewChart
             symbol={symbol}
             height={chartHeight}

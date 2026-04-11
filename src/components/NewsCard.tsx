@@ -22,7 +22,7 @@ export default function NewsCard({ article }: { article: NewsArticle }) {
       href={article.link}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex gap-4 rounded-xl bg-card border border-border p-4 hover:bg-card-hover transition-colors"
+      className="group flex gap-4 rounded-xl bg-card border border-border p-4 hover:bg-card-hover transition-all duration-200 cursor-pointer shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
     >
       {article.thumbnail && (
         <div className="hidden sm:block flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-border">
@@ -34,7 +34,7 @@ export default function NewsCard({ article }: { article: NewsArticle }) {
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-semibold leading-snug text-foreground group-hover:text-accent transition-colors line-clamp-2 mb-2">
+        <h3 className="text-sm font-semibold leading-snug text-foreground group-hover:text-accent transition-colors duration-200 line-clamp-2 mb-2">
           {article.title}
         </h3>
         <div className="flex items-center gap-3 text-xs text-muted">

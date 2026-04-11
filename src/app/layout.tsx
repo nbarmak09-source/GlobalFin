@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Source_Sans_3, Libre_Baskerville, IBM_Plex_Mono } from "next/font/google";
+import { Source_Sans_3, Lexend, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 
@@ -9,10 +9,10 @@ const sourceSans = Source_Sans_3({
   weight: ["400", "500", "600", "700"],
 });
 
-const libreBaskerville = Libre_Baskerville({
+const lexend = Lexend({
   variable: "--font-serif-display",
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -41,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body
-        className={`${sourceSans.variable} ${libreBaskerville.variable} ${ibmPlexMono.variable} font-sans antialiased min-h-screen w-full overflow-x-hidden flex flex-col`}
+        className={`${sourceSans.variable} ${lexend.variable} ${ibmPlexMono.variable} font-sans antialiased min-h-screen w-full overflow-x-hidden flex flex-col`}
       >
         <SessionProvider>{children}</SessionProvider>
       </body>

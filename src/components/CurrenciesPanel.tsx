@@ -42,8 +42,7 @@ export default function CurrenciesPanel() {
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div
             key={i}
-            className="h-24 rounded-lg bg-card animate-pulse"
-            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+            className="h-24 rounded-xl bg-card border border-border animate-pulse"
           />
         ))}
       </div>
@@ -52,7 +51,7 @@ export default function CurrenciesPanel() {
 
   if (error) {
     return (
-      <div className="rounded-lg bg-card p-6 text-center text-muted text-sm" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+      <div className="rounded-xl bg-card border border-border p-6 text-center text-muted text-sm">
         {error}
       </div>
     );
@@ -60,7 +59,7 @@ export default function CurrenciesPanel() {
 
   if (currencies.length === 0) {
     return (
-      <div className="rounded-lg bg-card p-6 text-center text-muted text-sm" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+      <div className="rounded-xl bg-card border border-border p-6 text-center text-muted text-sm">
         No currency data available
       </div>
     );
@@ -73,8 +72,7 @@ export default function CurrenciesPanel() {
         return (
           <div
             key={q.pair}
-            className="rounded-lg bg-card p-4 hover:bg-card-hover transition-colors"
-            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+            className="rounded-xl bg-card border border-border p-4 hover:bg-card-hover transition-all duration-200 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-[13px] font-[400] text-muted">{q.pair}</span>

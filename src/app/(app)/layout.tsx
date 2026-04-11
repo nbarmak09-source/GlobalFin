@@ -25,7 +25,7 @@ export default function AppLayout({
           Questions or concerns?{" "}
           <a
             href="mailto:nbarmak09@gmail.com"
-            className="text-accent hover:underline"
+            className="text-accent hover:underline cursor-pointer transition-colors duration-200"
           >
             nbarmak09@gmail.com
           </a>

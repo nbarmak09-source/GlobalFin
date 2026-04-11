@@ -54,13 +54,13 @@ export default function AddToWatchlistModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 mx-4 shadow-2xl shadow-black/40">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">Add to Watchlist</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 hover:bg-card-hover transition-colors"
+            className="rounded-lg p-1 hover:bg-card-hover transition-colors duration-200 cursor-pointer"
           >
             <X className="h-5 w-5 text-muted" />
           </button>
@@ -77,7 +77,7 @@ export default function AddToWatchlistModal({
               value={query}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search for a stock..."
-              className="w-full rounded-lg bg-background border border-border pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent"
+              className="w-full rounded-lg bg-background border border-border pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/40 transition-colors duration-200"
               autoFocus
             />
             {searching && (
@@ -92,7 +92,7 @@ export default function AddToWatchlistModal({
                   type="button"
                   disabled={submitting}
                   onClick={() => handleSelect(r)}
-                  className="w-full text-left px-3 py-2.5 hover:bg-card-hover transition-colors border-b border-border/50 last:border-0 disabled:opacity-40"
+                  className="w-full text-left px-3 py-2.5 hover:bg-card-hover transition-colors duration-200 border-b border-border/50 last:border-0 disabled:opacity-40 cursor-pointer"
                 >
                   <span className="text-sm font-semibold text-accent">
                     {r.symbol}

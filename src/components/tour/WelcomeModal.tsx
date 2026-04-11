@@ -33,14 +33,13 @@ export default function WelcomeModal({ onStart, onSkip }: Props) {
           className="h-48 w-[min(520px,90vw)] rounded-full opacity-40"
           style={{
             background:
-              "radial-gradient(ellipse at center, rgba(201,162,39,0.22) 0%, transparent 70%)",
+              "radial-gradient(ellipse at center, var(--ring) 0%, transparent 70%)",
           }}
         />
       </div>
 
       <div
-        className="relative w-full max-w-[520px] rounded-2xl border border-[#2d333b] shadow-2xl"
-        style={{ background: "#13161d" }}
+        className="relative w-full max-w-[520px] rounded-2xl border border-border bg-card shadow-2xl"
       >
         <div className="p-8">
           <div className="mb-6 flex items-center gap-2 text-accent">
@@ -52,11 +51,11 @@ export default function WelcomeModal({ onStart, onSkip }: Props) {
 
           <h1
             id="gcm-welcome-title"
-            className="font-serif text-2xl font-semibold leading-tight text-[#e8e6e1] sm:text-[1.65rem]"
+            className="font-serif text-2xl font-semibold leading-tight text-foreground sm:text-[1.65rem]"
           >
             Welcome to your analyst workstation.
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-[#8b949e]">
+          <p className="mt-3 text-sm leading-relaxed text-muted">
             You now have access to live market data, financial models, AI research tools, and supply
             chain intelligence — all in one platform. This 2-minute tour covers the essentials.
           </p>
@@ -65,38 +64,35 @@ export default function WelcomeModal({ onStart, onSkip }: Props) {
             {FEATURES.map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="flex items-center gap-3 rounded-xl px-3 py-3"
-                style={{ background: "#1c2128" }}
+                className="flex items-center gap-3 rounded-xl bg-card-hover px-3 py-3"
               >
                 <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ background: "rgba(201,162,39,0.15)" }}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/15"
                 >
-                  <Icon className="h-5 w-5 text-[#c9a227]" strokeWidth={1.75} />
+                  <Icon className="h-5 w-5 text-accent" strokeWidth={1.75} />
                 </div>
-                <span className="text-xs font-medium leading-snug text-[#e8e6e1]">{label}</span>
+                <span className="text-xs font-medium leading-snug text-foreground">{label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-[#1c2128] px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-[#8b949e]">⏱ About 2 minutes</p>
+        <div className="flex flex-col gap-3 border-t border-card-hover px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted">About 2 minutes</p>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               onClick={onSkip}
-              className="rounded-lg border border-[#2d333b] bg-transparent px-4 py-2.5 text-sm font-medium text-[#8b949e] transition-colors hover:border-[#3d444d] hover:text-[#e8e6e1]"
+              className="rounded-lg border border-border bg-transparent px-4 py-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:border-muted hover:text-foreground cursor-pointer"
             >
               Skip for now
             </button>
             <button
               type="button"
               onClick={onStart}
-              className="rounded-lg px-4 py-2.5 text-sm font-semibold text-[#0c0e14] transition-opacity hover:opacity-95"
-              style={{ background: "#c9a227" }}
+              className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-background transition-all duration-200 hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(201,162,39,0.25)] cursor-pointer"
             >
-              Start tour →
+              Start tour
             </button>
           </div>
         </div>

@@ -184,7 +184,7 @@ export default function MacroIndicators() {
 
   if (error || !data) {
     return (
-      <div className="rounded-lg bg-card p-4 text-center text-sm text-muted" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+      <div className="rounded-xl bg-card border border-border p-4 text-center text-sm text-muted">
         Macro indicator data unavailable. Make sure FRED_API_KEY is set in your
         .env file.
       </div>
@@ -209,8 +209,7 @@ export default function MacroIndicators() {
         <button
           type="button"
           onClick={() => setSelectedMacro("ip")}
-          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
-          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
@@ -266,8 +265,7 @@ export default function MacroIndicators() {
         <button
           type="button"
           onClick={() => setSelectedMacro("cpi")}
-          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
-          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
@@ -302,8 +300,7 @@ export default function MacroIndicators() {
         <button
           type="button"
           onClick={() => setSelectedMacro("m2")}
-          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
-          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
@@ -351,8 +348,7 @@ export default function MacroIndicators() {
         <button
           type="button"
           onClick={() => setSelectedMacro("businessCycle")}
-          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
-          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
@@ -414,8 +410,7 @@ export default function MacroIndicators() {
         <button
           type="button"
           onClick={() => setSelectedMacro("ism")}
-          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
-          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
@@ -470,8 +465,7 @@ export default function MacroIndicators() {
         <button
           type="button"
           onClick={() => setSelectedMacro("sentiment")}
-          className="rounded-lg bg-card p-4 text-left w-full hover:bg-card-hover transition-colors cursor-pointer group"
-          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">

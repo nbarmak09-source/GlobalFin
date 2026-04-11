@@ -11,6 +11,8 @@
   --green: #22c55e;
   --red: #ef4444;
   --accent: #c9a227;
+  --accent-hover: #d4ad2e;
+  --ring: rgba(201, 162, 39, 0.35);
   /* Chart-specific (mirrors theme) */
   --chart-bg: #13161d;
   --chart-text: #8b949e;
@@ -28,6 +30,8 @@
   --color-green: var(--green);
   --color-red: var(--red);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-ring: var(--ring);
   --font-sans: var(--font-sans-pro);
   --font-serif: var(--font-serif-display);
   --font-mono: var(--font-mono-pro);
@@ -175,10 +179,22 @@ html.gcm-hide-ticker [data-gcm-ticker] {
   }
 }
 
+/* ── Respect prefers-reduced-motion ────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ── Custom onboarding tour highlight ─────────────────────────────────────── */
 .gcm-tour-highlight {
-  outline: 2px solid #c9a227;
+  outline: 2px solid var(--accent);
   outline-offset: 4px;
   border-radius: 8px;
-  box-shadow: 0 0 0 4px rgba(201, 162, 39, 0.15);
+  box-shadow: 0 0 0 4px var(--ring);
 }

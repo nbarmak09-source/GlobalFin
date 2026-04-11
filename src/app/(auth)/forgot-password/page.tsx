@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
     <div className="w-full space-y-6 sm:space-y-8">
       <p className="text-sm text-muted text-center">Reset your password</p>
 
-      <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+      <div className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-2xl shadow-black/30">
         {submitted ? (
           <div className="space-y-4">
             <p className="text-sm text-foreground">
@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
             </p>
             <Link
               href="/login"
-              className="block w-full text-center rounded-lg bg-accent px-4 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-colors min-h-[44px]"
+              className="block w-full text-center rounded-lg bg-accent px-4 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-all duration-200 min-h-[44px] cursor-pointer hover:shadow-[0_0_20px_rgba(201,162,39,0.25)]"
             >
               Back to sign in
             </Link>
@@ -68,14 +68,14 @@ export default function ForgotPasswordPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors duration-200"
                 placeholder="you@example.com"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50 min-h-[44px]"
+              className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-all duration-200 disabled:opacity-50 min-h-[44px] cursor-pointer hover:shadow-[0_0_20px_rgba(201,162,39,0.25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               {loading ? "Sending…" : "Send reset link"}
             </button>

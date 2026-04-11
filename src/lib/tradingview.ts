@@ -31,6 +31,38 @@ const YAHOO_EXCHANGE_TO_TRADINGVIEW: Record<string, string> = {
   TOR: "TSX",
   VAN: "TSXV",
   CNQ: "CSE",
+  // Australia (ASX)
+  ASX: "ASX",
+  AX: "ASX",
+  // London Stock Exchange
+  LSE: "LSE",
+  IOB: "LSE",
+  // Germany (XETRA)
+  FRA: "XETR",
+  ETR: "XETR",
+  GER: "XETR",
+  // Hong Kong
+  HKG: "HKEX",
+  HKS: "HKEX",
+  // Japan
+  TYO: "TSE",
+  OSA: "TSE",
+  // Euronext (France, Netherlands, Belgium)
+  PAR: "EURONEXT",
+  AMS: "EURONEXT",
+  BRU: "EURONEXT",
+  // India
+  BSE: "BSE",
+  NSI: "NSE",
+  // Singapore
+  SES: "SGX",
+  // Switzerland
+  EBS: "SIX",
+  // Sweden
+  STO: "OMX",
+  // Korea
+  KSC: "KRX",
+  KOE: "KOSDAQ",
 };
 
 function inferTradingViewPrefixFromName(exchangeName: string): string | null {
@@ -42,6 +74,11 @@ function inferTradingViewPrefixFromName(exchangeName: string): string | null {
   if (n.includes("toronto") || n === "tsx") return "TSX";
   if (n.includes("venture") || n.includes("tsxv")) return "TSXV";
   if (n.includes("otc")) return "OTCMKTS";
+  if (n.includes("australian") || n.includes("asx")) return "ASX";
+  if (n.includes("london") || n.includes("lse")) return "LSE";
+  if (n.includes("hong kong") || n.includes("hkex")) return "HKEX";
+  if (n.includes("tokyo") || n.includes("japan")) return "TSE";
+  if (n.includes("frankfurt") || n.includes("xetra")) return "XETR";
   return null;
 }
 
@@ -77,5 +114,5 @@ export function getTradingViewSymbol(
     if (inferred) return `${inferred}:${upper}`;
   }
 
-  return `NYSE:${upper}`;
+  return upper;
 }

@@ -9,14 +9,14 @@ export default function AuthLayout({
       className="flex min-h-screen w-full flex-col items-center justify-center px-3 py-8 sm:px-4"
       style={{
         background:
-          "radial-gradient(ellipse at 50% 0%, rgba(201,162,39,0.06) 0%, transparent 60%)",
+          "radial-gradient(ellipse at 50% 0%, rgba(201,162,39,0.08) 0%, transparent 55%)",
       }}
     >
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center gap-2">
           <Link
             href="/"
-            className="flex items-center gap-2 text-xl font-bold font-serif text-accent"
+            className="flex items-center gap-2 text-xl font-bold font-serif text-accent transition-opacity duration-200 hover:opacity-80"
           >
             <Globe2 className="h-6 w-6" />
             Global Capital Markets HQ

@@ -182,11 +182,11 @@ export default function TickerTape() {
                 </span>
               )}
               <span className="text-xs font-mono text-foreground/60">
-                {fmtCurrency(item.price, item.currency)}
+                {fmtCurrency(item.priceUSD, "USD")}
               </span>
               {item.currency !== "USD" && (
                 <span className="text-[10px] font-mono text-muted">
-                  ${item.priceUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {fmtCurrency(item.price, item.currency)}
                 </span>
               )}
               <span

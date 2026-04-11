@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   getTradingViewSymbol,
   type TradingViewSymbolOptions,
@@ -24,7 +24,6 @@ export default function TradingViewChart({
 }: TradingViewChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
 
   const tvOpts = useMemo<TradingViewSymbolOptions | undefined>(
     () =>
@@ -33,18 +32,6 @@ export default function TradingViewChart({
         : undefined,
     [yahooExchange, yahooExchangeName]
   );
-
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-
-    const ro = new ResizeObserver(() => {
-      setContainerWidth(el.clientWidth);
-    });
-    ro.observe(el);
-    setContainerWidth(el.clientWidth);
-    return () => ro.disconnect();
-  }, []);
 
   useEffect(() => {
     if (!symbol || !containerRef.current) return;
@@ -70,7 +57,7 @@ export default function TradingViewChart({
     containerRef.current.innerHTML = "";
     const widgetDiv = document.createElement("div");
     widgetDiv.className = "tradingview-widget-container__widget";
-    widgetDiv.style.height = `${height}px`;
+    widgetDiv.style.height = "100%";
     widgetDiv.style.width = "100%";
     containerRef.current.appendChild(widgetDiv);
     containerRef.current.appendChild(script);
@@ -82,7 +69,7 @@ export default function TradingViewChart({
         container.innerHTML = "";
       }
     };
-  }, [symbol, height, interval, containerWidth, tvOpts]);
+  }, [symbol, height, interval, tvOpts]);
 
   const openHref = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(
     getTradingViewSymbol(symbol, tvOpts)

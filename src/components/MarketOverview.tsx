@@ -55,8 +55,7 @@ export default function MarketOverview() {
         {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="h-28 rounded-lg bg-card animate-pulse"
-            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+            className="h-28 rounded-xl bg-card border border-border animate-pulse"
           />
         ))}
       </div>
@@ -71,8 +70,7 @@ export default function MarketOverview() {
         return (
           <div
             key={index.symbol}
-            className="rounded-lg bg-card p-4 hover:bg-card-hover transition-colors"
-            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+            className="rounded-xl bg-card border border-border p-4 hover:bg-card-hover transition-all duration-200 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-[13px] font-[400] text-muted leading-tight">
@@ -85,7 +83,7 @@ export default function MarketOverview() {
               )}
             </div>
             <div className="text-[30px] font-[500] font-mono leading-none">
-              {fmtCurrency(index.price, index.currency)}
+              {fmtCurrency(index.priceUSD, "USD")}
             </div>
             <div
               className={`text-[13px] font-[400] font-mono mt-2 ${
@@ -97,10 +95,7 @@ export default function MarketOverview() {
             </div>
             {!isUSD && (
               <div className="text-[11px] font-[400] font-mono text-muted mt-1" style={{ opacity: 0.7 }}>
-                ${index.priceUSD.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })} USD
+                {fmtCurrency(index.price, index.currency)}
               </div>
             )}
           </div>

@@ -25,13 +25,11 @@ export default function TourComplete({ onDone }: Props) {
       aria-labelledby="tour-complete-title"
     >
       <div
-        className="w-full max-w-[400px] rounded-2xl border border-[#2d333b] p-8 shadow-2xl"
-        style={{ background: "#13161d" }}
+        className="w-full max-w-[400px] rounded-2xl border border-border bg-card p-8 shadow-2xl"
       >
         <div className="flex justify-center">
           <div
-            className="flex h-[52px] w-[52px] items-center justify-center rounded-full"
-            style={{ background: "rgba(34,197,94,0.12)" }}
+            className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-emerald-500/12"
           >
             <Check className="h-7 w-7 text-emerald-400" strokeWidth={2.5} />
           </div>
@@ -39,11 +37,11 @@ export default function TourComplete({ onDone }: Props) {
 
         <h2
           id="tour-complete-title"
-          className="mt-5 text-center font-serif text-xl font-semibold text-[#e8e6e1]"
+          className="mt-5 text-center font-serif text-xl font-semibold text-foreground"
         >
           You&apos;re ready to go.
         </h2>
-        <p className="mt-2 text-center text-sm leading-relaxed text-[#8b949e]">
+        <p className="mt-2 text-center text-sm leading-relaxed text-muted">
           You&apos;ve seen the key features. Start with a stock you know, or head to Research to find
           your first idea.
         </p>
@@ -52,26 +50,23 @@ export default function TourComplete({ onDone }: Props) {
           <Link
             href="/stocks"
             onClick={onDone}
-            className="rounded-xl border border-[#2d333b] px-3 py-3 text-center text-xs font-medium text-[#e8e6e1] transition-colors hover:bg-[#1c2128]"
-            style={{ background: "#1c2128" }}
+            className="rounded-xl border border-border bg-card-hover px-3 py-3 text-center text-xs font-medium text-foreground transition-colors duration-200 hover:bg-border cursor-pointer"
           >
-            Search a ticker →
+            Search a ticker
           </Link>
           <Link
             href="/research"
             onClick={onDone}
-            className="rounded-xl border border-[#2d333b] px-3 py-3 text-center text-xs font-medium text-[#e8e6e1] transition-colors hover:bg-[#252b33]"
-            style={{ background: "#1c2128" }}
+            className="rounded-xl border border-border bg-card-hover px-3 py-3 text-center text-xs font-medium text-foreground transition-colors duration-200 hover:bg-border cursor-pointer"
           >
-            Research page →
+            Research page
           </Link>
           <Link
             href="/models"
             onClick={onDone}
-            className="rounded-xl border border-[#2d333b] px-3 py-3 text-center text-xs font-medium text-[#e8e6e1] transition-colors hover:bg-[#252b33]"
-            style={{ background: "#1c2128" }}
+            className="rounded-xl border border-border bg-card-hover px-3 py-3 text-center text-xs font-medium text-foreground transition-colors duration-200 hover:bg-border cursor-pointer"
           >
-            Tools → Models
+            Tools &rarr; Models
           </Link>
           <button
             type="button"
@@ -79,10 +74,9 @@ export default function TourComplete({ onDone }: Props) {
               localStorage.removeItem("gcm_tour_seen");
               openWelcome();
             }}
-            className="rounded-xl border border-[#2d333b] px-3 py-3 text-center text-xs font-medium text-[#e8e6e1] transition-colors hover:bg-[#252b33]"
-            style={{ background: "#1c2128" }}
+            className="rounded-xl border border-border bg-card-hover px-3 py-3 text-center text-xs font-medium text-foreground transition-colors duration-200 hover:bg-border cursor-pointer"
           >
-            Menu → Take a tour
+            Menu &rarr; Tour
           </button>
         </div>
 
@@ -92,8 +86,7 @@ export default function TourComplete({ onDone }: Props) {
             onDone();
             router.push("/");
           }}
-          className="mt-6 w-full rounded-lg py-3 text-sm font-semibold text-[#0c0e14] transition-opacity hover:opacity-95"
-          style={{ background: "#c9a227" }}
+          className="mt-6 w-full rounded-lg bg-accent py-3 text-sm font-semibold text-background transition-all duration-200 hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(201,162,39,0.25)] cursor-pointer"
         >
           Go to dashboard
         </button>

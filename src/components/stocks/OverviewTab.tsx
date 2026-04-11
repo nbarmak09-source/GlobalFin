@@ -109,10 +109,10 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
                 View Full Chart <ArrowRight className="h-3 w-3" />
               </span>
             </div>
-            <div className="pointer-events-none h-[200px]">
+            <div className="pointer-events-none h-[300px]">
               <TradingViewChart
                 symbol={symbol}
-                height={200}
+                height={300}
                 interval="D"
                 yahooExchange={data.exchange}
                 yahooExchangeName={data.exchangeName}

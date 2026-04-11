@@ -75,13 +75,13 @@ export default function AddPositionModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 mx-4 shadow-2xl shadow-black/40">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">Add Position</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 hover:bg-card-hover transition-colors"
+            className="rounded-lg p-1 hover:bg-card-hover transition-colors duration-200 cursor-pointer"
           >
             <X className="h-5 w-5 text-muted" />
           </button>
@@ -100,7 +100,7 @@ export default function AddPositionModal({
                   value={query}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search for a stock..."
-                  className="w-full rounded-lg bg-background border border-border pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent"
+                  className="w-full rounded-lg bg-background border border-border pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/40 transition-colors duration-200"
                   autoFocus
                 />
                 {searching && (
@@ -117,7 +117,7 @@ export default function AddPositionModal({
                         setSelected(r);
                         setResults([]);
                       }}
-                      className="w-full text-left px-3 py-2 hover:bg-card-hover transition-colors border-b border-border/50 last:border-0"
+                      className="w-full text-left px-3 py-2 hover:bg-card-hover transition-colors duration-200 border-b border-border/50 last:border-0 cursor-pointer"
                     >
                       <span className="text-sm font-semibold text-accent">
                         {r.symbol}
@@ -161,7 +161,7 @@ export default function AddPositionModal({
               value={shares}
               onChange={(e) => setShares(e.target.value)}
               placeholder="e.g., 10"
-              className="w-full rounded-lg bg-background border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent"
+              className="w-full rounded-lg bg-background border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/40 transition-colors duration-200"
             />
           </div>
 
@@ -175,7 +175,7 @@ export default function AddPositionModal({
               value={avgCost}
               onChange={(e) => setAvgCost(e.target.value)}
               placeholder="e.g., 150.00"
-              className="w-full rounded-lg bg-background border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent"
+              className="w-full rounded-lg bg-background border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/40 transition-colors duration-200"
             />
           </div>
 
@@ -187,14 +187,14 @@ export default function AddPositionModal({
               type="date"
               value={purchaseDate}
               onChange={(e) => setPurchaseDate(e.target.value)}
-              className="w-full rounded-lg bg-background border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent"
+              className="w-full rounded-lg bg-background border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/40 transition-colors duration-200"
             />
           </div>
 
           <button
             type="submit"
             disabled={!selected || !shares || !avgCost || submitting}
-            className="w-full rounded-lg bg-accent py-2.5 text-sm font-medium text-white hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-lg bg-accent py-2.5 text-sm font-medium text-white hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer hover:shadow-[0_0_20px_rgba(201,162,39,0.25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             {submitting ? "Adding..." : "Add Position"}
           </button>

@@ -139,8 +139,7 @@ export default function MacroCharts() {
           {CHART_CONFIGS.map((c) => (
             <div
               key={c.key}
-              className="h-48 rounded-lg bg-card animate-pulse"
-              style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+              className="h-48 rounded-xl bg-card border border-border animate-pulse"
             />
           ))}
         </div>
@@ -292,8 +291,7 @@ function MiniChart({
 
   return (
     <div
-      className="rounded-lg bg-card overflow-hidden"
-      style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+      className="rounded-xl bg-card border border-border overflow-hidden shadow-lg shadow-black/20"
     >
       {/* Card header: label + value callout outside chart area */}
       <div className="px-4 pt-3 pb-2 flex items-center justify-between">

@@ -139,9 +139,8 @@ export default function StepTooltip({
       />
       <div
         ref={cardRef}
-        className="fixed z-[200] max-w-[400px] w-[min(400px,calc(100vw-32px))] rounded-[14px] border border-[#2d333b] shadow-[0_24px_48px_rgba(0,0,0,0.5)] transition-[opacity,transform] duration-200"
+        className="fixed z-[200] max-w-[400px] w-[min(400px,calc(100vw-32px))] rounded-[14px] border border-border bg-card shadow-[0_24px_48px_rgba(0,0,0,0.5)] transition-[opacity,transform] duration-200"
         style={{
-          background: "#13161d",
           left: pos?.left ?? 16,
           top: pos?.top ?? 16,
           opacity: entered ? 1 : 0,
@@ -152,23 +151,19 @@ export default function StepTooltip({
         aria-labelledby={`tour-step-title-${step.id}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex gap-3 border-b border-[#1c2128] px-5 py-4">
+        <header className="flex gap-3 border-b border-card-hover px-5 py-4">
           <div
-            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[9px]"
-            style={{
-              background: "rgba(201,162,39,0.12)",
-              border: "1px solid rgba(201,162,39,0.25)",
-            }}
+            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[9px] bg-accent/12 border border-accent/25"
           >
-            <Icon className="h-5 w-5 text-[#c9a227]" strokeWidth={1.75} />
+            <Icon className="h-5 w-5 text-accent" strokeWidth={1.75} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#c9a227]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-accent">
               {step.tag}
             </p>
             <h2
               id={`tour-step-title-${step.id}`}
-              className="font-serif text-[17px] font-semibold leading-snug text-[#e8e6e1]"
+              className="font-serif text-[17px] font-semibold leading-snug text-foreground"
             >
               {step.title}
             </h2>
@@ -176,25 +171,20 @@ export default function StepTooltip({
         </header>
 
         <div className="px-5 py-4">
-          <p className="text-[13px] leading-[1.65] text-[#8b949e]">{step.description}</p>
+          <p className="text-[13px] leading-[1.65] text-muted">{step.description}</p>
           <ul className="mt-3 space-y-2">
             {step.bullets.map((b) => (
               <li key={b} className="flex gap-2 text-left">
                 <span
-                  className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{ background: "#c9a227" }}
+                  className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
                 />
-                <span className="text-xs leading-relaxed text-[#8b949e]">{b}</span>
+                <span className="text-xs leading-relaxed text-muted">{b}</span>
               </li>
             ))}
           </ul>
           {step.highlight ? (
             <div
-              className="mt-4 rounded-lg border px-3 py-2.5 text-xs leading-relaxed text-[#c9a227]/95"
-              style={{
-                background: "rgba(201,162,39,0.06)",
-                borderColor: "rgba(201,162,39,0.15)",
-              }}
+              className="mt-4 rounded-lg border border-accent/15 bg-accent/[0.06] px-3 py-2.5 text-xs leading-relaxed text-accent/95"
             >
               <span className="mr-1">★</span>
               {step.highlight}
@@ -202,18 +192,17 @@ export default function StepTooltip({
           ) : null}
         </div>
 
-        <footer className="flex flex-col gap-3 border-t border-[#1c2128] px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+        <footer className="flex flex-col gap-3 border-t border-card-hover px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <div
-              className="h-[3px] w-20 overflow-hidden rounded-full"
-              style={{ background: "#1c2128" }}
+              className="h-[3px] w-20 overflow-hidden rounded-full bg-card-hover"
             >
               <div
-                className="h-full rounded-full transition-[width] duration-200"
-                style={{ width: `${progress}%`, background: "#c9a227" }}
+                className="h-full rounded-full bg-accent transition-[width] duration-200"
+                style={{ width: `${progress}%` }}
               />
             </div>
-            <span className="font-mono text-xs text-[#8b949e]">
+            <span className="font-mono text-xs text-muted">
               {stepIndex + 1} / {totalSteps}
             </span>
           </div>
@@ -222,17 +211,16 @@ export default function StepTooltip({
               type="button"
               onClick={onBack}
               disabled={stepIndex === 0}
-              className="rounded-lg border border-[#2d333b] bg-transparent px-3 py-2 text-xs font-medium text-[#8b949e] transition-colors hover:text-[#e8e6e1] disabled:pointer-events-none disabled:opacity-40"
+              className="rounded-lg border border-border bg-transparent px-3 py-2 text-xs font-medium text-muted transition-colors duration-200 hover:text-foreground disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
             >
-              ← Back
+              Back
             </button>
             <button
               type="button"
               onClick={onNext}
-              className="rounded-lg px-3 py-2 text-xs font-semibold text-[#0c0e14] transition-opacity hover:opacity-95"
-              style={{ background: "#c9a227" }}
+              className="rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-background transition-all duration-200 hover:bg-accent-hover cursor-pointer"
             >
-              Next →
+              Next
             </button>
           </div>
         </footer>

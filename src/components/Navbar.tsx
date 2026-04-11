@@ -94,7 +94,7 @@ function NavLink({
   return (
     <Link
       href={href}
-      className={`flex items-center gap-2 px-3 py-2.5 text-sm font-[500] transition-colors min-h-[44px] border-b-[3px] ${
+      className={`flex items-center gap-2 px-3 py-2.5 text-sm font-[500] transition-colors duration-200 min-h-[44px] border-b-[3px] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${
         active
           ? "text-accent border-accent"
           : "text-muted hover:text-foreground border-transparent hover:bg-card-hover rounded-lg"
@@ -125,7 +125,7 @@ function DropdownGroup({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-2 px-3 py-2.5 text-sm font-[500] transition-colors min-h-[44px] border-b-[3px] ${
+        className={`flex items-center gap-2 px-3 py-2.5 text-sm font-[500] transition-colors duration-200 min-h-[44px] border-b-[3px] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${
           anyActive
             ? "text-accent border-accent"
             : "text-muted hover:text-foreground border-transparent hover:bg-card-hover rounded-lg"
@@ -139,7 +139,7 @@ function DropdownGroup({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 w-64 rounded-xl border border-border bg-card shadow-xl z-50 py-1.5 overflow-hidden">
+        <div className="absolute left-0 top-full mt-1 w-64 rounded-xl border border-border bg-card shadow-2xl shadow-black/30 z-50 py-1.5 overflow-hidden">
           {items.map(({ href, label: itemLabel, icon: ItemIcon, desc }) => {
             const itemActive = pathname.startsWith(href);
             return (
@@ -147,7 +147,7 @@ function DropdownGroup({
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
-                className={`flex items-start gap-3 px-3 py-2.5 transition-colors ${
+                className={`flex items-start gap-3 px-3 py-2.5 transition-colors duration-200 cursor-pointer ${
                   itemActive
                     ? "bg-accent/10 text-accent"
                     : "text-foreground hover:bg-card-hover"
@@ -211,8 +211,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className="border-b border-border bg-card"
-      style={{ borderTop: "1px solid rgba(255,255,255,0.12)" }}
+      className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur-md"
     >
       <div className="flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 sm:px-4">
         {/* Logo */}
@@ -258,7 +257,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setAccountOpen((v) => !v)}
-              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted hover:text-foreground hover:bg-card-hover transition-colors"
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted hover:text-foreground hover:bg-card-hover transition-colors duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
               title={session?.user?.email ?? "Account"}
             >
               <User className="h-3.5 w-3.5 shrink-0" />
@@ -270,7 +269,7 @@ export default function Navbar() {
               />
             </button>
             {accountOpen && (
-              <div className="absolute right-0 top-full mt-2 w-44 rounded-lg border border-border bg-card shadow-lg z-50">
+              <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-border bg-card shadow-2xl shadow-black/30 z-50">
                 <button
                   type="button"
                   onClick={() => {
@@ -278,14 +277,14 @@ export default function Navbar() {
                     localStorage.removeItem("gcm_tour_seen");
                     openWelcome();
                   }}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-foreground w-full text-left transition-colors hover:bg-card-hover"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-foreground w-full text-left transition-colors duration-200 hover:bg-card-hover cursor-pointer"
                 >
                   <Wand2 className="h-4 w-4" />
                   <span>Take a tour</span>
                 </button>
                 <Link
                   href="/account"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-foreground transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors duration-200 cursor-pointer"
                   onClick={() => setAccountOpen(false)}
                 >
                   <User className="h-4 w-4" />
@@ -297,7 +296,7 @@ export default function Navbar() {
                     setAccountOpen(false);
                     signOut({ callbackUrl: "/login" });
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted hover:bg-card-hover hover:text-foreground"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted hover:bg-card-hover hover:text-foreground transition-colors duration-200 cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Sign out</span>
@@ -315,7 +314,7 @@ export default function Navbar() {
           <button
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted hover:bg-card-hover hover:text-foreground transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted hover:bg-card-hover hover:text-foreground transition-colors duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

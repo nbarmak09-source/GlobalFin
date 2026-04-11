@@ -48,6 +48,10 @@ function MiniChart({ data }: { data: ChartData }) {
   const curSym = CURRENCY_SYMBOLS[currency] || currency + " ";
   const isUSD = currency === "USD";
 
+  const displayCloses = isUSD
+    ? points.map((p) => p.close)
+    : points.map((p) => p.closeUSD ?? p.close * fxRate);
+
   if (points.length < 2) {
     return (
       <div className="h-44 flex items-center justify-center text-xs text-muted">
@@ -62,9 +66,8 @@ function MiniChart({ data }: { data: ChartData }) {
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
 
-  const closes = points.map((p) => p.close);
-  const min = Math.min(...closes);
-  const max = Math.max(...closes);
+  const min = Math.min(...displayCloses);
+  const max = Math.max(...displayCloses);
   const range = max - min || 1;
   const yPad = range * 0.08;
   const yMin = min - yPad;
@@ -74,14 +77,17 @@ function MiniChart({ data }: { data: ChartData }) {
   const yScale = (v: number) =>
     PAD.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
 
-  const chartPts = points.map((p, i) => ({ x: xScale(i), y: yScale(p.close) }));
+  const chartPts = displayCloses.map((_, i) => ({
+    x: xScale(i),
+    y: yScale(displayCloses[i]),
+  }));
   const line = chartPts
     .map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`)
     .join(" ");
   const areaPath = `${line} L${chartPts[chartPts.length - 1].x},${PAD.top + plotH} L${chartPts[0].x},${PAD.top + plotH} Z`;
 
-  const first = points[0].close;
-  const last = points[points.length - 1].close;
+  const first = displayCloses[0];
+  const last = displayCloses[points.length - 1];
   const diff = last - first;
   const pctChange = (diff / first) * 100;
   const isUp = diff >= 0;
@@ -285,7 +291,7 @@ function MiniChart({ data }: { data: ChartData }) {
               fontSize={10}
               fontFamily="var(--font-mono-pro), monospace"
             >
-              {formatTooltipTime(tooltip.point.time)}: {curSym}{tooltip.point.close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatTooltipTime(tooltip.point.time)}: ${(tooltip.point.closeUSD ?? tooltip.point.close * fxRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </text>
             {!isUSD && (
               <text
@@ -295,7 +301,7 @@ function MiniChart({ data }: { data: ChartData }) {
                 fontSize={9}
                 fontFamily="var(--font-mono-pro), monospace"
               >
-                ${(tooltip.point.closeUSD ?? tooltip.point.close * fxRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                {curSym}{tooltip.point.close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </text>
             )}
           </>
