@@ -649,6 +649,10 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
 
   return (
     <div className="space-y-6">
+      <div className="sm:hidden mb-4 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent/80">
+        ⚠ Financial models are best experienced on a larger screen. You can still
+        view and interact with the model below.
+      </div>
       <div className="flex justify-end">
         <button
           onClick={exportToExcel}
@@ -668,7 +672,7 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
             </h3>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="text-left text-muted border-b border-border">
                   <th className="px-4 py-2 font-medium">Item</th>
@@ -756,6 +760,9 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
               </tbody>
             </table>
           </div>
+          <p className="sm:hidden text-xs text-muted text-center mt-1">
+            ← scroll to see all columns →
+          </p>
         </section>
       )}
 
@@ -783,7 +790,7 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-muted">
                 <th className="text-left font-medium py-1 pr-4 min-w-[160px]">
@@ -841,6 +848,9 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
             </tbody>
           </table>
         </div>
+        <p className="sm:hidden text-xs text-muted text-center mt-1">
+          ← scroll to see all columns →
+        </p>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t border-border">
           {(
@@ -950,7 +960,7 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
           </p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-left text-muted border-b border-border">
                 <th className="px-4 py-2 font-medium min-w-[140px]">
@@ -1028,6 +1038,9 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
             </tbody>
           </table>
         </div>
+        <p className="sm:hidden text-xs text-muted text-center mt-1">
+          ← scroll to see all columns →
+        </p>
       </section>
 
       {/* Valuation Summary */}
@@ -1132,7 +1145,7 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
           </h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-center text-muted border-b border-border">
                 <th className="px-4 py-2 font-medium min-w-[80px]">
@@ -1189,6 +1202,9 @@ export default function DCFModel({ data, secData, symbol }: DCFModelProps) {
             </tbody>
           </table>
         </div>
+        <p className="sm:hidden text-xs text-muted text-center mt-1">
+          ← scroll to see all columns →
+        </p>
       </section>
     </div>
   );

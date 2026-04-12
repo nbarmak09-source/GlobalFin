@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { TickerItem } from "@/lib/types";
@@ -13,11 +13,8 @@ function isSupplyChainTapePath(pathname: string | null): boolean {
   );
 }
 
-/** Auto-scroll speed (matches ~120s per full loop for a very wide strip). */
-const SCROLL_PX_PER_SEC = 95;
-
-/** Pixels of horizontal movement before a pointer gesture counts as a drag (suppress link click). */
-const DRAG_THRESHOLD_PX = 6;
+/** Auto-scroll speed (px/s). Lower = slower. */
+const SCROLL_PX_PER_SEC = 45;
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: "$",
@@ -41,48 +38,7 @@ export default function TickerTape() {
 
   const [items, setItems] = useState<TickerItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const isDown = useRef(false);
-  const startX = useRef(0);
-  const scrollLeftStart = useRef(0);
-  const pointerMovedPastThreshold = useRef(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
-
-  function handleMouseDown(e: React.MouseEvent) {
-    if (!scrollRef.current) return;
-    isDown.current = true;
-    pointerMovedPastThreshold.current = false;
-    setIsDragging(true);
-    startX.current = e.pageX;
-    scrollLeftStart.current = scrollRef.current.scrollLeft;
-  }
-
-  function handleMouseLeave() {
-    isDown.current = false;
-    setIsDragging(false);
-    setIsHovering(false);
-  }
-
-  function handleMouseUp() {
-    isDown.current = false;
-    setIsDragging(false);
-  }
-
-  function handleMouseEnter() {
-    setIsHovering(true);
-  }
-
-  function handleMouseMove(e: React.MouseEvent) {
-    if (isDown.current && scrollRef.current) {
-      e.preventDefault();
-      if (Math.abs(e.pageX - startX.current) > DRAG_THRESHOLD_PX) {
-        pointerMovedPastThreshold.current = true;
-      }
-      const walk = (e.pageX - startX.current) * 1.5;
-      scrollRef.current.scrollLeft = scrollLeftStart.current - walk;
-    }
-  }
+  const rowRef = useRef<HTMLDivElement>(null);
 
   async function fetchTicker() {
     try {
@@ -102,45 +58,20 @@ export default function TickerTape() {
 
   useEffect(() => {
     fetchTicker();
-    const interval = setInterval(fetchTicker, 30000);
+    const interval = setInterval(fetchTicker, 15000);
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    function onGlobalMouseUp() {
-      isDown.current = false;
-      setIsDragging(false);
+  // Compute animation duration so the strip scrolls at exactly SCROLL_PX_PER_SEC.
+  // The inner row is duplicated (2× items); translateX(-50%) covers half the width.
+  useLayoutEffect(() => {
+    if (!rowRef.current || items.length === 0) return;
+    const distance = rowRef.current.scrollWidth / 2;
+    if (distance > 0) {
+      const duration = Math.round(distance / SCROLL_PX_PER_SEC);
+      rowRef.current.style.setProperty("--ticker-duration", `${duration}s`);
     }
-    window.addEventListener("mouseup", onGlobalMouseUp);
-    return () => window.removeEventListener("mouseup", onGlobalMouseUp);
-  }, []);
-
-  useEffect(() => {
-    if (!scrollRef.current || isHovering || isDragging) return;
-
-    let rafId: number;
-    let last = performance.now();
-
-    function tick(now: number) {
-      const el = scrollRef.current;
-      if (!el) return;
-      const dt = Math.min((now - last) / 1000, 0.1);
-      last = now;
-      const halfWidth = el.scrollWidth / 2;
-      if (halfWidth <= 0) {
-        rafId = requestAnimationFrame(tick);
-        return;
-      }
-      el.scrollLeft += SCROLL_PX_PER_SEC * dt;
-      if (el.scrollLeft >= halfWidth) {
-        el.scrollLeft = 0;
-      }
-      rafId = requestAnimationFrame(tick);
-    }
-
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [items, isHovering, isDragging]);
+  }, [items]);
 
   if (loading) {
     return (
@@ -156,15 +87,13 @@ export default function TickerTape() {
 
   return (
     <div
-      ref={scrollRef}
-      className={`h-10 bg-card border-b border-border overflow-x-auto overflow-y-hidden select-none ticker-scrollbar-hide ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
-      onMouseDown={handleMouseDown}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onMouseUp={handleMouseUp}
-      onMouseMove={handleMouseMove}
+      data-gcm-ticker
+      className="h-10 bg-card border-b border-border overflow-hidden select-none"
     >
-      <div className="flex h-full items-center whitespace-nowrap min-w-max">
+      <div
+        ref={rowRef}
+        className="ticker-animate flex h-full items-center whitespace-nowrap w-max"
+      >
         {duplicated.map((item, idx) => {
           const sc = supplyChainMode
             ? getSupplyChainByTicker(item.symbol)
@@ -182,11 +111,6 @@ export default function TickerTape() {
               draggable={false}
               title={title}
               aria-label={`Open ${item.name} (${item.symbol})`}
-              onClick={(e) => {
-                if (pointerMovedPastThreshold.current) {
-                  e.preventDefault();
-                }
-              }}
               className="inline-flex items-center gap-2 px-4 border-r border-border/50 shrink-0 text-inherit no-underline transition-colors hover:bg-muted/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             >
               {supplyChainMode ? (

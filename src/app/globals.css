@@ -71,7 +71,7 @@ html.gcm-hide-ticker [data-gcm-ticker] {
 }
 
 .ticker-animate {
-  animation: ticker-scroll 120s linear infinite;
+  animation: ticker-scroll var(--ticker-duration, 300s) linear infinite;
   will-change: transform;
 }
 

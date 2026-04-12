@@ -127,8 +127,8 @@ function DonutChart({
         {label}
       </h3>
       <div className="flex items-start gap-6">
-        <div className="h-40 w-40 shrink-0 [&_.recharts-layer]:outline-none">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="min-h-[260px] w-full min-w-0 flex-1 [&_.recharts-layer]:outline-none">
+          <ResponsiveContainer width="100%" height={260}>
             <RechartsPieChart>
               <Pie
                 data={data}
@@ -277,7 +277,7 @@ export default function AllocationPage() {
           </h1>
           <p className="text-sm text-muted">Loading portfolio data...</p>
         </header>
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           {[1, 2, 3].map((n) => (
             <div
               key={n}
@@ -325,7 +325,7 @@ export default function AllocationPage() {
         </button>
       </header>
 
-      <section className="grid gap-6 md:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-5">
           <DonutChart slices={sectorSlices} label="By Sector" />
         </div>

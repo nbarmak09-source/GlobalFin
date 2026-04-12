@@ -726,7 +726,7 @@ function PitchPageContent() {
             )}
           </div>
           {hasContent && (
-            <>
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
               <button
                 onClick={copyToClipboard}
                 className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted hover:text-foreground hover:bg-card-hover transition-colors"
@@ -786,7 +786,7 @@ function PitchPageContent() {
                 )}
                 {saving ? "Saving..." : saved ? "Saved" : "Save"}
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -949,7 +949,7 @@ function PitchPageContent() {
             DCF Assumptions
             <span className="ml-auto text-xs text-muted font-normal">Used in Excel export</span>
           </h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
               { key: "fcfGrowthRate" as const, label: "FCF Growth Rate (%)", min: 0, max: 50, step: 0.5 },
               { key: "wacc" as const, label: "WACC (%)", min: 4, max: 20, step: 0.5 },
@@ -1052,7 +1052,7 @@ function PitchPageContent() {
           </div>
           <div className="p-5">
             <p className="text-sm text-muted mb-5 italic">{score.summary}</p>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
               {([
                 { key: "thesis", label: "Thesis" },
                 { key: "valuation", label: "Valuation" },

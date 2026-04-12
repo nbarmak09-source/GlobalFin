@@ -548,6 +548,10 @@ export default function LBOModel({
 
   return (
     <div className="space-y-6">
+      <div className="sm:hidden mb-4 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent/80">
+        ⚠ Financial models are best experienced on a larger screen. You can still
+        view and interact with the model below.
+      </div>
       {/* Export */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted">
@@ -830,7 +834,7 @@ export default function LBOModel({
       <section className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h3 className="text-sm font-semibold">Operating Assumptions</h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-muted">
                 <th className="text-left font-medium py-1 pr-4 min-w-[160px]">
@@ -888,6 +892,9 @@ export default function LBOModel({
             </tbody>
           </table>
         </div>
+        <p className="sm:hidden text-xs text-muted text-center mt-1">
+          ← scroll to see all columns →
+        </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t border-border">
           {[
             {
@@ -937,7 +944,7 @@ export default function LBOModel({
           </h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-left text-muted border-b border-border">
                 <th className="px-4 py-2 font-medium min-w-[160px]">
@@ -1064,6 +1071,9 @@ export default function LBOModel({
             </tbody>
           </table>
         </div>
+        <p className="sm:hidden text-xs text-muted text-center mt-1">
+          ← scroll to see all columns →
+        </p>
       </section>
 
       {/* Debt Schedule */}
@@ -1072,7 +1082,7 @@ export default function LBOModel({
           <h3 className="text-sm font-semibold">Debt Schedule</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-left text-muted border-b border-border">
                 <th className="px-4 py-2 font-medium min-w-[160px]">
@@ -1172,6 +1182,9 @@ export default function LBOModel({
             </tbody>
           </table>
         </div>
+        <p className="sm:hidden text-xs text-muted text-center mt-1">
+          ← scroll to see all columns →
+        </p>
       </section>
 
       {/* Returns Summary */}
@@ -1270,7 +1283,7 @@ export default function LBOModel({
           </h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-center text-muted border-b border-border">
                 <th className="px-4 py-2 font-medium min-w-[100px]">
@@ -1319,6 +1332,9 @@ export default function LBOModel({
             </tbody>
           </table>
         </div>
+        <p className="sm:hidden text-xs text-muted text-center mt-1">
+          ← scroll to see all columns →
+        </p>
       </section>
     </div>
   );

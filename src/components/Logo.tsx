@@ -1,12 +1,12 @@
 /**
  * GCM HQ brand logo — logomark + optional wordmark.
  *
- * Logomark: three ascending rounded-corner bars (capital-markets / growth).
+ * Logomark: wireframe globe (global markets) + ascending chart bars (finance).
  * Export the standalone <LogoMark> if you only need the icon,
  * or <Logo> for the full lockup (icon + wordmark).
  */
 
-/** Three ascending bars — the core brand mark. */
+/** Globe + growth bars — global capital markets. */
 export function LogoMark({
   size = 22,
   className = "",
@@ -21,14 +21,54 @@ export function LogoMark({
       viewBox="0 0 22 22"
       fill="none"
       aria-hidden="true"
-      className={className}
+      className={`text-accent ${className}`}
     >
-      {/* Bar 1 — short */}
-      <rect x="1" y="14" width="5.5" height="8" rx="1.5" fill="#c9a227" />
-      {/* Bar 2 — medium */}
-      <rect x="8.25" y="9" width="5.5" height="13" rx="1.5" fill="#c9a227" />
-      {/* Bar 3 — tall */}
-      <rect x="15.5" y="2" width="5.5" height="20" rx="1.5" fill="#c9a227" />
+      {/* Globe: sphere + meridian + equator */}
+      <circle
+        cx="11"
+        cy="11"
+        r="7.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <ellipse
+        cx="11"
+        cy="11"
+        rx="3.2"
+        ry="7.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M 3.5 11 H 18.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      {/* Finance: ascending bars (lower-right inside globe) */}
+      <rect
+        x="12"
+        y="15.5"
+        width="2.25"
+        height="3"
+        rx="0.45"
+        fill="currentColor"
+      />
+      <rect
+        x="14.75"
+        y="13.5"
+        width="2.25"
+        height="5"
+        rx="0.45"
+        fill="currentColor"
+      />
+      <rect
+        x="17.5"
+        y="11"
+        width="2.25"
+        height="7.5"
+        rx="0.45"
+        fill="currentColor"
+      />
     </svg>
   );
 }

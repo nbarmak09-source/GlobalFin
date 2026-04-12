@@ -321,16 +321,18 @@ function ScreenerContent() {
     field,
     align = "left",
     title,
+    className = "",
   }: {
     label: string;
     field: SortKey;
     align?: "left" | "right";
     title?: string;
+    className?: string;
   }) {
     return (
       <th
         title={title}
-        className={`px-3 py-3 text-${align} cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap`}
+        className={`px-3 py-3 text-${align} cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${className}`}
         onClick={() => handleSort(field)}
       >
         <span className="inline-flex items-center gap-1">
@@ -526,12 +528,12 @@ function ScreenerContent() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           <button
             type="button"
             onClick={applyFilters}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50"
           >
             {loading ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
@@ -622,6 +624,7 @@ function ScreenerContent() {
                   field="forwardPE"
                   align="right"
                   title="Forward P/E"
+                  className="hidden sm:table-cell"
                 />
                 <SortableHeader
                   label="Yield"
@@ -634,6 +637,7 @@ function ScreenerContent() {
                   field="beta"
                   align="right"
                   title="3-year beta"
+                  className="hidden sm:table-cell"
                 />
                 <SortableHeader
                   label="Rev Gr"
@@ -646,6 +650,7 @@ function ScreenerContent() {
                   field="profitMargins"
                   align="right"
                   title="Net Profit Margin"
+                  className="hidden sm:table-cell"
                 />
                 <th className="px-3 py-3 text-left text-xs text-muted uppercase tracking-wide">
                   Rating
@@ -697,7 +702,7 @@ function ScreenerContent() {
                   <td className="px-3 py-3 text-right tabular-nums">
                     {fmtNum(r.pe)}
                   </td>
-                  <td className="px-3 py-3 text-right tabular-nums">
+                  <td className="hidden sm:table-cell px-3 py-3 text-right tabular-nums">
                     {fmtNum(r.forwardPE)}
                   </td>
                   <td className="px-3 py-3 text-right tabular-nums">
@@ -705,7 +710,7 @@ function ScreenerContent() {
                       ? `${r.dividendYield.toFixed(2)}%`
                       : "—"}
                   </td>
-                  <td className="px-3 py-3 text-right tabular-nums">
+                  <td className="hidden sm:table-cell px-3 py-3 text-right tabular-nums">
                     {fmtNum(r.beta)}
                   </td>
                   <td
@@ -713,7 +718,7 @@ function ScreenerContent() {
                   >
                     {r.revenueGrowth ? fmtPct(r.revenueGrowth) : "—"}
                   </td>
-                  <td className="px-3 py-3 text-right tabular-nums">
+                  <td className="hidden sm:table-cell px-3 py-3 text-right tabular-nums">
                     {r.profitMargins
                       ? `${r.profitMargins.toFixed(1)}%`
                       : "—"}
@@ -727,7 +732,7 @@ function ScreenerContent() {
                       title="Add to watchlist"
                       disabled={addingSymbol === r.symbol}
                       onClick={() => addToWatchlist(r.symbol, r.name)}
-                      className="text-muted hover:text-accent transition-colors disabled:opacity-50"
+                      className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted hover:text-accent transition-colors disabled:opacity-50"
                     >
                       <Plus className="h-4 w-4" />
                     </button>

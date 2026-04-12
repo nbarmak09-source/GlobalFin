@@ -371,7 +371,7 @@ function AlertTable({
                   <button
                     type="button"
                     onClick={() => onDelete(a.id)}
-                    className="text-muted hover:text-red-500 transition-colors"
+                    className="flex items-center justify-center min-h-[44px] min-w-[44px] text-muted hover:text-red-500 transition-colors"
                     title="Delete alert"
                   >
                     <Trash2 className="h-4 w-4" />

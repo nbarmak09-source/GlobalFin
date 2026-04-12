@@ -231,21 +231,26 @@ function LayerBand({
         <div className="flex items-center justify-end shrink-0">
           <BottleneckBadge risk={layer.bottleneckRisk} />
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-1 ticker-scrollbar-hide">
-          {layer.companies.map((c) => {
-            const t = c.ticker?.toUpperCase();
-            const cardKey = `${layer.id}-${c.name}`;
-            return (
-              <CompanyCard
-                key={`${layer.id}-${c.name}-${t ?? "private"}`}
-                company={c}
-                quote={t ? quotesBySymbol[t] : undefined}
-                highlighted={isHighlightMatch(c, highlightParam)}
-                selected={selectedKey === cardKey}
-                onClick={() => onSelectCompany(c, layer)}
-              />
-            );
-          })}
+        <div className="relative">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap">
+            {layer.companies.map((c) => {
+              const t = c.ticker?.toUpperCase();
+              const cardKey = `${layer.id}-${c.name}`;
+              return (
+                <CompanyCard
+                  key={`${layer.id}-${c.name}-${t ?? "private"}`}
+                  company={c}
+                  quote={t ? quotesBySymbol[t] : undefined}
+                  highlighted={isHighlightMatch(c, highlightParam)}
+                  selected={selectedKey === cardKey}
+                  onClick={() => onSelectCompany(c, layer)}
+                />
+              );
+            })}
+          </div>
+          <p className="sm:hidden text-xs text-muted mt-1 text-center">
+            Swipe to see more companies →
+          </p>
         </div>
       </div>
     </section>

@@ -175,7 +175,7 @@ function SortableRow({
                 e.stopPropagation();
                 onEdit(pos);
               }}
-              className="rounded-lg p-1.5 text-muted hover:text-accent hover:bg-accent/10 transition-colors"
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-muted hover:text-accent hover:bg-accent/10 transition-colors"
               title="Edit position"
             >
               <Pencil className="h-4 w-4" />
@@ -186,7 +186,7 @@ function SortableRow({
               e.stopPropagation();
               onDelete(pos.id);
             }}
-            className="rounded-lg p-1.5 text-muted hover:text-red hover:bg-red/10 transition-colors"
+            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-muted hover:text-red hover:bg-red/10 transition-colors"
             title="Delete position"
           >
             <Trash2 className="h-4 w-4" />
