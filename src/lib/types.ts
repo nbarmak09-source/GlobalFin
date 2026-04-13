@@ -106,6 +106,23 @@ export interface SearchResult {
   type: string;
 }
 
+/** Row from Yahoo predefined screener (gainers, losers, most active, etc.). */
+export interface MarketMoverQuote {
+  symbol: string;
+  shortName: string;
+  regularMarketPrice: number;
+  regularMarketChangePercent: number;
+  regularMarketVolume: number;
+  currency: string;
+}
+
+export interface MarketMoversBoard {
+  gainers: MarketMoverQuote[];
+  losers: MarketMoverQuote[];
+  mostActive: MarketMoverQuote[];
+  undervaluedLargeCaps: MarketMoverQuote[];
+}
+
 export interface CompanyOfficer {
   name: string;
   title: string;

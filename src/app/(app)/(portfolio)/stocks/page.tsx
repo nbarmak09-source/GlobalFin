@@ -14,6 +14,7 @@ import DividendsTab from "@/components/stocks/DividendsTab";
 import TransactionsTab from "@/components/stocks/TransactionsTab";
 import PeopleTab from "@/components/stocks/PeopleTab";
 import SECFilingsTab from "@/components/stocks/SECFilingsTab";
+import StocksMarketMovers from "@/components/stocks/StocksMarketMovers";
 import type { QuoteSummaryData } from "@/lib/types";
 import {
   TrendingUp,
@@ -313,6 +314,9 @@ function StocksPageContent() {
   return (
     <div className="space-y-4 min-w-0">
       <SymbolSearch onSelect={handleSymbolSelect} initialSymbol={symbol} />
+      {!symbol && (
+        <StocksMarketMovers onSelectSymbol={handleSymbolSelect} />
+      )}
 
       {/* Stock header */}
       {loading ? (

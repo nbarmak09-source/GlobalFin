@@ -6,6 +6,8 @@ import type {
   HistoricalDataPoint,
   SearchResult,
   QuoteSummaryData,
+  MarketMoverQuote,
+  MarketMoversBoard,
 } from "./types";
 
 const yf = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
@@ -687,6 +689,57 @@ export async function getScreenerQuote(symbol: string): Promise<ScreenerQuote | 
       return null;
     }
   }
+}
+
+function mapScreenerQuoteToMover(q: Record<string, unknown>): MarketMoverQuote | null {
+  const symbol = q.symbol;
+  if (typeof symbol !== "string" || !symbol.trim()) return null;
+  const price = q.regularMarketPrice;
+  const pct = q.regularMarketChangePercent;
+  const vol = q.regularMarketVolume;
+  const cur = q.currency;
+  return {
+    symbol: symbol.toUpperCase(),
+    shortName:
+      (typeof q.shortName === "string" && q.shortName) ||
+      (typeof q.longName === "string" && q.longName) ||
+      symbol,
+    regularMarketPrice: typeof price === "number" && !isNaN(price) ? price : 0,
+    regularMarketChangePercent: typeof pct === "number" && !isNaN(pct) ? pct : 0,
+    regularMarketVolume: typeof vol === "number" && !isNaN(vol) ? vol : 0,
+    currency: typeof cur === "string" && cur ? cur : "USD",
+  };
+}
+
+async function fetchScreenerList(
+  scrIds: "day_gainers" | "day_losers" | "most_actives" | "undervalued_large_caps",
+  count: number
+): Promise<MarketMoverQuote[]> {
+  try {
+    const result = (await yf.screener(
+      { scrIds, count, region: "US", lang: "en-US" },
+      undefined,
+      { validateResult: false }
+    )) as { quotes?: Record<string, unknown>[] };
+    const quotes = result.quotes || [];
+    return quotes
+      .map((row) => mapScreenerQuoteToMover(row))
+      .filter((r): r is MarketMoverQuote => r !== null);
+  } catch (e) {
+    console.error(`[yahoo] screener ${scrIds}:`, e);
+    return [];
+  }
+}
+
+/** Top movers and actives from Yahoo predefined screeners (parallel fetch). */
+export async function getMarketMoversBoard(count = 8): Promise<MarketMoversBoard> {
+  const [gainers, losers, mostActive, undervaluedLargeCaps] = await Promise.all([
+    fetchScreenerList("day_gainers", count),
+    fetchScreenerList("day_losers", count),
+    fetchScreenerList("most_actives", count),
+    fetchScreenerList("undervalued_large_caps", count),
+  ]);
+  return { gainers, losers, mostActive, undervaluedLargeCaps };
 }
 
 export async function getMarketNews(): Promise<NewsArticle[]> {

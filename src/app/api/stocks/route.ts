@@ -9,6 +9,7 @@ import {
   getSymbolNews,
   getExchangeRates,
   getIndexCurrency,
+  getMarketMoversBoard,
 } from "@/lib/yahoo";
 
 export async function GET(request: NextRequest) {
@@ -83,9 +84,15 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(data);
       }
 
+      case "marketMovers": {
+        const n = Math.min(25, Math.max(4, parseInt(searchParams.get("count") || "8", 10) || 8));
+        const data = await getMarketMoversBoard(n);
+        return NextResponse.json(data);
+      }
+
       default:
         return NextResponse.json(
-          { error: "Invalid action. Use: ticker, quote, quotes, history, search, news, summary" },
+          { error: "Invalid action. Use: ticker, quote, quotes, history, search, news, summary, marketMovers" },
           { status: 400 }
         );
     }
