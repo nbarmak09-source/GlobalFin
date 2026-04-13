@@ -14,10 +14,16 @@ type PortfolioTab = "holdings" | "watchlist";
 
 const ACTIVE_PORTFOLIO_KEY = "active-portfolio-id";
 
+/** Ensures session cookies are sent for API routes (same as other app pages). */
+const apiFetch = (input: string, init?: RequestInit) =>
+  fetch(input, { ...init, credentials: "include" });
+
 export default function PortfolioPage() {
   const [activeTab, setActiveTab] = useState<PortfolioTab>("holdings");
   const [portfolios, setPortfolios] = useState<UserPortfolio[]>([]);
   const [portfoliosLoading, setPortfoliosLoading] = useState(true);
+  const [portfoliosError, setPortfoliosError] = useState<string | null>(null);
+  const [positionsError, setPositionsError] = useState<string | null>(null);
   const [activePortfolioId, setActivePortfolioId] = useState<string | null>(null);
 
   const [positions, setPositions] = useState<EnrichedPosition[]>([]);
@@ -39,9 +45,25 @@ export default function PortfolioPage() {
 
   const fetchPortfolios = useCallback(async () => {
     setPortfoliosLoading(true);
+    setPortfoliosError(null);
     try {
-      const res = await fetch("/api/portfolios");
-      if (!res.ok) return;
+      const res = await apiFetch("/api/portfolios");
+      if (!res.ok) {
+        let msg = "Could not load portfolios.";
+        try {
+          const body = await res.json();
+          if (typeof body?.error === "string") msg = body.error;
+        } catch {
+          /* ignore */
+        }
+        if (res.status === 500) {
+          msg +=
+            " The database may need migrations (e.g. run `npx prisma migrate deploy` on the server).";
+        }
+        setPortfoliosError(msg);
+        setPortfolios([]);
+        return;
+      }
       const data: UserPortfolio[] = await res.json();
       setPortfolios(data);
 
@@ -54,7 +76,8 @@ export default function PortfolioPage() {
         return data[0]?.id ?? null;
       });
     } catch {
-      // silently fail
+      setPortfoliosError("Network error loading portfolios.");
+      setPortfolios([]);
     } finally {
       setPortfoliosLoading(false);
     }
@@ -72,21 +95,34 @@ export default function PortfolioPage() {
   const fetchPositions = useCallback(async (showLoader = true) => {
     if (!activePortfolioId) {
       setPositions([]);
+      setPositionsError(null);
       setLoading(false);
       return;
     }
     if (showLoader) setLoading(true);
     else setRefreshing(true);
+    setPositionsError(null);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/portfolio?portfolioId=${encodeURIComponent(activePortfolioId)}`
       );
       if (res.ok) {
         const data = await res.json();
         setPositions(data);
+      } else {
+        let msg = "Could not load holdings.";
+        try {
+          const body = await res.json();
+          if (typeof body?.error === "string") msg = body.error;
+        } catch {
+          /* ignore */
+        }
+        setPositionsError(msg);
+        setPositions([]);
       }
     } catch {
-      // silently fail
+      setPositionsError("Network error loading holdings.");
+      setPositions([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -97,7 +133,7 @@ export default function PortfolioPage() {
     if (showLoader) setLoading(true);
     else setRefreshing(true);
     try {
-      const res = await fetch("/api/watchlist");
+      const res = await apiFetch("/api/watchlist");
       if (res.ok) {
         const data = await res.json();
         setWatchlist(data);
@@ -126,7 +162,7 @@ export default function PortfolioPage() {
     purchaseDate?: string;
   }) {
     if (!activePortfolioId) return;
-    const res = await fetch(
+    const res = await apiFetch(
       `/api/portfolio?portfolioId=${encodeURIComponent(activePortfolioId)}`,
       {
         method: "POST",
@@ -142,7 +178,7 @@ export default function PortfolioPage() {
 
   async function handleDeletePosition(id: string) {
     if (!activePortfolioId) return;
-    const res = await fetch(
+    const res = await apiFetch(
       `/api/portfolio?id=${encodeURIComponent(id)}&portfolioId=${encodeURIComponent(activePortfolioId)}`,
       { method: "DELETE" }
     );
@@ -153,7 +189,7 @@ export default function PortfolioPage() {
   }
 
   async function handleAddWatchlist(item: { symbol: string; name: string }) {
-    const res = await fetch("/api/watchlist", {
+    const res = await apiFetch("/api/watchlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(item),
@@ -164,7 +200,7 @@ export default function PortfolioPage() {
   }
 
   async function handleRemoveWatchlist(id: string) {
-    const res = await fetch(`/api/watchlist?id=${id}`, { method: "DELETE" });
+    const res = await apiFetch(`/api/watchlist?id=${id}`, { method: "DELETE" });
     if (res.ok) {
       fetchWatchlist(false);
     }
@@ -173,7 +209,7 @@ export default function PortfolioPage() {
   async function handleReorderPositions(reordered: EnrichedPosition[]) {
     if (!activePortfolioId) return;
     setPositions(reordered);
-    await fetch(
+    await apiFetch(
       `/api/portfolio?portfolioId=${encodeURIComponent(activePortfolioId)}`,
       {
         method: "PATCH",
@@ -185,7 +221,7 @@ export default function PortfolioPage() {
 
   async function handleReorderWatchlist(reordered: EnrichedWatchlistItem[]) {
     setWatchlist(reordered);
-    await fetch("/api/watchlist", {
+    await apiFetch("/api/watchlist", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ orderedIds: reordered.map((w) => w.id) }),
@@ -197,8 +233,9 @@ export default function PortfolioPage() {
     const name = newPortfolioName.trim();
     if (!name) return;
     setCreatingPortfolio(true);
+    setPortfoliosError(null);
     try {
-      const res = await fetch("/api/portfolios", {
+      const res = await apiFetch("/api/portfolios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
@@ -211,9 +248,18 @@ export default function PortfolioPage() {
         setActivePortfolioId(created.id);
         setShowNewPortfolioModal(false);
         setNewPortfolioName("");
+      } else {
+        let msg = "Could not create portfolio.";
+        try {
+          const body = await res.json();
+          if (typeof body?.error === "string") msg = body.error;
+        } catch {
+          /* ignore */
+        }
+        setPortfoliosError(msg);
       }
     } catch {
-      // ignore
+      setPortfoliosError("Network error creating portfolio.");
     } finally {
       setCreatingPortfolio(false);
     }
@@ -228,7 +274,7 @@ export default function PortfolioPage() {
     ) {
       return;
     }
-    const res = await fetch(
+    const res = await apiFetch(
       `/api/portfolios?id=${encodeURIComponent(activePortfolioId)}`,
       { method: "DELETE" }
     );
@@ -326,8 +372,27 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      {/* Portfolio switcher */}
-      <div className="mb-6 flex flex-wrap items-center gap-2">
+      {portfoliosError && (
+        <div className="mb-4 rounded-lg border border-red/40 bg-red/10 px-4 py-3 text-sm text-red-200">
+          <p className="font-medium">Portfolio data</p>
+          <p className="mt-1 text-red-200/90">{portfoliosError}</p>
+          <button
+            type="button"
+            onClick={() => fetchPortfolios()}
+            className="mt-2 text-sm underline hover:text-foreground"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Portfolio switcher — separate lists per portfolio (same idea as Yahoo portfolios) */}
+      <div className="mb-6 flex flex-col gap-2">
+        <p className="text-xs text-muted max-w-2xl">
+          Use <span className="text-foreground/90">New portfolio</span> to add another list of holdings.
+          Each portfolio has its own positions and performance chart; switch tabs to pick which one you are editing.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
         {portfoliosLoading ? (
           <div className="h-10 w-48 rounded-lg bg-card border border-border animate-pulse" />
         ) : portfolios.length <= 4 ? (
@@ -379,6 +444,7 @@ export default function PortfolioPage() {
             <span className="hidden sm:inline">Delete portfolio</span>
           </button>
         )}
+        </div>
       </div>
 
       <div className="flex gap-1 mb-6 border-b border-border">
@@ -424,6 +490,18 @@ export default function PortfolioPage() {
 
       {activeTab === "holdings" ? (
         <div className="space-y-4">
+          {positionsError && !loading && (
+            <div className="rounded-lg border border-red/40 bg-red/10 px-4 py-3 text-sm text-red-200">
+              {positionsError}
+              <button
+                type="button"
+                onClick={() => fetchPositions(false)}
+                className="ml-3 underline hover:text-foreground"
+              >
+                Retry
+              </button>
+            </div>
+          )}
           {loading && (
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               {[1, 2, 3, 4, 5].map((i) => (

@@ -44,6 +44,7 @@ export default function EditPositionModal({
         `/api/portfolio?portfolioId=${encodeURIComponent(portfolioId)}`,
         {
           method: "PUT",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }

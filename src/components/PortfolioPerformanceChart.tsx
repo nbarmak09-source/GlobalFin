@@ -61,7 +61,8 @@ export default function PortfolioPerformanceChart({
     setError(null);
     try {
       const res = await fetch(
-        `/api/portfolio/performance?period=${encodeURIComponent(period)}&portfolioId=${encodeURIComponent(portfolioId)}`
+        `/api/portfolio/performance?period=${encodeURIComponent(period)}&portfolioId=${encodeURIComponent(portfolioId)}`,
+        { credentials: "include" }
       );
       const result = await res.json();
       if (!res.ok) {

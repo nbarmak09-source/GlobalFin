@@ -21,8 +21,8 @@ async function resolvePortfolioId(
   | { ok: true; portfolioId: string }
   | { ok: false; status: number; error: string }
 > {
+  const def = await ensureDefaultPortfolio(userId);
   if (!queryPortfolioId) {
-    const def = await ensureDefaultPortfolio(userId);
     return { ok: true, portfolioId: def.id };
   }
   const owned = await assertPortfolioOwnership(userId, queryPortfolioId);

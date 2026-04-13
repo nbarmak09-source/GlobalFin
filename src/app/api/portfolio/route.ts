@@ -34,8 +34,9 @@ async function resolvePortfolioId(
   | { ok: true; portfolioId: string }
   | { ok: false; status: number; error: string }
 > {
+  // Migrates orphan positions (portfolio_id null) onto the primary portfolio.
+  const def = await ensureDefaultPortfolio(userId);
   if (!queryPortfolioId) {
-    const def = await ensureDefaultPortfolio(userId);
     return { ok: true, portfolioId: def.id };
   }
   const owned = await assertPortfolioOwnership(userId, queryPortfolioId);
