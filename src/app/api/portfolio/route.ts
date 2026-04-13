@@ -5,6 +5,8 @@ import {
   updatePosition,
   deletePosition,
   reorderPositions,
+  ensureDefaultPortfolio,
+  assertPortfolioOwnership,
 } from "@/lib/portfolio";
 import { getMultipleQuotes } from "@/lib/yahoo";
 import { auth } from "@/lib/auth";
@@ -25,14 +27,41 @@ function isPositiveNumber(n: unknown): n is number {
   return false;
 }
 
-export async function GET() {
+async function resolvePortfolioId(
+  userId: string,
+  queryPortfolioId: string | null
+): Promise<
+  | { ok: true; portfolioId: string }
+  | { ok: false; status: number; error: string }
+> {
+  if (!queryPortfolioId) {
+    const def = await ensureDefaultPortfolio(userId);
+    return { ok: true, portfolioId: def.id };
+  }
+  const owned = await assertPortfolioOwnership(userId, queryPortfolioId);
+  if (!owned) {
+    return { ok: false, status: 403, error: "Invalid portfolio" };
+  }
+  return { ok: true, portfolioId: queryPortfolioId };
+}
+
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const positions = await getPositions(session.user.id);
+    const { searchParams } = new URL(request.url);
+    const resolved = await resolvePortfolioId(
+      session.user.id,
+      searchParams.get("portfolioId")
+    );
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+    }
+
+    const positions = await getPositions(session.user.id, resolved.portfolioId);
 
     if (positions.length === 0) {
       return NextResponse.json([]);
@@ -80,6 +109,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const resolved = await resolvePortfolioId(
+      session.user.id,
+      searchParams.get("portfolioId")
+    );
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+    }
+
     const body = await request.json().catch(() => null);
     if (body == null || typeof body !== "object") {
       return NextResponse.json(
@@ -118,7 +156,7 @@ export async function POST(request: NextRequest) {
       ...(purchaseDate != null && String(purchaseDate).trim() && { purchaseDate: String(purchaseDate).trim().slice(0, 10) }),
     };
 
-    const created = await addPosition(session.user.id, position);
+    const created = await addPosition(session.user.id, resolved.portfolioId, position);
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
     console.error("Portfolio POST error:", error);
@@ -136,6 +174,15 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const resolved = await resolvePortfolioId(
+      session.user.id,
+      searchParams.get("portfolioId")
+    );
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+    }
+
     const body = await request.json().catch(() => null);
     if (body == null || typeof body !== "object") {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -146,7 +193,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "id is required and must be a non-empty string" }, { status: 400 });
     }
 
-    const positions = await updatePosition(session.user.id, id.trim(), updates);
+    const positions = await updatePosition(session.user.id, resolved.portfolioId, id.trim(), updates);
     return NextResponse.json(positions);
   } catch (error) {
     console.error("Portfolio PUT error:", error);
@@ -162,6 +209,15 @@ export async function PATCH(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const resolved = await resolvePortfolioId(
+      session.user.id,
+      searchParams.get("portfolioId")
+    );
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: resolved.status });
     }
 
     const body = await request.json().catch(() => null);
@@ -183,7 +239,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    reorderPositions(session.user.id, orderedIds);
+    await reorderPositions(session.user.id, resolved.portfolioId, orderedIds);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Portfolio PATCH error:", error);
@@ -202,13 +258,21 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
+    const resolved = await resolvePortfolioId(
+      session.user.id,
+      searchParams.get("portfolioId")
+    );
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+    }
+
     const id = searchParams.get("id");
 
     if (!id || id.trim().length === 0) {
       return NextResponse.json({ error: "id query parameter is required" }, { status: 400 });
     }
 
-    const positions = await deletePosition(session.user.id, id.trim());
+    const positions = await deletePosition(session.user.id, resolved.portfolioId, id.trim());
     return NextResponse.json(positions);
   } catch (error) {
     console.error("Portfolio DELETE error:", error);

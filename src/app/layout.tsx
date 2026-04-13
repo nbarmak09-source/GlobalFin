@@ -34,6 +34,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -42,9 +43,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <body
         className={`${sourceSans.variable} ${lexend.variable} ${ibmPlexMono.variable} font-sans antialiased min-h-screen w-full overflow-x-hidden flex flex-col`}
+        suppressHydrationWarning
       >
         <SessionProvider>{children}</SessionProvider>
       </body>

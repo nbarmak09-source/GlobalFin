@@ -70,7 +70,7 @@ function DashboardInner() {
 
   return (
     <div className="space-y-0 min-w-0">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+      <div className="flex flex-col gap-4 mb-6">
         <div>
           {firstName && (
             <p className="text-xs text-muted mb-1">
@@ -86,30 +86,38 @@ function DashboardInner() {
               : "Sectors, valuations, analyst activity, and headlines"}
           </p>
         </div>
-        <div className="flex items-center gap-1 rounded-lg bg-card border border-border p-0.5 w-fit">
+        <div
+          className="flex w-full max-w-full items-stretch gap-1 rounded-xl bg-card border border-border p-1 sm:inline-flex sm:w-fit sm:rounded-lg sm:p-0.5"
+          role="tablist"
+          aria-label="Dashboard view"
+        >
           <button
             type="button"
+            role="tab"
+            aria-selected={tab === "overview"}
             onClick={() => setTab("overview")}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-[500] rounded-md transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${
+            className={`flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-[500] transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent sm:flex-initial sm:rounded-md sm:px-4 sm:py-2 ${
               tab === "overview"
                 ? "bg-accent text-white shadow-[0_0_12px_rgba(201,162,39,0.3)]"
                 : "text-muted hover:text-foreground"
             }`}
           >
-            <LayoutGrid className="h-4 w-4" />
-            Overview
+            <LayoutGrid className="h-4 w-4 shrink-0" />
+            <span className="whitespace-nowrap">Overview</span>
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={tab === "markets"}
             onClick={() => setTab("markets")}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-[500] rounded-md transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${
+            className={`flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-[500] transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent sm:flex-initial sm:rounded-md sm:px-4 sm:py-2 ${
               tab === "markets"
                 ? "bg-accent text-white shadow-[0_0_12px_rgba(201,162,39,0.3)]"
                 : "text-muted hover:text-foreground"
             }`}
           >
-            <BarChart3 className="h-4 w-4" />
-            Markets
+            <BarChart3 className="h-4 w-4 shrink-0" />
+            <span className="whitespace-nowrap">Markets</span>
           </button>
         </div>
       </div>

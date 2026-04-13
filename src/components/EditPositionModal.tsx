@@ -6,12 +6,14 @@ import type { EnrichedPosition } from "@/lib/types";
 
 interface EditPositionModalProps {
   position: EnrichedPosition;
+  portfolioId: string;
   onClose: () => void;
   onSaved: () => void;
 }
 
 export default function EditPositionModal({
   position,
+  portfolioId,
   onClose,
   onSaved,
 }: EditPositionModalProps) {
@@ -38,11 +40,14 @@ export default function EditPositionModal({
         purchaseDate: purchaseDate || "",
       };
 
-      const res = await fetch("/api/portfolio", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `/api/portfolio?portfolioId=${encodeURIComponent(portfolioId)}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) {
         let message = "Failed to update position";

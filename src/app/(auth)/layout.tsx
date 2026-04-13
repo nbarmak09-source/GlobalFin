@@ -6,7 +6,7 @@ export default function AuthLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div
-      className="flex min-h-screen w-full flex-col items-center justify-center px-3 py-8 sm:px-4"
+      className="flex min-h-screen w-full flex-col items-center justify-center px-3 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] sm:px-4"
       style={{
         background:
           "radial-gradient(ellipse at 50% 0%, rgba(201,162,39,0.08) 0%, transparent 55%)",

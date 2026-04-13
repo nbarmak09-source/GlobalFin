@@ -22,6 +22,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   positions     Position[]
+  portfolios    Portfolio[]
   watchlistItems WatchlistItem[]
   pitches       Pitch[]
   alerts        Alert[]
@@ -61,10 +62,25 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
-// --- App: per-user portfolio & watchlist ---
+// --- App: per-user portfolios, positions & watchlist ---
+model Portfolio {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?  @db.Text
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  positions Position[]
+
+  @@index([userId])
+}
+
 model Position {
   id           String   @id @default(cuid())
   userId       String
+  portfolioId  String?  @map("portfolio_id")
   symbol       String
   name         String
   shares       Float
@@ -72,9 +88,11 @@ model Position {
   purchaseDate String?  @map("purchase_date") // YYYY-MM-DD
   sortOrder    Int      @default(0) @map("sort_order")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolio Portfolio? @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([portfolioId])
 }
 
 model WatchlistItem {

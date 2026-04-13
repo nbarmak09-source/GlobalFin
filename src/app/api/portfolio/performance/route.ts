@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPositions } from "@/lib/portfolio";
+import {
+  getPositions,
+  ensureDefaultPortfolio,
+  assertPortfolioOwnership,
+} from "@/lib/portfolio";
 import { getHistoricalData } from "@/lib/yahoo";
 import { getQuote } from "@/lib/yahoo";
 import { auth } from "@/lib/auth";
@@ -8,6 +12,24 @@ const PERIODS = ["1D", "5D", "1M", "1Y", "5Y"] as const;
 
 function toTimeMs(t: string | number): number {
   return typeof t === "number" ? t * 1000 : new Date(t).getTime();
+}
+
+async function resolvePortfolioId(
+  userId: string,
+  queryPortfolioId: string | null
+): Promise<
+  | { ok: true; portfolioId: string }
+  | { ok: false; status: number; error: string }
+> {
+  if (!queryPortfolioId) {
+    const def = await ensureDefaultPortfolio(userId);
+    return { ok: true, portfolioId: def.id };
+  }
+  const owned = await assertPortfolioOwnership(userId, queryPortfolioId);
+  if (!owned) {
+    return { ok: false, status: 403, error: "Invalid portfolio" };
+  }
+  return { ok: true, portfolioId: queryPortfolioId };
 }
 
 export async function GET(request: NextRequest) {
@@ -23,10 +45,22 @@ export async function GET(request: NextRequest) {
       ? period
       : "1Y";
 
-    const positions = await getPositions(session.user.id);
+    const resolved = await resolvePortfolioId(
+      session.user.id,
+      searchParams.get("portfolioId")
+    );
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+    }
+
+    const positions = await getPositions(session.user.id, resolved.portfolioId);
 
     if (positions.length === 0) {
-      return NextResponse.json([]);
+      return NextResponse.json({
+        series: [],
+        firstValue: 0,
+        lastValue: 0,
+      });
     }
 
     const symbolHistories = await Promise.all(
@@ -146,7 +180,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(series);
+    const firstValue = series.length > 0 ? series[0].value : 0;
+    const lastValue = series.length > 0 ? series[series.length - 1].value : 0;
+
+    return NextResponse.json({ series, firstValue, lastValue });
   } catch (error) {
     console.error("Portfolio performance error:", error);
     return NextResponse.json(

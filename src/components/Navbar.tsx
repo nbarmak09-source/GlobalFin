@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useTour } from "@/lib/useTour";
 import { Logo } from "@/components/Logo";
+import { useMobileNav } from "@/components/MobileNavProvider";
 import {
   LayoutDashboard,
   Search,
@@ -174,7 +175,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { openWelcome } = useTour(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const { menuOpen: mobileOpen, closeMenu, toggleMenu } = useMobileNav();
   const {
     open: accountOpen,
     setOpen: setAccountOpen,
@@ -182,9 +183,8 @@ export default function Navbar() {
   } = useDropdown();
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMobileOpen(false);
-  }, [pathname]);
+    closeMenu();
+  }, [pathname, closeMenu]);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
@@ -192,6 +192,15 @@ export default function Navbar() {
       document.body.style.overflow = "";
     };
   }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") closeMenu();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen, closeMenu]);
 
   // Group labels for mobile
   const mobileGroups = [
@@ -211,15 +220,20 @@ export default function Navbar() {
 
   return (
     <nav
-      className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur-md"
+      className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur-md pt-[env(safe-area-inset-top)]"
     >
       <div className="flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 sm:px-4">
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center min-h-[44px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-lg"
+          className="flex items-center min-h-[44px] min-w-0 shrink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-lg"
         >
-          <Logo />
+          <span className="md:hidden">
+            <Logo compact />
+          </span>
+          <span className="hidden md:block">
+            <Logo />
+          </span>
         </Link>
 
         {/* Desktop nav */}
@@ -305,92 +319,117 @@ export default function Navbar() {
         </div>
 
         {/* Mobile: hamburger */}
-        <div className="flex md:hidden items-center gap-2">
-          <span className="text-xs text-muted truncate max-w-[80px]">
-            {session?.user?.name ?? "You"}
-          </span>
+        <div className="flex md:hidden items-center gap-1">
           <button
             type="button"
-            onClick={() => setMobileOpen((v) => !v)}
+            onClick={() => toggleMenu()}
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-muted hover:bg-card-hover hover:text-foreground transition-colors duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            aria-controls="gcm-mobile-drawer"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile slide-down panel */}
+      {/* Mobile: backdrop + right drawer */}
       <div
-        className={`fixed inset-0 z-50 bg-background/95 backdrop-blur-sm md:hidden transition-opacity duration-200 ${
+        className={`fixed inset-0 z-50 md:hidden transition-opacity duration-200 ${
           mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         aria-hidden={!mobileOpen}
       >
-        <div className="flex flex-col h-full pt-16 pb-8 px-4 overflow-y-auto">
-          {mobileGroups.map(({ label: groupLabel, links }) => (
-            <div key={groupLabel} className="mb-4">
-              <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted/60">
-                {groupLabel}
-              </p>
-              <div className="flex flex-col gap-0.5">
-                {links.map(({ href, label, icon: Icon, exact }) => {
-                  const active = isActive(pathname, href, exact);
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-[500] transition-colors min-h-[44px] ${
-                        active
-                          ? "bg-accent/10 text-accent"
-                          : "text-muted hover:text-foreground hover:bg-card-hover"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-
-          {/* Account section */}
-          <div className="mt-auto pt-4 border-t border-border flex flex-col gap-1">
-            <span className="px-3 py-2 text-xs text-muted flex items-center gap-2">
-              <User className="h-4 w-4" />
-              {session?.user?.email ?? "Signed in"}
+        <button
+          type="button"
+          className="absolute inset-0 bg-black/55 backdrop-blur-[2px] cursor-pointer"
+          aria-label="Close menu"
+          onClick={() => closeMenu()}
+        />
+        <aside
+          id="gcm-mobile-drawer"
+          className={`absolute top-0 right-0 flex h-full w-[min(20.5rem,100vw)] flex-col border-l border-border bg-card shadow-2xl transition-transform duration-300 ease-out ${
+            mobileOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+              {session?.user?.name ?? session?.user?.email ?? "Account"}
             </span>
             <button
               type="button"
-              onClick={() => {
-                setMobileOpen(false);
-                localStorage.removeItem("gcm_tour_seen");
-                openWelcome();
-              }}
-              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors min-h-[44px]"
+              onClick={() => closeMenu()}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-card-hover hover:text-foreground transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              aria-label="Close menu"
             >
-              <Wand2 className="h-4 w-4" />
-              Take a tour
-            </button>
-            <Link
-              href="/account"
-              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors min-h-[44px]"
-              onClick={() => setMobileOpen(false)}
-            >
-              <User className="h-4 w-4" />
-              Account
-            </Link>
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors min-h-[44px]"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
+              <X className="h-5 w-5" />
             </button>
           </div>
-        </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
+            {mobileGroups.map(({ label: groupLabel, links }) => (
+              <div key={groupLabel} className="mb-3">
+                <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted/60">
+                  {groupLabel}
+                </p>
+                <div className="flex flex-col gap-0.5">
+                  {links.map(({ href, label, icon: Icon, exact }) => {
+                    const active = isActive(pathname, href, exact);
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => closeMenu()}
+                        className={`flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-[500] transition-colors cursor-pointer ${
+                          active
+                            ? "bg-accent/10 text-accent"
+                            : "text-muted hover:bg-card-hover hover:text-foreground"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            <div className="mt-auto flex flex-col gap-0.5 border-t border-border pt-3">
+              <span className="flex items-center gap-2 px-3 py-2 text-xs text-muted break-all">
+                <User className="h-4 w-4 shrink-0" />
+                {session?.user?.email ?? "Signed in"}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  closeMenu();
+                  localStorage.removeItem("gcm_tour_seen");
+                  openWelcome();
+                }}
+                className="flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer"
+              >
+                <Wand2 className="h-4 w-4 shrink-0" />
+                Take a tour
+              </button>
+              <Link
+                href="/account"
+                className="flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer"
+                onClick={() => closeMenu()}
+              >
+                <User className="h-4 w-4 shrink-0" />
+                Account
+              </Link>
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer"
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                Sign out
+              </button>
+            </div>
+          </div>
+        </aside>
       </div>
     </nav>
   );

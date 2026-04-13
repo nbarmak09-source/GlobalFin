@@ -40,6 +40,17 @@ export interface NewsArticle {
   summary: string;
 }
 
+/** Named portfolio container (user can have multiple). */
+export interface UserPortfolio {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  sortOrder: number;
+  createdAt: string;
+  positionCount: number;
+}
+
 export interface PortfolioPosition {
   id: string;
   symbol: string;

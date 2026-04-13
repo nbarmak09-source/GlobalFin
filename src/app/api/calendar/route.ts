@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getPositions, getWatchlist } from "@/lib/portfolio";
+import { getAllPositionsForUser, getWatchlist } from "@/lib/portfolio";
 import { getQuoteSummary } from "@/lib/yahoo";
 
 export interface CalendarEvent {
@@ -24,10 +24,14 @@ export async function GET(request: NextRequest) {
     const symbols: { symbol: string; name: string }[] = [];
 
     if (scope === "holdings" || scope === "all") {
-      const positions = await getPositions(session.user.id);
-      symbols.push(
-        ...positions.map((p) => ({ symbol: p.symbol, name: p.name }))
-      );
+      const positions = await getAllPositionsForUser(session.user.id);
+      const seen = new Set<string>();
+      for (const p of positions) {
+        if (!seen.has(p.symbol)) {
+          seen.add(p.symbol);
+          symbols.push({ symbol: p.symbol, name: p.name });
+        }
+      }
     }
 
     if (scope === "watchlist" || scope === "all") {
