@@ -318,8 +318,7 @@ export default function DiscoverTab() {
             Recent upgrades &amp; downgrades
           </h2>
           <p className="text-xs text-muted mb-4">
-            Last 60 days from Yahoo{" "}
-            <code className="text-[11px]">upgradeDowngradeHistory</code>.
+            Last 60 days · Click a row to open that symbol's analyst forecast, targets, and rating history.
           </p>
           <div className="rounded-2xl border border-border bg-card overflow-hidden">
             <div className="overflow-x-auto">
@@ -332,15 +331,18 @@ export default function DiscoverTab() {
                     <th className="text-left py-3 px-4">Action</th>
                     <th className="text-left py-3 px-4">From</th>
                     <th className="text-left py-3 px-4">To</th>
+                    <th className="py-3 px-4" />
                   </tr>
                 </thead>
                 <tbody>
                   {upgrades.map((u, i) => {
                     const badge = actionBadge(u.action);
+                    const forecastHref = `/stocks?symbol=${encodeURIComponent(u.symbol)}&tab=Forecast`;
                     return (
                       <tr
                         key={`${u.symbol}-${u.date}-${i}`}
-                        className="border-b border-border/50 hover:bg-card-hover/50 transition-colors"
+                        className="border-b border-border/50 hover:bg-card-hover/50 transition-colors group cursor-pointer"
+                        onClick={() => { window.location.href = forecastHref; }}
                       >
                         <td className="py-2.5 px-4 text-xs text-muted whitespace-nowrap">
                           {new Date(u.date).toLocaleDateString("en-US", {
@@ -350,7 +352,8 @@ export default function DiscoverTab() {
                         </td>
                         <td className="py-2.5 px-4">
                           <Link
-                            href={`/stocks?symbol=${encodeURIComponent(u.symbol)}`}
+                            href={forecastHref}
+                            onClick={(e) => e.stopPropagation()}
                             className="font-semibold text-accent hover:underline"
                           >
                             {u.symbol}
@@ -368,6 +371,17 @@ export default function DiscoverTab() {
                         </td>
                         <td className="py-2.5 px-4 text-xs">{u.fromGrade || "—"}</td>
                         <td className="py-2.5 px-4 text-xs font-medium">{u.toGrade || "—"}</td>
+                        <td className="py-2.5 px-4 text-right">
+                          <Link
+                            href={forecastHref}
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap hover:underline"
+                            aria-label={`Open analyst forecast for ${u.symbol}`}
+                          >
+                            View analyst data
+                            <ChevronRight className="h-3 w-3" />
+                          </Link>
+                        </td>
                       </tr>
                     );
                   })}

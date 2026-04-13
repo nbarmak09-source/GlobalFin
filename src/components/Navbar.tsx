@@ -35,13 +35,16 @@ import {
 const TOP_LINKS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/supply-chain", label: "Supply Chain", icon: Boxes, exact: true },
-  { href: "/research", label: "Research", icon: Search, exact: false },
   { href: "/fixed-income", label: "Fixed Income", icon: LineChart, exact: false },
   { href: "/alternatives", label: "Alternatives", icon: Building2, exact: false },
-  { href: "/ecm", label: "Equities", icon: Briefcase, exact: false },
 ];
 
 // ── dropdown groups ─────────────────────────────────────────────────────────
+const EQUITIES_ITEMS = [
+  { href: "/ecm", label: "Equities", icon: Briefcase, desc: "Indices, sectors, deal flow & equity news" },
+  { href: "/research", label: "Equity Research", icon: Search, desc: "Analyst picks, upgrades & market ideas" },
+];
+
 const INVESTING_ITEMS = [
   { href: "/portfolio", label: "Portfolio", icon: Briefcase, desc: "Positions, P&L, and watchlist" },
   { href: "/stocks", label: "Stocks", icon: CandlestickChart, desc: "Single-name fundamentals" },
@@ -209,6 +212,10 @@ export default function Navbar() {
       links: TOP_LINKS.map((l) => ({ ...l })),
     },
     {
+      label: "Equities",
+      links: EQUITIES_ITEMS.map((i) => ({ ...i, exact: false })),
+    },
+    {
       label: "Investing",
       links: INVESTING_ITEMS.map((i) => ({ ...i, exact: false })),
     },
@@ -248,6 +255,12 @@ export default function Navbar() {
               pathname={pathname}
             />
           ))}
+          <DropdownGroup
+            label="Equities"
+            icon={Briefcase}
+            items={EQUITIES_ITEMS}
+            pathname={pathname}
+          />
           <DropdownGroup
             label="Investing"
             icon={TrendingUp}
