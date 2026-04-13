@@ -2,8 +2,9 @@
 -- RLS is intentionally enabled without any permissive policies so that
 -- PostgREST (anon/authenticated) cannot access rows by default.
 -- Your Next.js server uses the DB connection directly via Prisma.
-
-ALTER TABLE "prisma_migrations" ENABLE ROW LEVEL SECURITY;
+--
+-- Do not ALTER "_prisma_migrations" here: wrong name breaks deploy, and RLS on
+-- Prisma's migration table is unnecessary.
 
 -- NextAuth (Prisma Adapter) tables
 ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
