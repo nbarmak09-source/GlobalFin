@@ -1,8 +1,9 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Cpu } from "lucide-react";
+import { Cpu, Flame } from "lucide-react";
 import SemiconductorView from "@/components/supply-chain/SemiconductorView";
+import OilGasView from "@/components/supply-chain/OilGasView";
 
 interface Industry {
   id: string;
@@ -16,6 +17,11 @@ const INDUSTRIES: Industry[] = [
     id: "semiconductors",
     label: "Semiconductors",
     icon: <Cpu className="h-4 w-4" />,
+  },
+  {
+    id: "oil-gas",
+    label: "Oil & Gas",
+    icon: <Flame className="h-4 w-4" />,
   },
 ];
 
@@ -65,6 +71,7 @@ export default function SupplyChainPage() {
 
       {/* Industry content */}
       {activeIndustry === "semiconductors" && <SemiconductorView />}
+      {activeIndustry === "oil-gas" && <OilGasView />}
     </div>
   );
 }

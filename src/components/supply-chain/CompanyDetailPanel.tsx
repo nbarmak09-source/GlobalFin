@@ -108,10 +108,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 const LAYER_COLORS: Record<string, string> = {
   L1: "#7c3aed", L2: "#2563eb", L3: "#0d9488",
   L4: "#d97706", L5: "#dc2626", L6: "#f472b6",
+  // Oil & Gas layers
+  "OG-L1": "#d97706", "OG-L2": "#0369a1",
+  "OG-L3": "#0d9488", "OG-L4": "#7c3aed",
 };
 
-function LayerTrack({ currentId }: { currentId: string }) {
-  const allLayers = SUPPLY_CHAIN_LAYERS_DATA.layers;
+function LayerTrack({
+  currentId,
+  layers,
+}: {
+  currentId: string;
+  layers?: SupplyChainLayer[];
+}) {
+  const allLayers = layers ?? SUPPLY_CHAIN_LAYERS_DATA.layers;
   return (
     <div className="flex items-center gap-1.5">
       {allLayers.map((l) => {
@@ -194,6 +203,9 @@ function TetherBar({ score, lordName }: { score: number; lordName: string }) {
 const LAYER_LEFT_BORDER: Record<string, string> = {
   L1: "#4c1d95", L2: "#1e3a8a", L3: "#134e4a",
   L4: "#92400e", L5: "#9a3412", L6: "#fbcfe8",
+  // Oil & Gas layers
+  "OG-L1": "#d97706", "OG-L2": "#0369a1",
+  "OG-L3": "#0d9488", "OG-L4": "#7c3aed",
 };
 
 // ─── Main panel ───────────────────────────────────────────────────────────────
@@ -203,6 +215,12 @@ export interface CompanyDetailPanelProps {
   layer: SupplyChainLayer;
   quote: StockQuote | undefined;
   onClose: () => void;
+  /** Override the layer sequence shown in the LayerTrack dot track. Pass the
+   *  current industry's layers array so the track renders the correct IDs. */
+  layers?: SupplyChainLayer[];
+  /** Which secondary action button to show in the footer.
+   *  Defaults to "ecosystem" (semiconductor AI ecosystem link). */
+  secondaryAction?: "ecosystem" | "commodity-flows";
 }
 
 export default function CompanyDetailPanel({
@@ -210,6 +228,8 @@ export default function CompanyDetailPanel({
   layer,
   quote,
   onClose,
+  layers,
+  secondaryAction = "ecosystem",
 }: CompanyDetailPanelProps) {
   const router = useRouter();
   const sym = company.ticker?.toUpperCase() ?? null;
@@ -307,7 +327,7 @@ export default function CompanyDetailPanel({
           <div className="space-y-3">
             <SectionLabel>Layer Position</SectionLabel>
 
-            <LayerTrack currentId={layer.id} />
+            <LayerTrack currentId={layer.id} layers={layers} />
 
             <div className="rounded-xl border border-border bg-background/40 px-4 py-3 space-y-2">
               <div className="flex items-start justify-between gap-3">
@@ -405,17 +425,31 @@ export default function CompanyDetailPanel({
               Full Stock Analysis
             </a>
           )}
-          <button
-            type="button"
-            onClick={() => {
-              router.push("/supply-chain?industry=semiconductors&view=ecosystem");
-              onClose();
-            }}
-            className="flex items-center justify-center gap-2 w-full rounded-lg border border-border bg-card text-sm font-medium text-foreground py-2.5 hover:bg-card-hover transition-colors"
-          >
-            <Network className="h-4 w-4" />
-            View in Ecosystem Map
-          </button>
+          {secondaryAction === "commodity-flows" ? (
+            <button
+              type="button"
+              onClick={() => {
+                router.push("/supply-chain?industry=oil-gas&view=commodity-flows");
+                onClose();
+              }}
+              className="flex items-center justify-center gap-2 w-full rounded-lg border border-border bg-card text-sm font-medium text-foreground py-2.5 hover:bg-card-hover transition-colors"
+            >
+              <Network className="h-4 w-4" />
+              View Commodity Flows
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                router.push("/supply-chain?industry=semiconductors&view=ecosystem");
+                onClose();
+              }}
+              className="flex items-center justify-center gap-2 w-full rounded-lg border border-border bg-card text-sm font-medium text-foreground py-2.5 hover:bg-card-hover transition-colors"
+            >
+              <Network className="h-4 w-4" />
+              View in Ecosystem Map
+            </button>
+          )}
         </div>
       </div>
       </div>

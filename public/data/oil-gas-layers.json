@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "description": "Oil & Gas supply-chain layers (upstream through oilfield services). Same schema as supply-chain-layers.json; tickers link to listed equities where applicable.",
+  "layers": [
+    {
+      "id": "OG-L1",
+      "name": "Upstream (E&P)",
+      "nickname": "The wellhead — reserves, rigs, and resource extraction",
+      "color": "amber",
+      "bottleneckRisk": "high",
+      "companies": [
+        {
+          "ticker": "XOM",
+          "name": "ExxonMobil",
+          "role": "Permian & Deepwater Integrated Major",
+          "moatType": "oligopoly",
+          "moatSummary": "World-class project execution and balance-sheet depth let XOM outspend peers through down-cycles, locking in acreage others must sell.",
+          "concentrationNote": "Global E&P Oligopoly"
+        },
+        {
+          "ticker": "CVX",
+          "name": "Chevron",
+          "role": "Permian & LNG Integrated Major",
+          "moatType": "oligopoly",
+          "moatSummary": "Low-cost Permian position and long-term LNG offtake contracts generate resilient FCF well below $50/bbl breakeven.",
+          "concentrationNote": "Global E&P Oligopoly"
+        },
+        {
+          "ticker": "COP",
+          "name": "ConocoPhillips",
+          "role": "Pure-Play Low-Cost E&P",
+          "moatType": "leader",
+          "moatSummary": "Disciplined capital returns and a sub-$35/bbl cost of supply across a diversified multi-basin portfolio.",
+          "concentrationNote": "US Pure-Play E&P Leader"
+        },
+        {
+          "ticker": "EOG",
+          "name": "EOG Resources",
+          "role": "Shale Technology Pioneer",
+          "moatType": "leader",
+          "moatSummary": "Proprietary data and drilling efficiency keep EOG's well costs 15–20% below peers — the closest thing to a technology moat in unconventionals.",
+          "concentrationNote": "Shale Technology Leader"
+        },
+        {
+          "ticker": "BP",
+          "name": "BP",
+          "role": "Transitioning Integrated Major",
+          "moatType": "oligopoly",
+          "moatSummary": "Legacy deepwater and gas assets fund a multi-decade transition portfolio; execution risk remains the key overhang.",
+          "concentrationNote": "Global E&P Oligopoly"
+        },
+        {
+          "ticker": "SHEL",
+          "name": "Shell",
+          "role": "LNG & Trading Integrated Major",
+          "moatType": "oligopoly",
+          "moatSummary": "Largest global LNG portfolio and best-in-class commodities trading desk extract margin that pure E&Ps cannot access.",
+          "concentrationNote": "Global LNG Oligopoly"
+        },
+        {
+          "ticker": "2222.SR",
+          "name": "Saudi Aramco",
+          "role": "National Reserve Monopoly",
+          "moatType": "monopoly",
+          "moatSummary": "Sole legal producer of Saudi reserves — the world's lowest-cost barrel at ~$3/bbl lifting cost with no competitive threat structurally possible.",
+          "concentrationNote": "Saudi National Monopoly"
+        },
+        {
+          "ticker": "TTE",
+          "name": "TotalEnergies",
+          "role": "African & LNG Integrated Major",
+          "moatType": "oligopoly",
+          "moatSummary": "Deep African production base and growing LNG position in Qatar and Mozambique underpin a 30-year reserve life.",
+          "concentrationNote": "Global E&P Oligopoly"
+        },
+        {
+          "ticker": "EQNR",
+          "name": "Equinor",
+          "role": "North Sea State-Backed E&P",
+          "moatType": "leader",
+          "moatSummary": "Norwegian sovereign backing and best-in-class North Sea operatorship give EQNR a cost of equity that private peers cannot match.",
+          "concentrationNote": "State-Backed E&P"
+        }
+      ]
+    },
+    {
+      "id": "OG-L2",
+      "name": "Midstream",
+      "nickname": "The arterial network — pipelines, storage, and LNG terminals",
+      "color": "blue",
+      "bottleneckRisk": "critical",
+      "companies": [
+        {
+          "ticker": "KMI",
+          "name": "Kinder Morgan",
+          "role": "Natural Gas Pipeline Network",
+          "moatType": "toll",
+          "moatSummary": "40% of US natural gas flows through KMI infrastructure — fee-based contracts insulate earnings from commodity prices entirely.",
+          "concentrationNote": "US Gas Pipeline Toll Road"
+        },
+        {
+          "ticker": "EPD",
+          "name": "Enterprise Products",
+          "role": "NGL & Crude Pipeline MLP",
+          "moatType": "toll",
+          "moatSummary": "Largest NGL pipeline network in the US with fully integrated fractionation and export terminals — near-impossible to replicate at any cost.",
+          "concentrationNote": "NGL Toll Road MLP"
+        },
+        {
+          "ticker": "WMB",
+          "name": "Williams Cos.",
+          "role": "Deepwater & Appalachian Gas Gatherer",
+          "moatType": "toll",
+          "moatSummary": "Transco — the single highest-volume natural gas pipeline in the US — collects regulated tariffs on every molecule moving from Gulf to Northeast.",
+          "concentrationNote": "US Gas Gathering Toll"
+        },
+        {
+          "ticker": "ET",
+          "name": "Energy Transfer",
+          "role": "Diversified Midstream MLP",
+          "moatType": "toll",
+          "moatSummary": "Vast multi-commodity network covering crude, NGL, and natural gas across 38 states — scale creates cost advantages no new entrant can close.",
+          "concentrationNote": "Diversified Pipeline MLP"
+        },
+        {
+          "ticker": "ENB",
+          "name": "Enbridge",
+          "role": "North American Crude Oil Mainline",
+          "moatType": "toll",
+          "moatSummary": "Mainline system moves ~30% of all North American crude exports; regulated return structure makes it a pipeline utility masquerading as a cyclical.",
+          "concentrationNote": "Canadian Crude Toll Road"
+        },
+        {
+          "ticker": "TRP",
+          "name": "TC Energy",
+          "role": "North American Gas Transmission",
+          "moatType": "toll",
+          "moatSummary": "NGTL and Coastal GasLink underpin a regulated asset base with 95%+ contracted cash flows — closest thing to a bond in the energy sector.",
+          "concentrationNote": "Canadian Gas Transmission"
+        }
+      ]
+    },
+    {
+      "id": "OG-L3",
+      "name": "Downstream",
+      "nickname": "The conversion layer — crude into fuels, plastics, and chemicals",
+      "color": "teal",
+      "bottleneckRisk": "medium",
+      "companies": [
+        {
+          "ticker": "VLO",
+          "name": "Valero Energy",
+          "role": "Independent Refining Leader",
+          "moatType": "utility",
+          "moatSummary": "Scale and complexity advantage across 15 refineries let VLO run the widest range of feedstocks — heavy sour crude discounts drive outsized crack spreads.",
+          "concentrationNote": "US Refining Utility"
+        },
+        {
+          "ticker": "PSX",
+          "name": "Phillips 66",
+          "role": "Diversified Midstream-Refiner",
+          "moatType": "utility",
+          "moatSummary": "Midstream and chemicals segments dampen pure refining cyclicality; CPChem JV is a low-cost petrochemical compounder.",
+          "concentrationNote": "Integrated Refiner-Midstream"
+        },
+        {
+          "ticker": "MPC",
+          "name": "Marathon Petroleum",
+          "role": "MPLX-Linked Refining Operator",
+          "moatType": "utility",
+          "moatSummary": "GP economics from MPLX MLP generate recurring fee income that smooths refining margin volatility — effective self-funded midstream toll road.",
+          "concentrationNote": "Refiner with MLP GP"
+        },
+        {
+          "ticker": "DINO",
+          "name": "HF Sinclair",
+          "role": "Mid-Continent Refiner",
+          "moatType": "utility",
+          "moatSummary": "Rocky Mountain and mid-continent positioning captures landlocked crude discounts unavailable to coastal peers; Renewables segment adds optionality.",
+          "concentrationNote": "Mid-Continent Niche Refiner"
+        },
+        {
+          "ticker": "NESTE.HE",
+          "name": "Neste",
+          "role": "Renewable Diesel Pioneer",
+          "moatType": "leader",
+          "moatSummary": "First-mover in hydrotreated vegetable oil (HVO) with the lowest carbon-intensity score in the sector — regulatory mandates create captive demand competitors cannot yet serve.",
+          "concentrationNote": "Renewable Diesel Leader"
+        },
+        {
+          "ticker": "RELIANCE.NS",
+          "name": "Reliance Industries",
+          "role": "World-Scale Integrated Refinery",
+          "moatType": "oligopoly",
+          "moatSummary": "Jamnagar is the world's largest single-site refinery complex — complexity and scale produce per-barrel margins unachievable at any smaller facility.",
+          "concentrationNote": "World-Scale Refinery"
+        }
+      ]
+    },
+    {
+      "id": "OG-L4",
+      "name": "Oilfield Services & Equipment",
+      "nickname": "The enabling layer — drilling tech, completion, and subsea systems",
+      "color": "purple",
+      "bottleneckRisk": "high",
+      "companies": [
+        {
+          "ticker": "SLB",
+          "name": "Schlumberger",
+          "role": "Integrated OFS Technology Lord",
+          "moatType": "lord",
+          "moatSummary": "Proprietary digital platform (Delfi), deepwater subsea tech, and a service footprint in 120 countries make SLB the operating system that the entire upstream industry runs on.",
+          "concentrationNote": "OFS Technology Lord"
+        },
+        {
+          "ticker": "HAL",
+          "name": "Halliburton",
+          "role": "Completion & Stimulation Leader",
+          "moatType": "vassal",
+          "moatSummary": "Best-in-class hydraulic fracturing execution in North American unconventionals, but reliant on SLB's technology ecosystem for deepwater and digital capabilities.",
+          "concentrationNote": "NA Completion Vassal"
+        },
+        {
+          "ticker": "BKR",
+          "name": "Baker Hughes",
+          "role": "Equipment & Digital OFS",
+          "moatType": "vassal",
+          "moatSummary": "Industrial Internet platform from GE heritage gives BKR a digital edge, but LNG equipment and turbomachinery are the only segments with structural moat independent of SLB.",
+          "concentrationNote": "OFS Equipment Vassal"
+        },
+        {
+          "ticker": "NOV",
+          "name": "NOV Inc.",
+          "role": "Drilling Equipment Manufacturer",
+          "moatType": "oligopoly",
+          "moatSummary": "Monopoly-like positions in rig components (top drives, iron roughnecks) mean every new rig built globally uses NOV parts — switching cost is a full rig rebuild.",
+          "concentrationNote": "Rig Equipment Oligopoly"
+        },
+        {
+          "ticker": "FTI",
+          "name": "TechnipFMC",
+          "role": "Subsea Technology Specialist",
+          "moatType": "duopoly",
+          "moatSummary": "With Subsea 7, FTI controls the integrated EPCI market for deepwater tiebacks — no deepwater project can be sanctioned without one of these two.",
+          "concentrationNote": "Subsea EPCI Duopoly"
+        }
+      ]
+    }
+  ]
+}
