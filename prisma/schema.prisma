@@ -18,6 +18,10 @@ model User {
   image         String?
   bio           String?   @db.Text
   createdAt     DateTime  @default(now())
+  /** default | portfolio | custom — custom uses tickerTapeSymbols (max 10) */
+  tickerTapeMode    String   @default("default") @map("ticker_tape_mode")
+  /** JSON string[] of Yahoo symbols when mode is custom */
+  tickerTapeSymbols Json?    @map("ticker_tape_symbols")
   hashedPassword String?  // for credentials provider
   accounts      Account[]
   sessions      Session[]

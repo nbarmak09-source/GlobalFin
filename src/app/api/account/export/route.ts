@@ -13,7 +13,12 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { name: true, email: true },
+      select: {
+        name: true,
+        email: true,
+        tickerTapeMode: true,
+        tickerTapeSymbols: true,
+      },
     });
 
     const [positions, watchlist, pitches, alerts] = await Promise.all([
@@ -27,7 +32,12 @@ export async function GET() {
     const body = JSON.stringify(
       {
         exportedAt,
-        user: { name: user?.name ?? null, email: user?.email ?? null },
+        user: {
+          name: user?.name ?? null,
+          email: user?.email ?? null,
+          tickerTapeMode: user?.tickerTapeMode ?? null,
+          tickerTapeSymbols: user?.tickerTapeSymbols ?? null,
+        },
         positions,
         watchlist,
         pitches,

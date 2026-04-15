@@ -1,6 +1,17 @@
+import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  TICKER_TAPE_MAX_SYMBOLS,
+  TICKER_TAPE_MODES,
+  type TickerTapeMode,
+  parseCustomTickerSymbols,
+} from "@/lib/tickerTape";
+
+function isTickerTapeMode(v: unknown): v is TickerTapeMode {
+  return typeof v === "string" && (TICKER_TAPE_MODES as readonly string[]).includes(v);
+}
 
 export async function GET() {
   try {
@@ -20,6 +31,8 @@ export async function GET() {
           image: true,
           bio: true,
           createdAt: true,
+          tickerTapeMode: true,
+          tickerTapeSymbols: true,
         },
       }),
       prisma.account.findMany({
@@ -32,6 +45,8 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const customSyms = parseCustomTickerSymbols(user.tickerTapeSymbols);
+
     return NextResponse.json({
       name: user.name,
       email: user.email,
@@ -40,6 +55,10 @@ export async function GET() {
       bio: user.bio,
       createdAt: user.createdAt,
       providers: accounts.map((a) => a.provider),
+      tickerTapeMode: (isTickerTapeMode(user.tickerTapeMode)
+        ? user.tickerTapeMode
+        : "default") as TickerTapeMode,
+      tickerTapeSymbols: customSyms,
     });
   } catch (e) {
     console.error("GET /api/account/profile:", e);
@@ -57,6 +76,8 @@ export async function PATCH(request: NextRequest) {
     const body = (await request.json().catch(() => null)) as {
       name?: unknown;
       bio?: unknown;
+      tickerTapeMode?: unknown;
+      tickerTapeSymbols?: unknown;
     } | null;
     if (!body || typeof body !== "object") {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
@@ -64,6 +85,8 @@ export async function PATCH(request: NextRequest) {
 
     const nameRaw = body.name;
     const bioRaw = body.bio;
+    const tickerTapeModeRaw = body.tickerTapeMode;
+    const tickerTapeSymbolsRaw = body.tickerTapeSymbols;
 
     if (nameRaw !== undefined) {
       if (typeof nameRaw !== "string") {
@@ -87,9 +110,72 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const data: { name?: string; bio?: string | null } = {};
+    if (tickerTapeModeRaw !== undefined && !isTickerTapeMode(tickerTapeModeRaw)) {
+      return NextResponse.json(
+        { error: "tickerTapeMode must be default, portfolio, or custom" },
+        { status: 400 }
+      );
+    }
+
+    if (tickerTapeSymbolsRaw !== undefined && !Array.isArray(tickerTapeSymbolsRaw)) {
+      return NextResponse.json(
+        { error: "tickerTapeSymbols must be an array of strings" },
+        { status: 400 }
+      );
+    }
+
+    const hasTickerPatch =
+      tickerTapeModeRaw !== undefined || tickerTapeSymbolsRaw !== undefined;
+
+    let existingTicker: { tickerTapeMode: string | null; tickerTapeSymbols: unknown } | null =
+      null;
+    if (hasTickerPatch) {
+      existingTicker = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tickerTapeMode: true, tickerTapeSymbols: true },
+      });
+    }
+
+    const data: Prisma.UserUpdateInput = {};
     if (nameRaw !== undefined) data.name = (nameRaw as string).trim();
     if (bioRaw !== undefined) data.bio = bioRaw === null ? null : (bioRaw as string);
+
+    if (tickerTapeModeRaw !== undefined) {
+      data.tickerTapeMode = tickerTapeModeRaw;
+    }
+
+    if (tickerTapeSymbolsRaw !== undefined) {
+      const parsed = parseCustomTickerSymbols(tickerTapeSymbolsRaw);
+      if (parsed.length === 0) {
+        return NextResponse.json(
+          { error: `Add 1–${TICKER_TAPE_MAX_SYMBOLS} ticker symbols for custom tape` },
+          { status: 400 }
+        );
+      }
+      data.tickerTapeSymbols = parsed;
+      if (tickerTapeModeRaw === undefined) {
+        data.tickerTapeMode = "custom";
+      }
+    }
+
+    if (hasTickerPatch) {
+      const nextMode: TickerTapeMode =
+        data.tickerTapeMode !== undefined && isTickerTapeMode(data.tickerTapeMode)
+          ? data.tickerTapeMode
+          : isTickerTapeMode(existingTicker?.tickerTapeMode)
+            ? existingTicker!.tickerTapeMode
+            : "default";
+      const nextSyms =
+        data.tickerTapeSymbols !== undefined
+          ? parseCustomTickerSymbols(data.tickerTapeSymbols)
+          : parseCustomTickerSymbols(existingTicker?.tickerTapeSymbols);
+      if (nextMode === "custom" && nextSyms.length === 0) {
+        return NextResponse.json(
+          { error: `Add 1–${TICKER_TAPE_MAX_SYMBOLS} ticker symbols for custom tape` },
+          { status: 400 }
+        );
+      }
+    }
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
@@ -106,10 +192,20 @@ export async function PATCH(request: NextRequest) {
         image: true,
         bio: true,
         createdAt: true,
+        tickerTapeMode: true,
+        tickerTapeSymbols: true,
       },
     });
 
-    return NextResponse.json(updated);
+    const customSyms = parseCustomTickerSymbols(updated.tickerTapeSymbols);
+
+    return NextResponse.json({
+      ...updated,
+      tickerTapeMode: (isTickerTapeMode(updated.tickerTapeMode)
+        ? updated.tickerTapeMode
+        : "default") as TickerTapeMode,
+      tickerTapeSymbols: customSyms,
+    });
   } catch (e) {
     console.error("PATCH /api/account/profile:", e);
     return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });

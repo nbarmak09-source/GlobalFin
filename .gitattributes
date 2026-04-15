@@ -1,0 +1,2 @@
+# Stable checksums for Prisma migration.sql (avoid CRLF vs LF drift)
+prisma/migrations/**/migration.sql text eol=lf

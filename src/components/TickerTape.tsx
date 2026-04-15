@@ -81,7 +81,22 @@ export default function TickerTape() {
     );
   }
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return (
+      <div
+        data-gcm-ticker
+        className="h-10 bg-card border-b border-border flex items-center justify-center px-3 gap-2"
+      >
+        <span className="text-muted text-[11px] sm:text-xs text-center leading-snug">
+          Ticker tape: no live quotes yet (retrying every 15s). Check your connection, or{" "}
+          <Link href="/account" className="text-accent hover:underline shrink-0">
+            Account
+          </Link>{" "}
+          for tape visibility and the default symbol list.
+        </span>
+      </div>
+    );
+  }
 
   const duplicated = [...items, ...items];
 

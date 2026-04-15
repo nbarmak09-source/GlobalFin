@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import type { TickerItem } from "@/lib/types";
 
-const INDEX_SYMBOLS = ["^GSPC", "000001.SS", "^N225", "^FTSE", "^GSPTSE"];
+const INDEX_SYMBOLS = ["^GSPC", "^DJI", "^IXIC", "^VIX", "^GSPTSE"];
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: "$",

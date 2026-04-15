@@ -11,7 +11,7 @@ export default function AppLayout({
   return (
     <AppTourShell>
       <TickerTapePreference />
-      <div className="hidden sm:block" data-gcm-ticker>
+      <div data-gcm-ticker>
         <TickerTape />
       </div>
       <MobileNavProvider>

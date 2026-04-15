@@ -12,9 +12,16 @@ import {
   getIndexCurrency,
   getMarketMoversBoard,
 } from "@/lib/yahoo";
+import { auth } from "@/lib/auth";
+import { resolveTickerSymbolsForUser } from "@/lib/tickerTape";
 
 const JSON_CACHE_HEADERS = {
   "Cache-Control": "private, max-age=15, stale-while-revalidate=45",
+} as const;
+
+/** Per-user symbol list — private cache only. */
+const TICKER_CACHE_HEADERS = {
+  "Cache-Control": "private, max-age=12, stale-while-revalidate=48",
 } as const;
 
 export async function GET(request: NextRequest) {
@@ -28,8 +35,12 @@ export async function GET(request: NextRequest) {
   try {
     switch (action) {
       case "ticker": {
-        const data = await getTickerData();
-        return NextResponse.json(data);
+        const session = await auth();
+        const symbols = await resolveTickerSymbolsForUser(
+          session?.user?.id ?? null
+        );
+        const data = await getTickerData(symbols);
+        return NextResponse.json(data, { headers: TICKER_CACHE_HEADERS });
       }
 
       case "quote": {
@@ -46,7 +57,7 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: "Symbols required" }, { status: 400 });
         const symbolList = symbols.split(",");
         const data = await getMultipleQuotes(symbolList);
-        return NextResponse.json(data);
+        return NextResponse.json(data, { headers: JSON_CACHE_HEADERS });
       }
 
       case "history": {
@@ -61,9 +72,15 @@ export async function GET(request: NextRequest) {
             ...d,
             closeUSD: d.close * rate,
           }));
-          return NextResponse.json({ points: withUSD, currency: cur, fxRate: rate });
+          return NextResponse.json(
+            { points: withUSD, currency: cur, fxRate: rate },
+            { headers: JSON_CACHE_HEADERS }
+          );
         }
-        return NextResponse.json({ points: data, currency: "USD", fxRate: 1 });
+        return NextResponse.json(
+          { points: data, currency: "USD", fxRate: 1 },
+          { headers: JSON_CACHE_HEADERS }
+        );
       }
 
       case "search": {

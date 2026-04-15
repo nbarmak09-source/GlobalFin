@@ -186,7 +186,22 @@ export default function StocksMarketMovers({ onSelectSymbol }: StocksMarketMover
     PANELS.every((p) => (data[p.key]?.length ?? 0) === 0);
 
   if (isEmpty) {
-    return null;
+    return (
+      <section className="rounded-xl border border-border bg-card/60 p-4 text-sm text-muted">
+        <p className="text-foreground font-medium mb-1">Market movers unavailable</p>
+        <p className="text-xs leading-relaxed mb-3">
+          Day gainers, losers, and most active lists load from Yahoo Finance. If they are empty, try again in a
+          moment or open the screener. Your <span className="text-muted">Recent</span> list is stored locally and
+          always shows here.
+        </p>
+        <Link
+          href="/screener?preset=gainers"
+          className="text-xs font-medium text-accent hover:underline"
+        >
+          Open screener →
+        </Link>
+      </section>
+    );
   }
 
   return (

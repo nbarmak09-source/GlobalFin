@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "ulimit -n 10240 2>/dev/null; next dev -p 3000 -H 127.0.0.1",
+    "db:fix-rls-checksum": "node scripts/fix-rls-migration-checksum.cjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

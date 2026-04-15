@@ -22,66 +22,33 @@ function yahooOptionalNum(v: unknown): number | undefined {
   return undefined;
 }
 
-/** Symbols for the header ticker tape: indices, commodities, then US mega-caps & supply-chain names. */
-const TICKER_SYMBOLS = [
-  // US & major global indices
+/**
+ * Default header ticker when the user has not chosen portfolio/custom (or is logged out).
+ * Keep index symbols in sync with `INDEX_SYMBOLS` in `MarketOverview.tsx` for dashboard index cards.
+ */
+export const DEFAULT_TICKER_SYMBOLS = [
   "^GSPC",
   "^DJI",
   "^IXIC",
-  "^RUT",
   "^VIX",
-  "^GDAXI",
-  "^FCHI",
-  "^STOXX50E",
-  "^FTSE",
   "^GSPTSE",
-  "000001.SS",
-  "^N225",
-  "^HSI",
-  "^NSEI",
-  "^AXJO",
-  "^BVSP",
-  "^KS11",
-  // Commodities & materials proxies
   "GC=F",
-  "SI=F",
-  "HG=F",
-  "PA=F",
   "CL=F",
-  "BZ=F",
-  "NG=F",
-  "ZC=F",
-  "LIT",
-  // US equities
   "AAPL",
   "MSFT",
   "GOOGL",
-  "GOOG",
   "AMZN",
   "NVDA",
   "TSLA",
   "META",
   "BRK-B",
-  "JPM",
-  "V",
-  "UNH",
-  "XOM",
-  "JNJ",
-  "WMT",
-  // Supply chain / Bottleneck Monitor (also on ticker tape)
-  "SNPS",
-  "CDNS",
-  "ARM",
-  "ASML",
+  "ORCL",
+  "BTC-USD",
   "TSM",
-  "MU",
+  "ASML",
   "AVGO",
-  "MRVL",
-  "VRT",
-  "ETN",
-  "SBGSY",
-  "CEG",
-  "VST",
+  "MU",
+  "SNPS",
 ];
 
 /** Short labels for indices, futures, and ETFs where Yahoo names are noisy. */
@@ -89,69 +56,16 @@ const SYMBOL_DISPLAY_NAMES: Record<string, string> = {
   "^GSPC": "S&P 500",
   "^DJI": "Dow Jones",
   "^IXIC": "Nasdaq Composite",
-  "^RUT": "Russell 2000",
   "^VIX": "VIX",
-  "^GDAXI": "DAX",
-  "^FCHI": "CAC 40",
-  "^STOXX50E": "Euro Stoxx 50",
-  "^FTSE": "FTSE 100",
   "^GSPTSE": "S&P/TSX",
-  "000001.SS": "SSE Composite",
-  "^N225": "Nikkei 225",
-  "^HSI": "Hang Seng",
-  "^NSEI": "Nifty 50",
-  "^AXJO": "ASX 200",
-  "^BVSP": "Bovespa",
-  "^KS11": "KOSPI",
   "GC=F": "Gold",
-  "SI=F": "Silver",
-  "HG=F": "Copper",
-  "PA=F": "Palladium",
   "CL=F": "WTI Crude",
-  "BZ=F": "Brent Crude",
-  "NG=F": "Natural Gas",
-  "ZC=F": "Corn",
-  "LIT": "Lithium (LIT ETF)",
+  "BTC-USD": "Bitcoin",
 };
 
 const INDEX_CURRENCIES: Record<string, string> = {
-  "000001.SS": "CNY",
-  "^N225": "JPY",
-  "^FTSE": "GBP",
   "^GSPTSE": "CAD",
-  "^GDAXI": "EUR",
-  "^FCHI": "EUR",
-  "^STOXX50E": "EUR",
-  "^HSI": "HKD",
-  "^NSEI": "INR",
-  "^AXJO": "AUD",
-  "^BVSP": "BRL",
-  "^KS11": "KRW",
 };
-
-export async function getExchangeRates(
-  currencies: string[]
-): Promise<Record<string, number>> {
-  const rates: Record<string, number> = { USD: 1 };
-  const needed = [...new Set(currencies.filter((c) => c !== "USD"))];
-
-  await Promise.all(
-    needed.map(async (cur) => {
-      try {
-        const fxQuote = await yf.quote(`${cur}USD=X`);
-        rates[cur] = fxQuote.regularMarketPrice ?? 1;
-      } catch {
-        rates[cur] = 1;
-      }
-    })
-  );
-
-  return rates;
-}
-
-export function getIndexCurrency(symbol: string): string | undefined {
-  return INDEX_CURRENCIES[symbol];
-}
 
 type YahooQuoteRow = {
   symbol: string;
@@ -197,6 +111,49 @@ async function fetchQuotesBatch(symbols: string[]): Promise<YahooQuoteRow[]> {
   return flat;
 }
 
+export async function getExchangeRates(
+  currencies: string[]
+): Promise<Record<string, number>> {
+  const rates: Record<string, number> = { USD: 1 };
+  const needed = [...new Set(currencies.filter((c) => c !== "USD"))];
+  if (needed.length === 0) return rates;
+
+  /** One batched Yahoo quote call per chunk — avoids N parallel FX round trips (major win for ticker tape). */
+  const fxSymbols = needed.map((cur) => `${cur}USD=X`);
+  try {
+    const rows = await fetchQuotesBatch(fxSymbols);
+    const bySym = new Map(rows.map((q) => [q.symbol, q]));
+    for (const cur of needed) {
+      const sym = `${cur}USD=X`;
+      const q = bySym.get(sym);
+      rates[cur] = q?.regularMarketPrice ?? 1;
+    }
+  } catch {
+    await Promise.all(
+      needed.map(async (cur) => {
+        try {
+          const fxQuote = await yf.quote(`${cur}USD=X`, undefined, {
+            validateResult: false,
+          });
+          if (fxQuote && !Array.isArray(fxQuote)) {
+            rates[cur] = fxQuote.regularMarketPrice ?? 1;
+          } else {
+            rates[cur] = 1;
+          }
+        } catch {
+          rates[cur] = 1;
+        }
+      })
+    );
+  }
+
+  return rates;
+}
+
+export function getIndexCurrency(symbol: string): string | undefined {
+  return INDEX_CURRENCIES[symbol];
+}
+
 function stockQuoteFromYahoo(quote: YahooQuoteRow, fallbackSymbol: string): StockQuote {
   const q = quote as Record<string, unknown>;
   return {
@@ -229,25 +186,67 @@ function stockQuoteFromYahoo(quote: YahooQuoteRow, fallbackSymbol: string): Stoc
   };
 }
 
-async function fetchTickerDataUncached(): Promise<TickerItem[]> {
+function dedupeTickerSymbols(symbols: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of symbols) {
+    const s = raw.trim().toUpperCase();
+    if (!s) continue;
+    if (seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+  }
+  return out;
+}
+
+function tickerCacheKey(symbols: string[]): string {
+  return [...new Set(symbols.map((s) => s.trim().toUpperCase()))].sort().join(",");
+}
+
+function lookupQuoteRow(
+  bySym: Map<string, YahooQuoteRow>,
+  symbol: string
+): YahooQuoteRow | undefined {
+  const u = symbol.toUpperCase();
+  let q = bySym.get(u);
+  if (q) return q;
+  if (u.startsWith("^")) q = bySym.get(u.slice(1));
+  if (q) return q;
+  if (!u.startsWith("^")) q = bySym.get("^" + u);
+  return q;
+}
+
+async function fetchTickerDataUncached(symbols: string[]): Promise<TickerItem[]> {
+  if (symbols.length === 0) return [];
   let quotes: YahooQuoteRow[];
   try {
-    quotes = await fetchQuotesBatch([...TICKER_SYMBOLS]);
+    quotes = await fetchQuotesBatch([...symbols]);
   } catch {
     quotes = [];
-    for (const symbol of TICKER_SYMBOLS) {
-      try {
-        const q = await yf.quote(symbol, undefined, { validateResult: false });
-        if (q && !Array.isArray(q)) quotes.push(q);
-      } catch {
-        /* skip */
+  }
+
+  const bySym = new Map<string, YahooQuoteRow>();
+  for (const q of quotes) {
+    const s = q.symbol.toUpperCase();
+    bySym.set(s, q);
+  }
+
+  // Batch often resolves without throwing but returns no rows (Yahoo / rate limits). Fill gaps per symbol.
+  for (const symbol of symbols) {
+    if (lookupQuoteRow(bySym, symbol)) continue;
+    try {
+      const q = await yf.quote(symbol, undefined, { validateResult: false });
+      if (q && !Array.isArray(q)) {
+        const s = q.symbol.toUpperCase();
+        bySym.set(s, q);
       }
+    } catch {
+      /* skip */
     }
   }
 
-  const bySym = new Map(quotes.map((q) => [q.symbol, q]));
-  const rawResults = TICKER_SYMBOLS.map((symbol) => {
-    const quote = bySym.get(symbol);
+  const rawResults = symbols.map((symbol) => {
+    const quote = lookupQuoteRow(bySym, symbol);
     if (!quote) return null;
     return {
       symbol,
@@ -281,11 +280,14 @@ async function fetchTickerDataUncached(): Promise<TickerItem[]> {
   });
 }
 
-/** Short cache: tape polls every 15s; dedupes concurrent users without stale tape beyond one refresh. */
-export async function getTickerData(): Promise<TickerItem[]> {
+/** Short cache: tape polls every 15s; cache key includes symbol set (per default / user list). */
+export async function getTickerData(symbols: string[]): Promise<TickerItem[]> {
+  const normalized = dedupeTickerSymbols(symbols);
+  if (normalized.length === 0) return [];
+  const key = tickerCacheKey(normalized);
   return unstable_cache(
-    () => fetchTickerDataUncached(),
-    ["yahoo-ticker-tape"],
+    () => fetchTickerDataUncached(normalized),
+    ["yahoo-ticker-tape", key],
     { revalidate: 12 }
   )();
 }
@@ -909,12 +911,21 @@ export async function getScreenerQuote(symbol: string): Promise<ScreenerQuote | 
   }
 }
 
+function yahooCoerceFiniteNum(v: unknown): number | undefined {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return undefined;
+}
+
 function mapScreenerQuoteToMover(q: Record<string, unknown>): MarketMoverQuote | null {
   const symbol = q.symbol;
   if (typeof symbol !== "string" || !symbol.trim()) return null;
-  const price = q.regularMarketPrice;
-  const pct = q.regularMarketChangePercent;
-  const vol = q.regularMarketVolume;
+  const price = yahooCoerceFiniteNum(q.regularMarketPrice) ?? 0;
+  const pct = yahooCoerceFiniteNum(q.regularMarketChangePercent) ?? 0;
+  const vol = yahooCoerceFiniteNum(q.regularMarketVolume) ?? 0;
   const cur = q.currency;
   const tpe = yahooOptionalNum(q.trailingPE);
   const fpe = yahooOptionalNum(q.forwardPE);
@@ -924,9 +935,9 @@ function mapScreenerQuoteToMover(q: Record<string, unknown>): MarketMoverQuote |
       (typeof q.shortName === "string" && q.shortName) ||
       (typeof q.longName === "string" && q.longName) ||
       symbol,
-    regularMarketPrice: typeof price === "number" && !isNaN(price) ? price : 0,
-    regularMarketChangePercent: typeof pct === "number" && !isNaN(pct) ? pct : 0,
-    regularMarketVolume: typeof vol === "number" && !isNaN(vol) ? vol : 0,
+    regularMarketPrice: price,
+    regularMarketChangePercent: pct,
+    regularMarketVolume: vol,
     currency: typeof cur === "string" && cur ? cur : "USD",
   };
   if (tpe != null && tpe > 0) row.trailingPE = tpe;

@@ -39,6 +39,8 @@ const SECTION_IDS: SectionId[] = [
   "data",
 ];
 
+type TickerTapeMode = "default" | "portfolio" | "custom";
+
 type ProfilePayload = {
   name: string | null;
   email: string | null;
@@ -47,6 +49,8 @@ type ProfilePayload = {
   bio: string | null;
   createdAt: string;
   providers: string[];
+  tickerTapeMode?: TickerTapeMode;
+  tickerTapeSymbols?: string[];
 };
 
 type StatsPayload = {
@@ -146,6 +150,10 @@ export default function AccountPage() {
   const [defaultPitchType, setDefaultPitchType] = useState("Growth");
   const [privacyMask, setPrivacyMask] = useState(false);
   const [tickerTape, setTickerTape] = useState(true);
+  const [tickerTapeMode, setTickerTapeMode] = useState<TickerTapeMode>("default");
+  const [tickerTapeCustomDraft, setTickerTapeCustomDraft] = useState("");
+  const [tickerTapeSaving, setTickerTapeSaving] = useState(false);
+  const [tickerTapeSaveError, setTickerTapeSaveError] = useState<string | null>(null);
 
   const setSectionRef = useCallback((id: SectionId) => {
     return (el: HTMLElement | null) => {
@@ -182,6 +190,8 @@ export default function AccountPage() {
         setProfile(data);
         setDraftName(data.name ?? "");
         setDraftBio(data.bio ?? "");
+        setTickerTapeMode(data.tickerTapeMode ?? "default");
+        setTickerTapeCustomDraft((data.tickerTapeSymbols ?? []).join(", "));
       } catch {
         /* silent */
       } finally {
@@ -269,6 +279,72 @@ export default function AccountPage() {
       /* silent */
     } finally {
       setSavePending(false);
+    }
+  };
+
+  const parseCustomSymbolsFromDraft = (s: string): string[] => {
+    const SYMBOL_REGEX = /^[A-Za-z0-9.-]{1,10}$/;
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const part of s.split(/[\s,]+/).filter(Boolean)) {
+      const u = part.trim().toUpperCase();
+      if (!SYMBOL_REGEX.test(u)) continue;
+      if (seen.has(u)) continue;
+      seen.add(u);
+      out.push(u);
+      if (out.length >= 10) break;
+    }
+    return out;
+  };
+
+  const handleSaveTickerTape = async () => {
+    setTickerTapeSaveError(null);
+    setTickerTapeSaving(true);
+    try {
+      const body: { tickerTapeMode: TickerTapeMode; tickerTapeSymbols?: string[] } = {
+        tickerTapeMode,
+      };
+      if (tickerTapeMode === "custom") {
+        const syms = parseCustomSymbolsFromDraft(tickerTapeCustomDraft);
+        if (syms.length === 0) {
+          setTickerTapeSaveError(
+            "Add at least one valid ticker (letters, numbers, dots, dashes, max 10)."
+          );
+          return;
+        }
+        body.tickerTapeSymbols = syms;
+      }
+      const res = await fetch("/api/account/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const j = (await res.json().catch(() => null)) as { error?: string } | ProfilePayload | null;
+      if (!res.ok) {
+        setTickerTapeSaveError(
+          typeof j && j && "error" in j && typeof j.error === "string"
+            ? j.error
+            : "Could not save."
+        );
+        return;
+      }
+      const updated = j as ProfilePayload;
+      setProfile((p) =>
+        p
+          ? {
+              ...p,
+              tickerTapeMode: updated.tickerTapeMode,
+              tickerTapeSymbols: updated.tickerTapeSymbols,
+            }
+          : null
+      );
+      setTickerTapeMode(updated.tickerTapeMode ?? "default");
+      setTickerTapeCustomDraft((updated.tickerTapeSymbols ?? []).join(", "));
+      router.refresh();
+    } catch {
+      setTickerTapeSaveError("Could not save.");
+    } finally {
+      setTickerTapeSaving(false);
     }
   };
 
@@ -867,7 +943,7 @@ export default function AccountPage() {
                   }}
                 />
               </div>
-              <div className="px-5 py-[11px] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="px-5 py-[11px] border-b border-[#1c2128] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <p className="text-sm text-foreground">Ticker tape</p>
                   <p className="text-xs text-muted">Show scrolling prices at the top</p>
@@ -880,6 +956,52 @@ export default function AccountPage() {
                     window.dispatchEvent(new Event("gcm-prefs-change"));
                   }}
                 />
+              </div>
+              <div className="px-5 py-4 flex flex-col gap-3">
+                <div>
+                  <p className="text-sm text-foreground">Tape symbols</p>
+                  <p className="text-xs text-muted mt-0.5">
+                    Default list, up to 10 holdings from your portfolio, or your own list (max 10).
+                  </p>
+                </div>
+                <select
+                  value={tickerTapeMode}
+                  onChange={(e) => {
+                    setTickerTapeMode(e.target.value as TickerTapeMode);
+                    setTickerTapeSaveError(null);
+                  }}
+                  className="rounded-lg border border-[#2d333b] bg-background text-sm text-foreground px-2 py-1.5 max-w-md w-full"
+                >
+                  <option value="default">Default (indices &amp; liquid names)</option>
+                  <option value="portfolio">My portfolio (first 10 positions)</option>
+                  <option value="custom">Custom (enter up to 10 tickers)</option>
+                </select>
+                {tickerTapeMode === "custom" ? (
+                  <textarea
+                    value={tickerTapeCustomDraft}
+                    onChange={(e) => {
+                      setTickerTapeCustomDraft(e.target.value);
+                      setTickerTapeSaveError(null);
+                    }}
+                    rows={3}
+                    placeholder="e.g. AAPL, MSFT, NVDA, ^GSPC"
+                    className="rounded-lg border border-[#2d333b] bg-background text-sm text-foreground px-3 py-2 max-w-md w-full font-mono placeholder:text-muted resize-y min-h-[4.5rem]"
+                  />
+                ) : null}
+                {tickerTapeSaveError ? (
+                  <p className="text-xs text-[#ef4444]">{tickerTapeSaveError}</p>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={tickerTapeSaving}
+                  onClick={() => void handleSaveTickerTape()}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#2d333b] text-muted hover:text-foreground px-3 py-1.5 text-sm transition-colors disabled:opacity-50 w-fit"
+                >
+                  {tickerTapeSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : null}
+                  Save tape settings
+                </button>
               </div>
             </div>
           </section>
