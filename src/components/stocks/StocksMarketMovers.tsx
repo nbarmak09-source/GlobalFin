@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   TrendingUp,
   TrendingDown,
@@ -8,6 +9,8 @@ import {
   Gem,
 } from "lucide-react";
 import type { MarketMoverQuote, MarketMoversBoard } from "@/lib/types";
+
+const MAX_ROWS = 8;
 
 function fmtVolume(v: number): string {
   if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
@@ -29,6 +32,12 @@ function pctClass(p: number): string {
   return "text-muted";
 }
 
+function formatPeLine(row: MarketMoverQuote): string | null {
+  const pe = row.trailingPE ?? row.forwardPE;
+  if (pe == null || !Number.isFinite(pe) || pe <= 0) return null;
+  return `P/E ${pe.toFixed(1)}`;
+}
+
 interface StocksMarketMoversProps {
   onSelectSymbol: (symbol: string, name: string) => void;
 }
@@ -37,15 +46,16 @@ type PanelKey = keyof MarketMoversBoard;
 
 const PANELS: {
   key: PanelKey;
+  preset: string;
   title: string;
   subtitle: string;
   icon: typeof TrendingUp;
   accent: string;
-  /** Show volume as secondary for most-active */
-  emphasizeVolume?: boolean;
+  showPe?: boolean;
 }[] = [
   {
     key: "gainers",
+    preset: "gainers",
     title: "Day gainers",
     subtitle: "Largest % advances",
     icon: TrendingUp,
@@ -53,6 +63,7 @@ const PANELS: {
   },
   {
     key: "losers",
+    preset: "losers",
     title: "Day losers",
     subtitle: "Largest % declines",
     icon: TrendingDown,
@@ -60,31 +71,37 @@ const PANELS: {
   },
   {
     key: "mostActive",
+    preset: "most-active",
     title: "Most active",
     subtitle: "Highest share volume",
     icon: BarChart3,
     accent: "text-accent",
-    emphasizeVolume: true,
   },
   {
     key: "undervaluedLargeCaps",
+    preset: "undervalued",
     title: "Undervalued large caps",
     subtitle: "Yahoo value screen",
     icon: Gem,
     accent: "text-accent",
+    showPe: true,
   },
 ];
 
 function MoverRow({
   row,
-  emphasizeVolume,
+  showPe,
   onSelect,
 }: {
   row: MarketMoverQuote;
-  emphasizeVolume?: boolean;
+  showPe?: boolean;
   onSelect: () => void;
 }) {
   const isPositive = row.regularMarketChangePercent >= 0;
+  const volLine =
+    row.regularMarketVolume > 0 ? `Vol ${fmtVolume(row.regularMarketVolume)}` : null;
+  const peLine = showPe ? formatPeLine(row) : null;
+
   return (
     <button
       type="button"
@@ -98,10 +115,11 @@ function MoverRow({
           </span>
           <span className="text-xs text-muted truncate">{row.shortName}</span>
         </div>
-        {emphasizeVolume ? (
-          <div className="text-[11px] font-mono text-muted mt-0.5">
-            Vol {fmtVolume(row.regularMarketVolume)}
-          </div>
+        {peLine ? (
+          <div className="text-[11px] font-mono text-muted/80 mt-0.5">{peLine}</div>
+        ) : null}
+        {volLine ? (
+          <div className="text-[11px] font-mono text-muted mt-0.5">{volLine}</div>
         ) : null}
       </div>
       <div className="shrink-0 text-right">
@@ -128,7 +146,7 @@ export default function StocksMarketMovers({ onSelectSymbol }: StocksMarketMover
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch("/api/stocks?action=marketMovers&count=8");
+        const res = await fetch(`/api/stocks?action=marketMovers&count=${MAX_ROWS}`);
         if (!res.ok) return;
         const json: MarketMoversBoard = await res.json();
         if (!cancelled) setData(json);
@@ -174,7 +192,7 @@ export default function StocksMarketMovers({ onSelectSymbol }: StocksMarketMover
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
       {PANELS.map((panel) => {
-        const rows = data![panel.key] ?? [];
+        const rows = (data![panel.key] ?? []).slice(0, MAX_ROWS);
         const Icon = panel.icon;
         if (rows.length === 0) return null;
         return (
@@ -189,15 +207,23 @@ export default function StocksMarketMovers({ onSelectSymbol }: StocksMarketMover
               </div>
               <p className="text-[11px] text-muted mt-0.5 pl-6">{panel.subtitle}</p>
             </div>
-            <div className="px-2 py-2 flex-1 overflow-y-auto max-h-[min(420px,55vh)]">
+            <div className="px-2 py-2 flex-1 min-h-0">
               {rows.map((row) => (
                 <MoverRow
                   key={row.symbol}
                   row={row}
-                  emphasizeVolume={panel.emphasizeVolume}
+                  showPe={panel.showPe}
                   onSelect={() => onSelectSymbol(row.symbol, row.shortName)}
                 />
               ))}
+            </div>
+            <div className="px-4 pb-3 pt-1 border-t border-border mt-auto">
+              <Link
+                href={`/screener?preset=${encodeURIComponent(panel.preset)}`}
+                className="text-xs font-medium text-accent hover:underline"
+              >
+                Show more →
+              </Link>
             </div>
           </section>
         );
@@ -205,4 +231,3 @@ export default function StocksMarketMovers({ onSelectSymbol }: StocksMarketMover
     </div>
   );
 }
-

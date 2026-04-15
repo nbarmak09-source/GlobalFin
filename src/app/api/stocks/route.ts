@@ -6,11 +6,16 @@ import {
   getHistoricalData,
   searchSymbols,
   getQuoteSummary,
+  getQuoteSummaryHeavy,
   getSymbolNews,
   getExchangeRates,
   getIndexCurrency,
   getMarketMoversBoard,
 } from "@/lib/yahoo";
+
+const JSON_CACHE_HEADERS = {
+  "Cache-Control": "private, max-age=15, stale-while-revalidate=45",
+} as const;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -33,7 +38,7 @@ export async function GET(request: NextRequest) {
         const data = await getQuote(symbol);
         if (!data)
           return NextResponse.json({ error: "Not found" }, { status: 404 });
-        return NextResponse.json(data);
+        return NextResponse.json(data, { headers: JSON_CACHE_HEADERS });
       }
 
       case "quotes": {
@@ -81,7 +86,21 @@ export async function GET(request: NextRequest) {
         const data = await getQuoteSummary(symbol);
         if (!data)
           return NextResponse.json({ error: "Not found" }, { status: 404 });
-        return NextResponse.json(data);
+        return NextResponse.json(data, { headers: JSON_CACHE_HEADERS });
+      }
+
+      case "summaryHeavy": {
+        if (!symbol)
+          return NextResponse.json({ error: "Symbol required" }, { status: 400 });
+        const data = await getQuoteSummaryHeavy(symbol);
+        return NextResponse.json(
+          data ?? {
+            upgradeDowngradeHistory: [],
+            insiderTransactions: [],
+            netSharePurchaseActivity: null,
+          },
+          { headers: JSON_CACHE_HEADERS }
+        );
       }
 
       case "marketMovers": {
@@ -92,7 +111,10 @@ export async function GET(request: NextRequest) {
 
       default:
         return NextResponse.json(
-          { error: "Invalid action. Use: ticker, quote, quotes, history, search, news, summary, marketMovers" },
+          {
+            error:
+              "Invalid action. Use: ticker, quote, quotes, history, search, news, summary, summaryHeavy, marketMovers",
+          },
           { status: 400 }
         );
     }

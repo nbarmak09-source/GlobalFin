@@ -10,6 +10,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import PositionDetailPanel from "./PositionDetailPanel";
+import ExtendedHoursInline from "./ExtendedHoursInline";
 import type { EnrichedWatchlistItem } from "@/lib/types";
 import {
   DndContext,
@@ -127,8 +128,11 @@ function SortableRow({
           />
         </div>
       </td>
-      <td className="px-4 py-3 text-right font-mono">
-        ${formatCurrency(item.currentPrice)}
+      <td className="px-4 py-3 text-right font-mono align-top">
+        <div>${formatCurrency(item.currentPrice)}</div>
+        {item.extendedHours && (
+          <ExtendedHoursInline line={item.extendedHours} compact className="mt-0.5 justify-end" />
+        )}
       </td>
       <td className="px-4 py-3 text-right">
         <div className="flex items-center justify-end gap-1">

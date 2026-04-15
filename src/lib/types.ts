@@ -1,3 +1,5 @@
+import type { ExtendedHoursLine } from "./extendedHours";
+
 export interface StockQuote {
   symbol: string;
   /** Yahoo Finance exchange code (e.g. NMS, NYQ); used for TradingView routing */
@@ -18,6 +20,14 @@ export interface StockQuote {
   marketCap: number;
   trailingPE: number;
   currency: string;
+  /** Yahoo `marketState` (e.g. PRE, REGULAR, POST, CLOSED) */
+  marketState?: string;
+  preMarketPrice?: number;
+  preMarketChange?: number;
+  preMarketChangePercent?: number;
+  postMarketPrice?: number;
+  postMarketChange?: number;
+  postMarketChangePercent?: number;
 }
 
 export interface TickerItem {
@@ -74,6 +84,8 @@ export interface EnrichedWatchlistItem extends WatchlistItem {
   fiftyTwoWeekHigh: number;
   fiftyTwoWeekLow: number;
   marketCap: number;
+  /** Pre-market or after-hours snapshot when Yahoo publishes it */
+  extendedHours: ExtendedHoursLine | null;
 }
 
 export interface EnrichedPosition extends PortfolioPosition {
@@ -83,6 +95,8 @@ export interface EnrichedPosition extends PortfolioPosition {
   dayChangePercent: number;
   totalPL: number;
   totalPLPercent: number;
+  /** Pre-market or after-hours snapshot when Yahoo publishes it */
+  extendedHours: ExtendedHoursLine | null;
 }
 
 export interface HistoricalDataPoint {
@@ -114,6 +128,8 @@ export interface MarketMoverQuote {
   regularMarketChangePercent: number;
   regularMarketVolume: number;
   currency: string;
+  trailingPE?: number;
+  forwardPE?: number;
 }
 
 export interface MarketMoversBoard {
@@ -285,6 +301,14 @@ export interface QuoteSummaryData {
   regularMarketPreviousClose: number;
   marketCap: number;
   currency: string;
+  /** Yahoo `marketState` on the price module (e.g. PRE, REGULAR, POST, CLOSED) */
+  marketState?: string;
+  preMarketPrice?: number;
+  preMarketChange?: number;
+  preMarketChangePercent?: number;
+  postMarketPrice?: number;
+  postMarketChange?: number;
+  postMarketChangePercent?: number;
 
   // Valuation
   trailingPE: number;
@@ -356,6 +380,8 @@ export interface QuoteSummaryData {
 
   // Calendar
   earningsDate: string;
+  /** Next earnings call instant from Yahoo `calendarEvents.earnings` when provided (ms since epoch). */
+  earningsCallTimeMs?: number;
   dividendPayDate: string;
 
   // Earnings Charts
@@ -383,6 +409,12 @@ export interface QuoteSummaryData {
     totalInsiderShares: number;
   } | null;
 }
+
+/** Yahoo modules loaded after core quote summary (insiders + rating history). */
+export type QuoteSummaryHeavyPatch = Pick<
+  QuoteSummaryData,
+  "upgradeDowngradeHistory" | "insiderTransactions" | "netSharePurchaseActivity"
+>;
 
 export interface SECAnnualFinancialRow {
   fiscalYear: string;

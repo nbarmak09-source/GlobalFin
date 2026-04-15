@@ -9,6 +9,24 @@ export interface CalendarEvent {
   type: "earnings" | "dividend";
   date: string;
   detail: string;
+  /** Before / after US market open when Yahoo provides an earnings call timestamp. */
+  callTime?: "BMO" | "AMC";
+}
+
+/** US/Eastern hour classification for typical earnings releases. */
+function classifyEarningsCallET(ms: number): "BMO" | "AMC" | undefined {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  }).formatToParts(new Date(ms));
+  const hour = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+  const minute = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+  const t = hour * 60 + minute;
+  if (t < 9 * 60 + 30) return "BMO";
+  if (t >= 16 * 60) return "AMC";
+  return undefined;
 }
 
 export async function GET(request: NextRequest) {
@@ -66,6 +84,10 @@ export async function GET(request: NextRequest) {
           type: "earnings",
           date: data.earningsDate,
           detail: estEps != null ? `Est. EPS: $${estEps.toFixed(2)}` : "",
+          callTime:
+            data.earningsCallTimeMs != null
+              ? classifyEarningsCallET(data.earningsCallTimeMs)
+              : undefined,
         });
       }
 

@@ -51,16 +51,33 @@ export default function PositionDetailPanel({ symbol, onClose }: PositionDetailP
   }
 
   const metrics = summary
-    ? [
-        { label: "Market Cap", value: formatMarketCap(summary.marketCap) },
-        { label: "P/E (TTM)", value: summary.trailingPE?.toFixed(2) ?? "—" },
-        { label: "Forward P/E", value: summary.forwardPE?.toFixed(2) ?? "—" },
-        { label: "P/B", value: summary.priceToBook?.toFixed(2) ?? "—" },
-        { label: "P/S", value: summary.priceToSalesTrailing12Months?.toFixed(2) ?? "—" },
-        { label: "Beta", value: summary.beta?.toFixed(2) ?? "—" },
-        { label: "Div Yield", value: summary.dividendYield ? `${(summary.dividendYield * 100).toFixed(2)}%` : "—" },
-        { label: "52W Range", value: summary.fiftyTwoWeekLow && summary.fiftyTwoWeekHigh ? `$${summary.fiftyTwoWeekLow.toFixed(2)} - $${summary.fiftyTwoWeekHigh.toFixed(2)}` : "—" },
-      ]
+    ? (() => {
+        const base = [
+          { label: "Market Cap", value: formatMarketCap(summary.marketCap) },
+          { label: "P/E (TTM)", value: summary.trailingPE?.toFixed(2) ?? "—" },
+          { label: "Forward P/E", value: summary.forwardPE?.toFixed(2) ?? "—" },
+          { label: "P/B", value: summary.priceToBook?.toFixed(2) ?? "—" },
+          { label: "P/S", value: summary.priceToSalesTrailing12Months?.toFixed(2) ?? "—" },
+          { label: "Beta", value: summary.beta?.toFixed(2) ?? "—" },
+          { label: "Div Yield", value: summary.dividendYield ? `${(summary.dividendYield * 100).toFixed(2)}%` : "—" },
+          { label: "52W Range", value: summary.fiftyTwoWeekLow && summary.fiftyTwoWeekHigh ? `$${summary.fiftyTwoWeekLow.toFixed(2)} - $${summary.fiftyTwoWeekHigh.toFixed(2)}` : "—" },
+        ];
+        if (summary.preMarketPrice != null && summary.preMarketPrice > 0) {
+          const up = (summary.preMarketChange ?? 0) >= 0;
+          base.push({
+            label: "Pre-market",
+            value: `$${summary.preMarketPrice.toFixed(2)} · ${up ? "+" : ""}${(summary.preMarketChange ?? 0).toFixed(2)} (${up ? "+" : ""}${(summary.preMarketChangePercent ?? 0).toFixed(2)}%)`,
+          });
+        }
+        if (summary.postMarketPrice != null && summary.postMarketPrice > 0) {
+          const up = (summary.postMarketChange ?? 0) >= 0;
+          base.push({
+            label: "After hours",
+            value: `$${summary.postMarketPrice.toFixed(2)} · ${up ? "+" : ""}${(summary.postMarketChange ?? 0).toFixed(2)} (${up ? "+" : ""}${(summary.postMarketChangePercent ?? 0).toFixed(2)}%)`,
+          });
+        }
+        return base;
+      })()
     : [];
 
   const analystRating = summary?.recommendationKey

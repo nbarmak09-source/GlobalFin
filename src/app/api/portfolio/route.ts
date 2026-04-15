@@ -9,6 +9,7 @@ import {
   assertPortfolioOwnership,
 } from "@/lib/portfolio";
 import { getMultipleQuotes } from "@/lib/yahoo";
+import { getExtendedHoursLine } from "@/lib/extendedHours";
 import { auth } from "@/lib/auth";
 import type { EnrichedPosition } from "@/lib/types";
 
@@ -90,6 +91,7 @@ export async function GET(request: NextRequest) {
         dayChangePercent,
         totalPL,
         totalPLPercent,
+        extendedHours: quote ? getExtendedHoursLine(quote) : null,
       };
     });
 

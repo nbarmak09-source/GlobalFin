@@ -50,7 +50,7 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
   const powerTier = getTierBySymbol(symbol);
   const supplyChainMatch = getSupplyChainByTicker(symbol);
 
-  const stats = [
+  const stats: { label: string; value: string }[] = [
     { label: "Market Cap", value: formatNumber(data.marketCap) },
     { label: "P/E Ratio (TTM)", value: fmt(data.trailingPE) },
     { label: "EPS (TTM)", value: data.trailingEps ? `$${fmt(data.trailingEps)}` : "N/A" },
@@ -66,6 +66,21 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
     { label: "Prev Close", value: `$${fmt(data.regularMarketPreviousClose)}` },
     { label: "Shares Outstanding", value: data.sharesOutstanding ? (data.sharesOutstanding / 1e9).toFixed(2) + "B" : "N/A" },
   ];
+
+  if (data.preMarketPrice != null && data.preMarketPrice > 0) {
+    const up = (data.preMarketChange ?? 0) >= 0;
+    stats.push({
+      label: "Pre-market",
+      value: `$${data.preMarketPrice.toFixed(2)} · ${up ? "+" : ""}${(data.preMarketChange ?? 0).toFixed(2)} (${up ? "+" : ""}${(data.preMarketChangePercent ?? 0).toFixed(2)}%)`,
+    });
+  }
+  if (data.postMarketPrice != null && data.postMarketPrice > 0) {
+    const up = (data.postMarketChange ?? 0) >= 0;
+    stats.push({
+      label: "After hours",
+      value: `$${data.postMarketPrice.toFixed(2)} · ${up ? "+" : ""}${(data.postMarketChange ?? 0).toFixed(2)} (${up ? "+" : ""}${(data.postMarketChangePercent ?? 0).toFixed(2)}%)`,
+    });
+  }
 
   return (
     <div className="space-y-6">

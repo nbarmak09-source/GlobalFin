@@ -15,13 +15,16 @@ import TransactionsTab from "@/components/stocks/TransactionsTab";
 import PeopleTab from "@/components/stocks/PeopleTab";
 import SECFilingsTab from "@/components/stocks/SECFilingsTab";
 import StocksMarketMovers from "@/components/stocks/StocksMarketMovers";
-import type { QuoteSummaryData } from "@/lib/types";
+import RecentStocksRow from "@/components/stocks/RecentStocksRow";
+import StocksEarningsThisWeek from "@/components/stocks/StocksEarningsThisWeek";
+import ExtendedHoursInline from "@/components/ExtendedHoursInline";
+import { pushRecentStock, readRecentStocks, type RecentStockEntry } from "@/lib/recentStocks";
+import { getExtendedHoursLine } from "@/lib/extendedHours";
+import type { QuoteSummaryData, QuoteSummaryHeavyPatch, StockQuote } from "@/lib/types";
 import {
   TrendingUp,
   TrendingDown,
   Loader2,
-  CandlestickChart,
-  Search,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -41,17 +44,6 @@ const SUB_TABS = [
 ] as const;
 
 type SubTab = (typeof SUB_TABS)[number];
-
-const POPULAR_SYMBOLS = [
-  { symbol: "AAPL", name: "Apple" },
-  { symbol: "MSFT", name: "Microsoft" },
-  { symbol: "NVDA", name: "NVIDIA" },
-  { symbol: "GOOGL", name: "Alphabet" },
-  { symbol: "AMZN", name: "Amazon" },
-  { symbol: "TSLA", name: "Tesla" },
-  { symbol: "META", name: "Meta" },
-  { symbol: "JPM", name: "JPMorgan" },
-];
 
 function formatMarketCap(v: number): string {
   if (v >= 1e12) return `$${(v / 1e12).toFixed(2)}T`;
@@ -155,9 +147,11 @@ function StocksPageContent() {
   const [displayName, setDisplayName] = useState("");
   const [activeTab, setActiveTab] = useState<SubTab>("Overview");
   const [data, setData] = useState<QuoteSummaryData | null>(null);
+  const [quote, setQuote] = useState<StockQuote | null>(null);
   const [loading, setLoading] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [recentStocks, setRecentStocks] = useState<RecentStockEntry[]>([]);
 
   const checkTabScroll = useCallback(() => {
     const el = tabBarRef.current;
@@ -179,32 +173,68 @@ function StocksPageContent() {
     };
   }, [checkTabScroll, symbol]);
 
-  const fetchSummary = useCallback(async (sym: string) => {
+  useEffect(() => {
+    setRecentStocks(readRecentStocks());
+  }, []);
+
+  const fetchSymbolData = useCallback(async (sym: string, signal: AbortSignal) => {
     if (!sym.trim()) {
       setData(null);
+      setQuote(null);
       setLoading(false);
       return;
     }
     setLoading(true);
+    setData(null);
+    setQuote(null);
+
+    const qUrl = `/api/stocks?action=quote&symbol=${encodeURIComponent(sym)}`;
+    const sUrl = `/api/stocks?action=summary&symbol=${encodeURIComponent(sym)}`;
+
+    function mergeHeavy() {
+      const hUrl = `/api/stocks?action=summaryHeavy&symbol=${encodeURIComponent(sym)}`;
+      fetch(hUrl)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((patch: QuoteSummaryHeavyPatch | null) => {
+          if (!patch) return;
+          setData((prev) => (prev ? { ...prev, ...patch } : null));
+        })
+        .catch(() => {
+          /* ignore */
+        });
+    }
+
     try {
-      const res = await fetch(
-        `/api/stocks?action=summary&symbol=${encodeURIComponent(sym)}`
-      );
-      if (res.ok) {
-        const result: QuoteSummaryData = await res.json();
-        setData(result);
-        if (result.shortName) setDisplayName(result.shortName);
-      }
-    } catch {
-      // silently fail
+      await Promise.allSettled([
+        fetch(qUrl, { signal }).then(async (res) => {
+          if (signal.aborted || !res.ok) return;
+          const q: StockQuote = await res.json();
+          if (signal.aborted) return;
+          setQuote(q);
+          if (q.shortName) setDisplayName(q.shortName);
+        }),
+        fetch(sUrl, { signal }).then(async (res) => {
+          if (signal.aborted || !res.ok) return;
+          const summary: QuoteSummaryData = await res.json();
+          if (signal.aborted) return;
+          setData(summary);
+          if (summary.shortName) setDisplayName(summary.shortName);
+          const next = pushRecentStock(sym, summary.shortName || summary.longName || sym);
+          setRecentStocks(next);
+          mergeHeavy();
+        }),
+      ]);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     const urlSymbol = searchParams.get("symbol")?.trim().toUpperCase();
     if (urlSymbol) setSymbol(urlSymbol);
+    else setSymbol("");
 
     const urlTab = searchParams.get("tab") as SubTab | null;
     if (urlTab && (SUB_TABS as readonly string[]).includes(urlTab)) {
@@ -213,13 +243,16 @@ function StocksPageContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (symbol) {
-      fetchSummary(symbol);
-    } else {
+    if (!symbol) {
       setData(null);
+      setQuote(null);
       setLoading(false);
+      return;
     }
-  }, [symbol, fetchSummary]);
+    const ac = new AbortController();
+    fetchSymbolData(symbol, ac.signal);
+    return () => ac.abort();
+  }, [symbol, fetchSymbolData]);
 
   function handleSymbolSelect(sym: string, name: string) {
     setSymbol(sym);
@@ -228,6 +261,14 @@ function StocksPageContent() {
       `/stocks?symbol=${encodeURIComponent(sym)}&tab=${encodeURIComponent(activeTab)}`,
       { scroll: false }
     );
+  }
+
+  function handleClearSymbol() {
+    setDisplayName("");
+    setActiveTab("Overview");
+    setSymbol("");
+    setQuote(null);
+    router.replace("/stocks", { scroll: false });
   }
 
   function handleTabChange(tab: SubTab) {
@@ -245,39 +286,15 @@ function StocksPageContent() {
     }, 0);
   }
 
-  const isPositive = (data?.regularMarketChange ?? 0) >= 0;
+  const headerRow = data ?? quote;
+  const isPositive = (headerRow?.regularMarketChange ?? 0) >= 0;
   const priceFmt = (v: number) =>
     v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const extendedHoursLine = headerRow ? getExtendedHoursLine(headerRow) : null;
 
   function renderTab() {
     if (!symbol) {
-      return (
-        <div className="rounded-xl border border-border bg-card p-10 flex flex-col items-center justify-center gap-6 text-center min-h-[320px]">
-          <div className="h-14 w-14 rounded-2xl bg-accent/10 flex items-center justify-center">
-            <CandlestickChart className="h-7 w-7 text-accent" />
-          </div>
-          <div>
-            <p className="text-lg font-semibold mb-1">Search for any stock</p>
-            <p className="text-sm text-muted max-w-sm">
-              Enter a symbol or company name above to view fundamentals, charts, filings, and more.
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-2">
-            {POPULAR_SYMBOLS.map(({ symbol: sym, name }) => (
-              <button
-                key={sym}
-                type="button"
-                onClick={() => handleSymbolSelect(sym, name)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background hover:bg-card-hover hover:border-accent/50 px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer"
-              >
-                <Search className="h-3 w-3 text-muted" />
-                <span className="text-accent font-mono font-semibold">{sym}</span>
-                <span className="text-muted">{name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      );
+      return null;
     }
     if (activeTab === "Compare") {
       return <CompareTab currentSymbol={symbol} />;
@@ -288,7 +305,14 @@ function StocksPageContent() {
     if (activeTab === "SEC Filings") {
       return <SECFilingsTab symbol={symbol} />;
     }
-    if (!data) return null;
+    if (!data) {
+      return (
+        <div className="rounded-xl border border-border bg-card flex flex-col items-center justify-center py-16 gap-3 text-muted">
+          <Loader2 className="h-8 w-8 animate-spin text-accent" />
+          <p className="text-sm">Loading fundamentals…</p>
+        </div>
+      );
+    }
     switch (activeTab) {
       case "Overview":
         return <OverviewTab data={data} symbol={symbol} onViewChart={() => handleTabChange("Historical Price")} />;
@@ -313,15 +337,23 @@ function StocksPageContent() {
 
   return (
     <div className="space-y-4 min-w-0">
-      <SymbolSearch onSelect={handleSymbolSelect} initialSymbol={symbol} />
+      <SymbolSearch
+        onSelect={handleSymbolSelect}
+        onClear={handleClearSymbol}
+        initialSymbol={symbol}
+      />
       {!symbol && (
-        <StocksMarketMovers onSelectSymbol={handleSymbolSelect} />
+        <div className="space-y-4 min-w-0">
+          <RecentStocksRow entries={recentStocks} onSelect={handleSymbolSelect} />
+          <StocksMarketMovers onSelectSymbol={handleSymbolSelect} />
+          <StocksEarningsThisWeek />
+        </div>
       )}
 
-      {/* Stock header */}
-      {loading ? (
+      {/* Stock header — quote (fast) can render before full summary */}
+      {symbol && loading && !headerRow ? (
         <HeaderSkeleton />
-      ) : data ? (
+      ) : headerRow ? (
         <div className="rounded-xl border border-border bg-card p-5 space-y-4">
           {/* Row 1: name/price + primary stats */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 min-w-0">
@@ -331,24 +363,28 @@ function StocksPageContent() {
                 <span className="text-xs font-mono font-semibold text-muted bg-background border border-border rounded px-1.5 py-0.5 shrink-0">
                   {symbol}
                 </span>
-                {data.exchangeName && (
-                  <span className="text-xs text-muted shrink-0">{data.exchangeName}</span>
+                {(data?.exchangeName || quote?.exchangeName) && (
+                  <span className="text-xs text-muted shrink-0">
+                    {data?.exchangeName || quote?.exchangeName}
+                  </span>
                 )}
-                {data.sector && (
+                {data?.sector && (
                   <span className="text-xs bg-accent/10 text-accent border border-accent/20 rounded-full px-2 py-0.5 shrink-0 truncate max-w-[160px]">
                     {data.sector}
                   </span>
                 )}
-                {data.industry && (
+                {data?.industry && (
                   <span className="text-xs text-muted/70 truncate max-w-[180px] hidden sm:inline">
                     {data.industry}
                   </span>
                 )}
               </div>
-              <h1 className="text-xl font-bold font-serif truncate">{displayName}</h1>
+              <h1 className="text-xl font-bold font-serif truncate">
+                {displayName || headerRow.shortName || symbol}
+              </h1>
               <div className="flex items-baseline gap-3 mt-1 flex-wrap">
                 <span className="text-3xl font-bold font-mono tabular-nums">
-                  ${priceFmt(data.regularMarketPrice)}
+                  ${priceFmt(headerRow.regularMarketPrice)}
                 </span>
                 <span
                   className={`flex items-center gap-1 text-base font-mono font-medium tabular-nums ${
@@ -357,25 +393,28 @@ function StocksPageContent() {
                 >
                   {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                   {isPositive ? "+" : ""}
-                  {priceFmt(data.regularMarketChange)}&nbsp;
+                  {priceFmt(headerRow.regularMarketChange)}&nbsp;
                   <span className="text-sm opacity-80">
-                    ({isPositive ? "+" : ""}{data.regularMarketChangePercent.toFixed(2)}%)
+                    ({isPositive ? "+" : ""}{headerRow.regularMarketChangePercent.toFixed(2)}%)
                   </span>
                 </span>
+                {extendedHoursLine && (
+                  <ExtendedHoursInline line={extendedHoursLine} className="mt-1.5 w-full" />
+                )}
               </div>
             </div>
 
             {/* Primary stats: market cap + volume + analyst + beta */}
             <div className="flex flex-row flex-wrap gap-x-5 gap-y-3 shrink-0 items-start sm:text-right">
               {[
-                { label: "Market Cap", value: data.marketCap ? formatMarketCap(data.marketCap) : "—" },
-                { label: "Volume", value: data.regularMarketVolume ? fmtVolume(data.regularMarketVolume) : "—" },
+                { label: "Market Cap", value: headerRow.marketCap ? formatMarketCap(headerRow.marketCap) : "—" },
+                { label: "Volume", value: headerRow.regularMarketVolume ? fmtVolume(headerRow.regularMarketVolume) : "—" },
                 {
                   label: "Analyst Target",
-                  value: data.targetMeanPrice ? `$${priceFmt(data.targetMeanPrice)}` : "—",
-                  sub: data.numberOfAnalystOpinions ? `${data.numberOfAnalystOpinions} analysts` : undefined,
+                  value: data?.targetMeanPrice ? `$${priceFmt(data.targetMeanPrice)}` : "—",
+                  sub: data?.numberOfAnalystOpinions ? `${data.numberOfAnalystOpinions} analysts` : undefined,
                 },
-                { label: "Beta", value: data.beta ? data.beta.toFixed(2) : "—" },
+                { label: "Beta", value: data?.beta != null ? data.beta.toFixed(2) : "—" },
               ].map(({ label, value, sub }) => (
                 <div key={label} className="flex flex-col gap-0.5">
                   <span className="text-[10px] font-medium text-muted uppercase tracking-wide">{label}</span>
@@ -387,20 +426,22 @@ function StocksPageContent() {
           </div>
 
           {/* Row 2: 52W range bar */}
-          {data.fiftyTwoWeekLow && data.fiftyTwoWeekHigh && (
+          {headerRow.fiftyTwoWeekLow > 0 &&
+            headerRow.fiftyTwoWeekHigh > 0 &&
+            headerRow.fiftyTwoWeekHigh !== headerRow.fiftyTwoWeekLow && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-[11px] text-muted font-mono">
-                <span>52W Low&nbsp; <span className="text-foreground font-medium">${priceFmt(data.fiftyTwoWeekLow)}</span></span>
+                <span>52W Low&nbsp; <span className="text-foreground font-medium">${priceFmt(headerRow.fiftyTwoWeekLow)}</span></span>
                 <span className="text-[10px] text-muted/60">52-week range</span>
-                <span>52W High&nbsp; <span className="text-foreground font-medium">${priceFmt(data.fiftyTwoWeekHigh)}</span></span>
+                <span>52W High&nbsp; <span className="text-foreground font-medium">${priceFmt(headerRow.fiftyTwoWeekHigh)}</span></span>
               </div>
               <div className="relative h-1.5 rounded-full bg-border overflow-visible">
                 <div
                   className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-red/60 via-accent/80 to-green/60"
                   style={{
                     width: `${Math.min(100, Math.max(0,
-                      ((data.regularMarketPrice - data.fiftyTwoWeekLow) /
-                        (data.fiftyTwoWeekHigh - data.fiftyTwoWeekLow)) * 100
+                      ((headerRow.regularMarketPrice - headerRow.fiftyTwoWeekLow) /
+                        (headerRow.fiftyTwoWeekHigh - headerRow.fiftyTwoWeekLow)) * 100
                     ))}%`,
                   }}
                 />
@@ -408,8 +449,8 @@ function StocksPageContent() {
                   className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3 w-1.5 rounded-full bg-foreground shadow border border-border"
                   style={{
                     left: `${Math.min(100, Math.max(0,
-                      ((data.regularMarketPrice - data.fiftyTwoWeekLow) /
-                        (data.fiftyTwoWeekHigh - data.fiftyTwoWeekLow)) * 100
+                      ((headerRow.regularMarketPrice - headerRow.fiftyTwoWeekLow) /
+                        (headerRow.fiftyTwoWeekHigh - headerRow.fiftyTwoWeekLow)) * 100
                     ))}%`,
                   }}
                 />

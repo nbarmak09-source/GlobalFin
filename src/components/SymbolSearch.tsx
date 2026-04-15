@@ -6,12 +6,15 @@ import type { SearchResult } from "@/lib/types";
 
 interface SymbolSearchProps {
   onSelect: (symbol: string, name: string) => void;
+  /** Called when the user clears the field and presses Enter (e.g. exit stock detail on Stocks). */
+  onClear?: () => void;
   initialSymbol?: string;
   placeholder?: string;
 }
 
 export default function SymbolSearch({
   onSelect,
+  onClear,
   initialSymbol = "",
   placeholder = "Search symbol (e.g., AAPL, MSFT)...",
 }: SymbolSearchProps) {
@@ -77,17 +80,23 @@ export default function SymbolSearch({
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && query.trim()) {
-      e.preventDefault();
-      const sym = query.trim().toUpperCase();
-      const exactMatch = results.find((r) => r.symbol.toUpperCase() === sym);
-      if (exactMatch) {
-        handleSelect(exactMatch);
-      } else {
-        setShowDropdown(false);
-        setResults([]);
-        onSelect(sym, sym);
+    if (e.key !== "Enter") return;
+    if (!query.trim()) {
+      if (onClear) {
+        e.preventDefault();
+        onClear();
       }
+      return;
+    }
+    e.preventDefault();
+    const sym = query.trim().toUpperCase();
+    const exactMatch = results.find((r) => r.symbol.toUpperCase() === sym);
+    if (exactMatch) {
+      handleSelect(exactMatch);
+    } else {
+      setShowDropdown(false);
+      setResults([]);
+      onSelect(sym, sym);
     }
   }
 

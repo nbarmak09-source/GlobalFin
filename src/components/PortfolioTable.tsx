@@ -4,6 +4,7 @@ import { useState, Fragment } from "react";
 import Link from "next/link";
 import { Trash2, TrendingUp, TrendingDown, GripVertical, ChevronDown, Pencil } from "lucide-react";
 import PositionDetailPanel from "./PositionDetailPanel";
+import ExtendedHoursInline from "./ExtendedHoursInline";
 import type { EnrichedPosition } from "@/lib/types";
 import {
   DndContext,
@@ -134,8 +135,11 @@ function SortableRow({
       <td className="px-4 py-3 text-right font-mono">
         ${formatCurrency(pos.avgCost)}
       </td>
-      <td className="px-4 py-3 text-right font-mono">
-        ${formatCurrency(pos.currentPrice)}
+      <td className="px-4 py-3 text-right font-mono align-top">
+        <div>${formatCurrency(pos.currentPrice)}</div>
+        {pos.extendedHours && (
+          <ExtendedHoursInline line={pos.extendedHours} compact className="mt-0.5 justify-end" />
+        )}
       </td>
       <td className="px-4 py-3 text-right font-mono">
         {valuesVisible ? `$${formatCurrency(pos.marketValue)}` : MASK}

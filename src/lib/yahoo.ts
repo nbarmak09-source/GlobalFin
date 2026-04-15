@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import YahooFinance from "yahoo-finance2";
 import type {
   StockQuote,
@@ -6,11 +7,20 @@ import type {
   HistoricalDataPoint,
   SearchResult,
   QuoteSummaryData,
+  QuoteSummaryHeavyPatch,
   MarketMoverQuote,
   MarketMoversBoard,
 } from "./types";
 
 const yf = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
+
+/** Yahoo v7 quote supports comma-joined symbols; batch to avoid N parallel HTTP calls. */
+const YAHOO_QUOTE_BATCH_SIZE = 50;
+
+function yahooOptionalNum(v: unknown): number | undefined {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  return undefined;
+}
 
 /** Symbols for the header ticker tape: indices, commodities, then US mega-caps & supply-chain names. */
 const TICKER_SYMBOLS = [
@@ -143,32 +153,115 @@ export function getIndexCurrency(symbol: string): string | undefined {
   return INDEX_CURRENCIES[symbol];
 }
 
-export async function getTickerData(): Promise<TickerItem[]> {
-  const rows = await Promise.all(
-    TICKER_SYMBOLS.map(async (symbol) => {
-      try {
-        const quote = await yf.quote(symbol);
-        return {
-          symbol,
-          name:
-            SYMBOL_DISPLAY_NAMES[symbol] ||
-            quote.shortName ||
-            quote.longName ||
-            symbol,
-          price: quote.regularMarketPrice ?? 0,
-          change: quote.regularMarketChange ?? 0,
-          changePercent: quote.regularMarketChangePercent ?? 0,
-          currency: quote.currency ?? "USD",
-        };
-      } catch {
-        return null;
-      }
-    })
-  );
+type YahooQuoteRow = {
+  symbol: string;
+  shortName?: string;
+  longName?: string;
+  regularMarketPrice?: number;
+  regularMarketChange?: number;
+  regularMarketChangePercent?: number;
+  regularMarketVolume?: number;
+  regularMarketOpen?: number;
+  regularMarketDayHigh?: number;
+  regularMarketDayLow?: number;
+  regularMarketPreviousClose?: number;
+  fiftyTwoWeekHigh?: number;
+  fiftyTwoWeekLow?: number;
+  marketCap?: number;
+  trailingPE?: number;
+  currency?: string;
+  exchange?: unknown;
+  fullExchangeName?: unknown;
+};
 
-  const rawResults = rows.filter(
-    (r): r is NonNullable<(typeof rows)[number]> => r !== null
+/** One or more Yahoo quote API calls (chunked). Same data as N× single `quote()`, far fewer round trips. */
+async function fetchQuotesBatch(symbols: string[]): Promise<YahooQuoteRow[]> {
+  if (symbols.length === 0) return [];
+  const chunks: string[][] = [];
+  for (let i = 0; i < symbols.length; i += YAHOO_QUOTE_BATCH_SIZE) {
+    chunks.push(symbols.slice(i, i + YAHOO_QUOTE_BATCH_SIZE));
+  }
+  const parts = await Promise.all(
+    chunks.map((chunk) =>
+      yf.quote(chunk, undefined, { validateResult: false })
+    )
   );
+  const flat: YahooQuoteRow[] = [];
+  for (const p of parts) {
+    if (Array.isArray(p)) {
+      for (const item of p) flat.push(item as YahooQuoteRow);
+    } else if (p) {
+      flat.push(p as YahooQuoteRow);
+    }
+  }
+  return flat;
+}
+
+function stockQuoteFromYahoo(quote: YahooQuoteRow, fallbackSymbol: string): StockQuote {
+  const q = quote as Record<string, unknown>;
+  return {
+    symbol: quote.symbol,
+    exchange: quote.exchange != null ? String(quote.exchange) : "",
+    exchangeName:
+      quote.fullExchangeName != null ? String(quote.fullExchangeName) : "",
+    shortName: quote.shortName || quote.longName || fallbackSymbol,
+    regularMarketPrice: quote.regularMarketPrice ?? 0,
+    regularMarketChange: quote.regularMarketChange ?? 0,
+    regularMarketChangePercent: quote.regularMarketChangePercent ?? 0,
+    regularMarketVolume: quote.regularMarketVolume ?? 0,
+    regularMarketOpen: quote.regularMarketOpen ?? 0,
+    regularMarketDayHigh: quote.regularMarketDayHigh ?? 0,
+    regularMarketDayLow: quote.regularMarketDayLow ?? 0,
+    regularMarketPreviousClose: quote.regularMarketPreviousClose ?? 0,
+    fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh ?? 0,
+    fiftyTwoWeekLow: quote.fiftyTwoWeekLow ?? 0,
+    marketCap: quote.marketCap ?? 0,
+    trailingPE: quote.trailingPE ?? 0,
+    currency: quote.currency ?? "USD",
+    marketState:
+      q.marketState != null ? String(q.marketState) : undefined,
+    preMarketPrice: yahooOptionalNum(q.preMarketPrice),
+    preMarketChange: yahooOptionalNum(q.preMarketChange),
+    preMarketChangePercent: yahooOptionalNum(q.preMarketChangePercent),
+    postMarketPrice: yahooOptionalNum(q.postMarketPrice),
+    postMarketChange: yahooOptionalNum(q.postMarketChange),
+    postMarketChangePercent: yahooOptionalNum(q.postMarketChangePercent),
+  };
+}
+
+async function fetchTickerDataUncached(): Promise<TickerItem[]> {
+  let quotes: YahooQuoteRow[];
+  try {
+    quotes = await fetchQuotesBatch([...TICKER_SYMBOLS]);
+  } catch {
+    quotes = [];
+    for (const symbol of TICKER_SYMBOLS) {
+      try {
+        const q = await yf.quote(symbol, undefined, { validateResult: false });
+        if (q && !Array.isArray(q)) quotes.push(q);
+      } catch {
+        /* skip */
+      }
+    }
+  }
+
+  const bySym = new Map(quotes.map((q) => [q.symbol, q]));
+  const rawResults = TICKER_SYMBOLS.map((symbol) => {
+    const quote = bySym.get(symbol);
+    if (!quote) return null;
+    return {
+      symbol,
+      name:
+        SYMBOL_DISPLAY_NAMES[symbol] ||
+        quote.shortName ||
+        quote.longName ||
+        symbol,
+      price: quote.regularMarketPrice ?? 0,
+      change: quote.regularMarketChange ?? 0,
+      changePercent: quote.regularMarketChangePercent ?? 0,
+      currency: quote.currency ?? "USD",
+    };
+  }).filter((r): r is NonNullable<typeof r> => r !== null);
 
   const currencies = rawResults.map((r) => r.currency);
   const fxRates = await getExchangeRates(currencies);
@@ -188,29 +281,20 @@ export async function getTickerData(): Promise<TickerItem[]> {
   });
 }
 
+/** Short cache: tape polls every 15s; dedupes concurrent users without stale tape beyond one refresh. */
+export async function getTickerData(): Promise<TickerItem[]> {
+  return unstable_cache(
+    () => fetchTickerDataUncached(),
+    ["yahoo-ticker-tape"],
+    { revalidate: 12 }
+  )();
+}
+
 export async function getQuote(symbol: string): Promise<StockQuote | null> {
   try {
-    const quote = await yf.quote(symbol);
-    return {
-      symbol: quote.symbol,
-      exchange: quote.exchange != null ? String(quote.exchange) : "",
-      exchangeName:
-        quote.fullExchangeName != null ? String(quote.fullExchangeName) : "",
-      shortName: quote.shortName || quote.longName || symbol,
-      regularMarketPrice: quote.regularMarketPrice ?? 0,
-      regularMarketChange: quote.regularMarketChange ?? 0,
-      regularMarketChangePercent: quote.regularMarketChangePercent ?? 0,
-      regularMarketVolume: quote.regularMarketVolume ?? 0,
-      regularMarketOpen: quote.regularMarketOpen ?? 0,
-      regularMarketDayHigh: quote.regularMarketDayHigh ?? 0,
-      regularMarketDayLow: quote.regularMarketDayLow ?? 0,
-      regularMarketPreviousClose: quote.regularMarketPreviousClose ?? 0,
-      fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh ?? 0,
-      fiftyTwoWeekLow: quote.fiftyTwoWeekLow ?? 0,
-      marketCap: quote.marketCap ?? 0,
-      trailingPE: quote.trailingPE ?? 0,
-      currency: quote.currency ?? "USD",
-    };
+    const quote = await yf.quote(symbol, undefined, { validateResult: false });
+    if (!quote || Array.isArray(quote)) return null;
+    return stockQuoteFromYahoo(quote, symbol);
   } catch {
     return null;
   }
@@ -219,12 +303,22 @@ export async function getQuote(symbol: string): Promise<StockQuote | null> {
 export async function getMultipleQuotes(
   symbols: string[]
 ): Promise<StockQuote[]> {
-  const results: StockQuote[] = [];
-  for (const symbol of symbols) {
-    const quote = await getQuote(symbol);
-    if (quote) results.push(quote);
+  if (symbols.length === 0) return [];
+  const unique = [...new Set(symbols)];
+  try {
+    const batch = await fetchQuotesBatch(unique);
+    const bySym = new Map(batch.map((q) => [q.symbol, q]));
+    return symbols
+      .map((s) => {
+        const q = bySym.get(s);
+        if (!q) return null;
+        return stockQuoteFromYahoo(q, s);
+      })
+      .filter((q): q is StockQuote => q != null);
+  } catch {
+    const quotes = await Promise.all(symbols.map((s) => getQuote(s)));
+    return quotes.filter((q): q is StockQuote => q != null);
   }
-  return results;
 }
 
 function getPeriodStart(period: string): { start: Date; interval: "1d" | "1wk" | "1mo" | "5m" | "15m" | "1h" } {
@@ -353,27 +447,128 @@ export async function searchSymbols(query: string): Promise<SearchResult[]> {
   }
 }
 
-export async function getQuoteSummary(
+/** Maps Yahoo heavy-only quoteSummary modules (shared with core + heavy fetch). */
+function mapYahooHeavyModules(result: any): QuoteSummaryHeavyPatch {
+  const udh = result.upgradeDowngradeHistory;
+  const it = result.insiderTransactions;
+  const nspa = result.netSharePurchaseActivity;
+  return {
+    upgradeDowngradeHistory:
+      udh?.history
+        ?.slice(0, 20)
+        .map(
+          (h: {
+            epochGradeDate?: number | Date;
+            firm?: string;
+            toGrade?: string;
+            fromGrade?: string;
+            action?: string;
+          }) => ({
+            date: new Date(h.epochGradeDate as number | Date).toISOString().split("T")[0],
+            firm: h.firm,
+            toGrade: String(h.toGrade),
+            fromGrade: String(h.fromGrade ?? ""),
+            action: String(h.action),
+          })
+        ) ?? [],
+    insiderTransactions:
+      it?.transactions?.slice(0, 30).map(
+        (t: {
+          filerName?: string;
+          filerRelation?: string;
+          transactionText?: string;
+          shares?: number;
+          value?: number;
+          startDate?: Date | string | number;
+          ownership?: string;
+        }) => ({
+          filerName: t.filerName,
+          filerRelation: String(t.filerRelation),
+          transactionText: t.transactionText,
+          shares: t.shares,
+          value: t.value,
+          startDate: new Date(t.startDate as string | number | Date).toISOString().split("T")[0],
+          ownership: String(t.ownership),
+        })
+      ) ?? [],
+    netSharePurchaseActivity: nspa
+      ? {
+          buyInfoCount: nspa.buyInfoCount,
+          buyInfoShares: nspa.buyInfoShares,
+          sellInfoCount: nspa.sellInfoCount,
+          sellInfoShares: nspa.sellInfoShares ?? 0,
+          netInfoCount: nspa.netInfoCount,
+          netInfoShares: nspa.netInfoShares,
+          totalInsiderShares: nspa.totalInsiderShares,
+        }
+      : null,
+  };
+}
+
+async function fetchQuoteSummaryHeavyFromYahoo(
+  symbol: string
+): Promise<QuoteSummaryHeavyPatch | null> {
+  try {
+    const result = (await yf.quoteSummary(
+      symbol,
+      {
+        modules: [
+          "upgradeDowngradeHistory",
+          "insiderTransactions",
+          "netSharePurchaseActivity",
+        ],
+      },
+      { validateResult: false }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    )) as any;
+    return mapYahooHeavyModules(result);
+  } catch (error) {
+    console.error("quoteSummary heavy error:", error);
+    return null;
+  }
+}
+
+/** Insiders + rating history — fetched separately to keep core summary fast. */
+export async function getQuoteSummaryHeavy(
+  symbol: string
+): Promise<QuoteSummaryHeavyPatch | null> {
+  const sym = symbol.trim().toUpperCase();
+  if (!sym) return null;
+  return unstable_cache(
+    async () => fetchQuoteSummaryHeavyFromYahoo(sym),
+    ["yahoo-quote-summary-heavy", sym],
+    { revalidate: 60 }
+  )();
+}
+
+/** Uncached Yahoo fetch — see `getQuoteSummary` for caching. */
+async function fetchQuoteSummaryFromYahoo(
   symbol: string
 ): Promise<QuoteSummaryData | null> {
   try {
-    const result = await yf.quoteSummary(symbol, {
-      modules: [
-        "assetProfile",
-        "summaryProfile",
-        "summaryDetail",
-        "defaultKeyStatistics",
-        "financialData",
-        "earnings",
-        "earningsTrend",
-        "recommendationTrend",
-        "upgradeDowngradeHistory",
-        "insiderTransactions",
-        "netSharePurchaseActivity",
-        "calendarEvents",
-        "price",
-      ],
-    });
+    // With validateResult: false the library types the payload loosely; keep `any` here
+    // so the mapper matches the previous fully-typed quoteSummary result.
+    const result = (await yf.quoteSummary(
+      symbol,
+      {
+        modules: [
+          "assetProfile",
+          "summaryProfile",
+          "summaryDetail",
+          "defaultKeyStatistics",
+          "financialData",
+          "earnings",
+          "earningsTrend",
+          "recommendationTrend",
+          "calendarEvents",
+          "price",
+        ],
+      },
+      // Skip strict validation — large payloads are slow and Yahoo sometimes
+      // returns extra/missing fields that would reject the whole response.
+      { validateResult: false }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    )) as any;
 
     const profile = result.assetProfile;
     const summary = result.summaryProfile;
@@ -382,12 +577,10 @@ export async function getQuoteSummary(
     const fin = result.financialData;
     const earn = result.earnings;
     const price = result.price;
+    const priceRaw = price as Record<string, unknown> | undefined;
     const cal = result.calendarEvents;
     const et = result.earningsTrend;
     const rt = result.recommendationTrend;
-    const udh = result.upgradeDowngradeHistory;
-    const it = result.insiderTransactions;
-    const nspa = result.netSharePurchaseActivity;
 
     return {
       shortName: price?.shortName || "",
@@ -418,6 +611,14 @@ export async function getQuoteSummary(
       regularMarketPreviousClose: price?.regularMarketPreviousClose ?? detail?.regularMarketPreviousClose ?? 0,
       marketCap: price?.marketCap ?? detail?.marketCap ?? 0,
       currency: price?.currency ?? detail?.currency ?? "USD",
+      marketState:
+        priceRaw?.marketState != null ? String(priceRaw.marketState) : undefined,
+      preMarketPrice: yahooOptionalNum(priceRaw?.preMarketPrice),
+      preMarketChange: yahooOptionalNum(priceRaw?.preMarketChange),
+      preMarketChangePercent: yahooOptionalNum(priceRaw?.preMarketChangePercent),
+      postMarketPrice: yahooOptionalNum(priceRaw?.postMarketPrice),
+      postMarketChange: yahooOptionalNum(priceRaw?.postMarketChange),
+      postMarketChangePercent: yahooOptionalNum(priceRaw?.postMarketChangePercent),
 
       trailingPE: detail?.trailingPE ?? stats?.trailingEps ?? 0,
       forwardPE: detail?.forwardPE ?? stats?.forwardPE ?? 0,
@@ -489,31 +690,50 @@ export async function getQuoteSummary(
         cal?.earnings?.earningsDate?.[0]
           ? new Date(cal.earnings.earningsDate[0]).toISOString().split("T")[0]
           : "",
+      earningsCallTimeMs: (() => {
+        const rawEarn = cal?.earnings as Record<string, unknown> | undefined;
+        const ect = rawEarn?.earningsCallTime;
+        if (ect == null) return undefined;
+        if (typeof ect === "number" && Number.isFinite(ect)) {
+          return ect < 1e12 ? ect * 1000 : ect;
+        }
+        if (typeof ect === "string" && ect.trim()) {
+          const n = Number(ect);
+          if (Number.isFinite(n)) return n < 1e12 ? n * 1000 : n;
+        }
+        return undefined;
+      })(),
       dividendPayDate: cal?.dividendDate
         ? new Date(cal.dividendDate).toISOString().split("T")[0]
         : "",
 
       earningsChartQuarterly:
-        earn?.earningsChart?.quarterly?.map((q) => ({
+        earn?.earningsChart?.quarterly?.map((q: { date?: string; actual?: number; estimate?: number }) => ({
           date: q.date,
           actual: q.actual ?? undefined,
           estimate: q.estimate,
         })) ?? [],
       financialsChartYearly:
-        earn?.financialsChart?.yearly?.map((y) => ({
+        earn?.financialsChart?.yearly?.map((y: { date?: string; revenue?: number; earnings?: number }) => ({
           date: y.date,
           revenue: y.revenue,
           earnings: y.earnings,
         })) ?? [],
       financialsChartQuarterly:
-        earn?.financialsChart?.quarterly?.map((q) => ({
+        earn?.financialsChart?.quarterly?.map((q: { date?: string; revenue?: number; earnings?: number }) => ({
           date: q.date,
           revenue: q.revenue,
           earnings: q.earnings,
         })) ?? [],
 
       earningsTrend:
-        et?.trend?.map((t) => ({
+        et?.trend?.map((t: {
+          period?: string;
+          endDate?: Date | string | number;
+          growth?: number;
+          earningsEstimate?: Record<string, number | null | undefined>;
+          revenueEstimate?: Record<string, number | null | undefined>;
+        }) => ({
           period: t.period,
           endDate: t.endDate ? new Date(t.endDate).toISOString().split("T")[0] : null,
           growth: t.growth,
@@ -536,7 +756,14 @@ export async function getQuoteSummary(
         })) ?? [],
 
       recommendationTrend:
-        rt?.trend?.map((t) => ({
+        rt?.trend?.map((t: {
+          period?: string;
+          strongBuy?: number;
+          buy?: number;
+          hold?: number;
+          sell?: number;
+          strongSell?: number;
+        }) => ({
           period: t.period,
           strongBuy: t.strongBuy,
           buy: t.buy,
@@ -545,19 +772,17 @@ export async function getQuoteSummary(
           strongSell: t.strongSell,
         })) ?? [],
 
-      upgradeDowngradeHistory:
-        udh?.history
-          ?.slice(0, 20)
-          .map((h) => ({
-            date: new Date(h.epochGradeDate).toISOString().split("T")[0],
-            firm: h.firm,
-            toGrade: String(h.toGrade),
-            fromGrade: String(h.fromGrade ?? ""),
-            action: String(h.action),
-          })) ?? [],
-
+      upgradeDowngradeHistory: [],
       companyOfficers:
-        profile?.companyOfficers?.map((o) => ({
+        profile?.companyOfficers?.map((o: {
+          name?: string;
+          title?: string;
+          age?: number;
+          yearBorn?: number;
+          totalPay?: number;
+          exercisedValue?: number;
+          unexercisedValue?: number;
+        }) => ({
           name: o.name,
           title: o.title,
           age: o.age,
@@ -567,33 +792,26 @@ export async function getQuoteSummary(
           unexercisedValue: o.unexercisedValue,
         })) ?? [],
 
-      insiderTransactions:
-        it?.transactions?.slice(0, 30).map((t) => ({
-          filerName: t.filerName,
-          filerRelation: String(t.filerRelation),
-          transactionText: t.transactionText,
-          shares: t.shares,
-          value: t.value,
-          startDate: new Date(t.startDate).toISOString().split("T")[0],
-          ownership: String(t.ownership),
-        })) ?? [],
-
-      netSharePurchaseActivity: nspa
-        ? {
-            buyInfoCount: nspa.buyInfoCount,
-            buyInfoShares: nspa.buyInfoShares,
-            sellInfoCount: nspa.sellInfoCount,
-            sellInfoShares: nspa.sellInfoShares ?? 0,
-            netInfoCount: nspa.netInfoCount,
-            netInfoShares: nspa.netInfoShares,
-            totalInsiderShares: nspa.totalInsiderShares,
-          }
-        : null,
+      insiderTransactions: [],
+      netSharePurchaseActivity: null,
     };
   } catch (error) {
     console.error("quoteSummary error:", error);
     return null;
   }
+}
+
+/** Quote summary with short server cache to absorb repeat loads / dev double-fetch. */
+export async function getQuoteSummary(
+  symbol: string
+): Promise<QuoteSummaryData | null> {
+  const sym = symbol.trim().toUpperCase();
+  if (!sym) return null;
+  return unstable_cache(
+    async () => fetchQuoteSummaryFromYahoo(sym),
+    ["yahoo-quote-summary", sym],
+    { revalidate: 20 }
+  )();
 }
 
 export interface ScreenerQuote {
@@ -698,7 +916,9 @@ function mapScreenerQuoteToMover(q: Record<string, unknown>): MarketMoverQuote |
   const pct = q.regularMarketChangePercent;
   const vol = q.regularMarketVolume;
   const cur = q.currency;
-  return {
+  const tpe = yahooOptionalNum(q.trailingPE);
+  const fpe = yahooOptionalNum(q.forwardPE);
+  const row: MarketMoverQuote = {
     symbol: symbol.toUpperCase(),
     shortName:
       (typeof q.shortName === "string" && q.shortName) ||
@@ -709,6 +929,9 @@ function mapScreenerQuoteToMover(q: Record<string, unknown>): MarketMoverQuote |
     regularMarketVolume: typeof vol === "number" && !isNaN(vol) ? vol : 0,
     currency: typeof cur === "string" && cur ? cur : "USD",
   };
+  if (tpe != null && tpe > 0) row.trailingPE = tpe;
+  if (fpe != null && fpe > 0) row.forwardPE = fpe;
+  return row;
 }
 
 async function fetchScreenerList(
@@ -731,8 +954,9 @@ async function fetchScreenerList(
   }
 }
 
-/** Top movers and actives from Yahoo predefined screeners (parallel fetch). */
-export async function getMarketMoversBoard(count = 8): Promise<MarketMoversBoard> {
+async function fetchMarketMoversBoardUncached(
+  count: number
+): Promise<MarketMoversBoard> {
   const [gainers, losers, mostActive, undervaluedLargeCaps] = await Promise.all([
     fetchScreenerList("day_gainers", count),
     fetchScreenerList("day_losers", count),
@@ -740,6 +964,16 @@ export async function getMarketMoversBoard(count = 8): Promise<MarketMoversBoard
     fetchScreenerList("undervalued_large_caps", count),
   ]);
   return { gainers, losers, mostActive, undervaluedLargeCaps };
+}
+
+/** Top movers from Yahoo screeners; cached — data is not tick-by-tick. */
+export async function getMarketMoversBoard(count = 8): Promise<MarketMoversBoard> {
+  const n = Math.min(25, Math.max(4, count));
+  return unstable_cache(
+    () => fetchMarketMoversBoardUncached(n),
+    ["yahoo-market-movers-board", String(n)],
+    { revalidate: 90 }
+  )();
 }
 
 export async function getMarketNews(): Promise<NewsArticle[]> {

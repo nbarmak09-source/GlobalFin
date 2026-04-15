@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getQuoteSummary } from "@/lib/yahoo";
+import { getQuoteSummaryHeavy } from "@/lib/yahoo";
 
 const TRACKED_SYMBOLS = [
   "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "JPM",
@@ -22,7 +22,7 @@ export async function GET() {
     cutoff.setDate(cutoff.getDate() - 60);
 
     const summaries = await Promise.allSettled(
-      TRACKED_SYMBOLS.map((sym) => getQuoteSummary(sym))
+      TRACKED_SYMBOLS.map((sym) => getQuoteSummaryHeavy(sym))
     );
 
     const entries: UpgradeEntry[] = [];

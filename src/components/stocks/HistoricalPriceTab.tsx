@@ -70,13 +70,20 @@ function Section({ title, children }: SectionProps) {
 interface Props {
   symbol: string;
   summaryData?: QuoteSummaryData;
+  /** When parent already fetched quote (e.g. stocks page), skip duplicate request */
+  initialQuote?: StockQuote;
 }
 
-export default function HistoricalPriceTab({ symbol, summaryData }: Props) {
+export default function HistoricalPriceTab({ symbol, summaryData, initialQuote }: Props) {
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>(PERIODS[6]);
-  const [quote, setQuote] = useState<StockQuote | null>(null);
+  const [quote, setQuote] = useState<StockQuote | null>(initialQuote ?? null);
 
   useEffect(() => {
+    setQuote(initialQuote ?? null);
+  }, [symbol, initialQuote]);
+
+  useEffect(() => {
+    if (initialQuote) return;
     async function fetchQuote() {
       try {
         const res = await fetch(`/api/stocks?action=quote&symbol=${encodeURIComponent(symbol)}`);
@@ -84,7 +91,7 @@ export default function HistoricalPriceTab({ symbol, summaryData }: Props) {
       } catch { /* silently fail */ }
     }
     fetchQuote();
-  }, [symbol]);
+  }, [symbol, initialQuote]);
 
   const d = summaryData;
 
@@ -163,6 +170,20 @@ export default function HistoricalPriceTab({ symbol, summaryData }: Props) {
                 value={`${quote.regularMarketChange >= 0 ? "+" : ""}$${fmt2(quote.regularMarketChange)} (${quote.regularMarketChangePercent >= 0 ? "+" : ""}${quote.regularMarketChangePercent.toFixed(2)}%)`}
                 color={quote.regularMarketChange >= 0 ? "text-green" : "text-red"}
               />
+              {quote.preMarketPrice != null && quote.preMarketPrice > 0 && (
+                <StatRow
+                  label="Pre-market"
+                  value={`$${fmt2(quote.preMarketPrice)} · ${(quote.preMarketChange ?? 0) >= 0 ? "+" : ""}${fmt2(quote.preMarketChange)} (${(quote.preMarketChangePercent ?? 0) >= 0 ? "+" : ""}${(quote.preMarketChangePercent ?? 0).toFixed(2)}%)`}
+                  color={(quote.preMarketChange ?? 0) >= 0 ? "text-green" : "text-red"}
+                />
+              )}
+              {quote.postMarketPrice != null && quote.postMarketPrice > 0 && (
+                <StatRow
+                  label="After hours"
+                  value={`$${fmt2(quote.postMarketPrice)} · ${(quote.postMarketChange ?? 0) >= 0 ? "+" : ""}${fmt2(quote.postMarketChange)} (${(quote.postMarketChangePercent ?? 0) >= 0 ? "+" : ""}${(quote.postMarketChangePercent ?? 0).toFixed(2)}%)`}
+                  color={(quote.postMarketChange ?? 0) >= 0 ? "text-green" : "text-red"}
+                />
+              )}
               <StatRow label="Volume" value={fmtVol(quote.regularMarketVolume)} />
               <StatRow label="Exchange" value={quote.exchangeName || quote.exchange || "—"} />
               <StatRow label="Currency" value={quote.currency || "USD"} />

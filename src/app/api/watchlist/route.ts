@@ -6,6 +6,7 @@ import {
   reorderWatchlist,
 } from "@/lib/portfolio";
 import { getMultipleQuotes } from "@/lib/yahoo";
+import { getExtendedHoursLine } from "@/lib/extendedHours";
 import { auth } from "@/lib/auth";
 import type { EnrichedWatchlistItem } from "@/lib/types";
 
@@ -42,6 +43,7 @@ export async function GET() {
         fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh ?? 0,
         fiftyTwoWeekLow: quote?.fiftyTwoWeekLow ?? 0,
         marketCap: quote?.marketCap ?? 0,
+        extendedHours: quote ? getExtendedHoursLine(quote) : null,
       };
     });
 
