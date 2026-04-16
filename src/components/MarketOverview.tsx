@@ -82,7 +82,7 @@ export default function MarketOverview() {
                 <TrendingDown className="h-4 w-4 text-red shrink-0" />
               )}
             </div>
-            <div className="text-[30px] font-[500] font-mono leading-none">
+            <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
               {fmtCurrency(index.priceUSD, "USD")}
             </div>
             <div

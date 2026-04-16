@@ -282,8 +282,9 @@ export default function PortfolioTable({
   if (loading && positions.length === 0) {
     return (
       <div className="rounded-xl bg-card border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="table-fade-right">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
                 <th className="px-2 py-3 w-8"></th>
@@ -307,7 +308,8 @@ export default function PortfolioTable({
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -415,8 +417,9 @@ export default function PortfolioTable({
       </div>
 
       <div className="rounded-xl bg-card border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <DndContext
+        <div className="table-fade-right">
+          <div className="overflow-x-auto">
+            <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
@@ -471,6 +474,7 @@ export default function PortfolioTable({
               </tbody>
             </table>
           </DndContext>
+          </div>
         </div>
       </div>
     </div>

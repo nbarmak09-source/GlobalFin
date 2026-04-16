@@ -221,7 +221,7 @@ export default function MacroIndicators() {
               <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
             </span>
           </div>
-          <div className="text-[30px] font-[500] font-mono leading-none">
+          <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
             {ip.value != null ? ip.value.toFixed(1) : "—"}
           </div>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -277,7 +277,7 @@ export default function MacroIndicators() {
               <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
             </span>
           </div>
-          <div className="text-[30px] font-[500] font-mono leading-none">
+          <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
             {cpi.yoyChange != null ? `${cpi.yoyChange.toFixed(1)}%` : "—"}
           </div>
           <div className="text-[13px] font-[400] text-muted mt-2">Year-over-year change</div>
@@ -312,7 +312,7 @@ export default function MacroIndicators() {
               <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
             </span>
           </div>
-          <div className="text-[30px] font-[500] font-mono leading-none">
+          <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
             {m2.value != null
               ? `$${(m2.value / 1000).toFixed(1)}T`
               : "—"}
@@ -362,7 +362,7 @@ export default function MacroIndicators() {
           </div>
           <div className="flex items-center gap-2 mb-2">
             <span
-              className={`text-[30px] font-[500] leading-none ${
+              className={`text-[26px] sm:text-[30px] font-[500] leading-none ${
                 businessCycle.inRecession ? "text-red" : "text-green"
               }`}
             >
@@ -422,7 +422,7 @@ export default function MacroIndicators() {
               <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
             </span>
           </div>
-          <div className="text-[30px] font-[500] font-mono leading-none">
+          <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
             {ismMfg.value != null ? ismMfg.value.toFixed(1) : "—"}
           </div>
           {ismMfg.value != null && (
@@ -477,7 +477,7 @@ export default function MacroIndicators() {
               <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
             </span>
           </div>
-          <div className="text-[30px] font-[500] font-mono leading-none">
+          <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
             {sentiment.value != null ? sentiment.value.toFixed(1) : "—"}
           </div>
           {sentiment.value != null && sentiment.change != null && (

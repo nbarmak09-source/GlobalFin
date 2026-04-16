@@ -208,7 +208,7 @@ function MiniChart({
 
     const chart = createChart(container, {
       width,
-      height: 120,
+      height: Math.max(container.clientHeight, 1),
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: "#8b949e",
@@ -267,8 +267,10 @@ function MiniChart({
 
     const ro = new ResizeObserver(() => {
       if (containerRef.current && chartRef.current) {
+        const el = containerRef.current;
         chartRef.current.applyOptions({
-          width: Math.max(containerRef.current.clientWidth || 300, 200),
+          width: Math.max(el.clientWidth || 300, 200),
+          height: Math.max(el.clientHeight, 1),
         });
       }
     });
@@ -319,7 +321,10 @@ function MiniChart({
       </div>
       {/* Chart plot area with 8px margin */}
       <div className="px-2 pb-2">
-        <div ref={containerRef} className="w-full" style={{ height: 120 }} />
+        <div
+          ref={containerRef}
+          className="h-[160px] w-full sm:h-[120px]"
+        />
       </div>
     </div>
   );

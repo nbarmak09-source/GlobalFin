@@ -75,7 +75,7 @@ export default function TickerTape() {
 
   if (loading) {
     return (
-      <div className="h-10 bg-card border-b border-border flex items-center justify-center">
+      <div className="h-10 overflow-x-hidden bg-card border-b border-border flex items-center justify-center">
         <div className="text-muted text-xs">Loading market data...</div>
       </div>
     );
@@ -85,7 +85,7 @@ export default function TickerTape() {
     return (
       <div
         data-gcm-ticker
-        className="h-10 bg-card border-b border-border flex items-center justify-center px-3 gap-2"
+        className="h-10 overflow-x-hidden bg-card border-b border-border flex items-center justify-center px-3 gap-2"
       >
         <span className="text-muted text-[11px] sm:text-xs text-center leading-snug">
           Ticker tape: no live quotes yet (retrying every 15s). Check your connection, or{" "}
@@ -103,11 +103,11 @@ export default function TickerTape() {
   return (
     <div
       data-gcm-ticker
-      className="h-10 bg-card border-b border-border overflow-hidden select-none"
+      className="h-10 overflow-x-hidden overflow-y-hidden bg-card border-b border-border select-none"
     >
       <div
         ref={rowRef}
-        className="ticker-animate flex h-full items-center whitespace-nowrap w-max"
+        className="ticker-animate flex h-full touch-pan-x items-center whitespace-nowrap w-max"
       >
         {duplicated.map((item, idx) => {
           const sc = supplyChainMode
