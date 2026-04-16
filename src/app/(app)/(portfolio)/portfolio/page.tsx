@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Plus, RefreshCw, Briefcase, Eye, EyeOff, FolderPlus, Trash2, X } from "lucide-react";
 import PortfolioTable from "@/components/PortfolioTable";
 import PortfolioPerformanceChart from "@/components/PortfolioPerformanceChart";
+import PortfolioEarningsUpcoming from "@/components/PortfolioEarningsUpcoming";
 import AddPositionModal from "@/components/AddPositionModal";
 import EditPositionModal from "@/components/EditPositionModal";
 import WatchlistTable from "@/components/WatchlistTable";
@@ -512,6 +513,7 @@ export default function PortfolioPage() {
               ))}
             </div>
           )}
+          <PortfolioEarningsUpcoming />
           {!loading && (
             <PortfolioPerformanceChart portfolioId={activePortfolioId} />
           )}
