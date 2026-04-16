@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Search, Loader2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
+import MobileBottomSheet from "@/components/MobileBottomSheet";
 import type { SearchResult } from "@/lib/types";
 
 interface AddPositionModalProps {
@@ -85,19 +86,8 @@ export default function AddPositionModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 mx-4 shadow-2xl shadow-black/40">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">Add Position</h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 hover:bg-card-hover transition-colors duration-200 cursor-pointer"
-          >
-            <X className="h-5 w-5 text-muted" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <MobileBottomSheet open title="Add Position" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
           {!selected ? (
             <div>
               <label className="block text-sm font-medium text-muted mb-1">
@@ -209,7 +199,6 @@ export default function AddPositionModal({
             {submitting ? "Adding..." : "Add Position"}
           </button>
         </form>
-      </div>
-    </div>
+    </MobileBottomSheet>
   );
 }
