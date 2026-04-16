@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -179,6 +180,11 @@ export default function Navbar() {
   const { data: session } = useSession();
   const { openWelcome } = useTour(false);
   const { menuOpen: mobileOpen, closeMenu, toggleMenu } = useMobileNav();
+  const [portalReady, setPortalReady] = useState(false);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
   const {
     open: accountOpen,
     setOpen: setAccountOpen,
@@ -346,104 +352,108 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile: backdrop + right drawer */}
-      <div
-        className={`fixed inset-0 z-50 md:hidden transition-opacity duration-200 ${
-          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
-        aria-hidden={!mobileOpen}
-      >
-        <button
-          type="button"
-          className="absolute inset-0 bg-black/55 backdrop-blur-[2px] cursor-pointer"
-          aria-label="Close menu"
-          onClick={() => closeMenu()}
-        />
-        <aside
-          id="gcm-mobile-drawer"
-          className={`absolute top-0 right-0 flex h-full w-[min(20.5rem,100vw)] flex-col border-l border-border bg-card shadow-2xl transition-transform duration-300 ease-out ${
-            mobileOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
-          }`}
-        >
-          <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            <span className="min-w-0 truncate text-sm font-semibold text-foreground">
-              {session?.user?.name ?? session?.user?.email ?? "Account"}
-            </span>
+      {/* Mobile: backdrop + drawer — portaled to body so position:fixed is not clipped by nav backdrop-blur (Safari/WebKit containing block). */}
+      {portalReady &&
+        createPortal(
+          <div
+            className={`fixed inset-0 z-[100] md:hidden transition-opacity duration-200 ${
+              mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+            }`}
+            aria-hidden={!mobileOpen}
+          >
             <button
               type="button"
-              onClick={() => closeMenu()}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-card-hover hover:text-foreground transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              className="absolute inset-0 bg-black/55 backdrop-blur-[2px] cursor-pointer"
               aria-label="Close menu"
+              onClick={() => closeMenu()}
+            />
+            <aside
+              id="gcm-mobile-drawer"
+              className={`absolute top-0 right-0 flex h-dvh min-h-0 w-[min(20.5rem,100vw)] flex-col border-l border-border bg-card shadow-2xl transition-transform duration-300 ease-out ${
+                mobileOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
+              }`}
             >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
-            {mobileGroups.map(({ label: groupLabel, links }) => (
-              <div key={groupLabel} className="mb-3">
-                <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted/60">
-                  {groupLabel}
-                </p>
-                <div className="flex flex-col gap-0.5">
-                  {links.map(({ href, label, icon: Icon, exact }) => {
-                    const active = isActive(pathname, href, exact);
-                    return (
-                      <Link
-                        key={href}
-                        href={href}
-                        onClick={() => closeMenu()}
-                        className={`flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-[500] transition-colors cursor-pointer ${
-                          active
-                            ? "bg-accent/10 text-accent"
-                            : "text-muted hover:bg-card-hover hover:text-foreground"
-                        }`}
-                      >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        {label}
-                      </Link>
-                    );
-                  })}
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+                <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+                  {session?.user?.name ?? session?.user?.email ?? "Account"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => closeMenu()}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-card-hover hover:text-foreground transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
+                {mobileGroups.map(({ label: groupLabel, links }) => (
+                  <div key={groupLabel} className="mb-3">
+                    <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted/60">
+                      {groupLabel}
+                    </p>
+                    <div className="flex flex-col gap-0.5">
+                      {links.map(({ href, label, icon: Icon, exact }) => {
+                        const active = isActive(pathname, href, exact);
+                        return (
+                          <Link
+                            key={href}
+                            href={href}
+                            onClick={() => closeMenu()}
+                            className={`flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-[500] transition-colors cursor-pointer ${
+                              active
+                                ? "bg-accent/10 text-accent"
+                                : "text-muted hover:bg-card-hover hover:text-foreground"
+                            }`}
+                          >
+                            <Icon className="h-4 w-4 shrink-0" />
+                            {label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                <div className="mt-auto flex flex-col gap-0.5 border-t border-border pt-3">
+                  <span className="flex items-center gap-2 px-3 py-2 text-xs text-muted break-all">
+                    <User className="h-4 w-4 shrink-0" />
+                    {session?.user?.email ?? "Signed in"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMenu();
+                      localStorage.removeItem("gcm_tour_seen");
+                      openWelcome();
+                    }}
+                    className="flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer"
+                  >
+                    <Wand2 className="h-4 w-4 shrink-0" />
+                    Take a tour
+                  </button>
+                  <Link
+                    href="/account"
+                    className="flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer"
+                    onClick={() => closeMenu()}
+                  >
+                    <User className="h-4 w-4 shrink-0" />
+                    Account
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                    className="flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4 shrink-0" />
+                    Sign out
+                  </button>
                 </div>
               </div>
-            ))}
-
-            <div className="mt-auto flex flex-col gap-0.5 border-t border-border pt-3">
-              <span className="flex items-center gap-2 px-3 py-2 text-xs text-muted break-all">
-                <User className="h-4 w-4 shrink-0" />
-                {session?.user?.email ?? "Signed in"}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  closeMenu();
-                  localStorage.removeItem("gcm_tour_seen");
-                  openWelcome();
-                }}
-                className="flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer"
-              >
-                <Wand2 className="h-4 w-4 shrink-0" />
-                Take a tour
-              </button>
-              <Link
-                href="/account"
-                className="flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer"
-                onClick={() => closeMenu()}
-              >
-                <User className="h-4 w-4 shrink-0" />
-                Account
-              </Link>
-              <button
-                type="button"
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer"
-              >
-                <LogOut className="h-4 w-4 shrink-0" />
-                Sign out
-              </button>
-            </div>
-          </div>
-        </aside>
-      </div>
+            </aside>
+          </div>,
+          document.body
+        )}
     </nav>
   );
 }

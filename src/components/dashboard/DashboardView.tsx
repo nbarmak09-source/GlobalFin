@@ -19,7 +19,35 @@ import {
   BarChart3,
   Loader2,
   Globe,
+  Landmark,
+  Sparkles,
 } from "lucide-react";
+
+type DashboardTab = "overview" | "rates" | "insights" | "markets";
+
+function parseDashboardTab(param: string | null): DashboardTab {
+  if (param === "markets" || param === "rates" || param === "insights") return param;
+  return "overview";
+}
+
+const TAB_META: Record<DashboardTab, { title: string; subtitle: string }> = {
+  overview: {
+    title: "Market Overview",
+    subtitle: "Major indices, macro data, and market performance",
+  },
+  rates: {
+    title: "Rates & FX",
+    subtitle: "Treasury curve, spreads, and major currencies",
+  },
+  insights: {
+    title: "Insights",
+    subtitle: "Charts and long-form market context",
+  },
+  markets: {
+    title: "Markets",
+    subtitle: "Sectors, valuations, analyst activity, and headlines",
+  },
+};
 
 function SectionHeader({
   icon: Icon,
@@ -49,7 +77,7 @@ function DashboardInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session } = useSession();
-  const tab = searchParams.get("tab") === "markets" ? "markets" : "overview";
+  const tab = parseDashboardTab(searchParams.get("tab"));
 
   const firstName = session?.user?.name?.trim().split(/\s+/)[0] ?? null;
 
@@ -60,13 +88,22 @@ function DashboardInner() {
     return "Good evening";
   }
 
-  function setTab(next: "overview" | "markets") {
-    if (next === "markets") {
-      router.replace("/?tab=markets", { scroll: false });
-    } else {
+  function setTab(next: DashboardTab) {
+    if (next === "overview") {
       router.replace("/", { scroll: false });
+    } else {
+      router.replace(`/?tab=${next}`, { scroll: false });
     }
   }
+
+  const meta = TAB_META[tab];
+
+  const dashboardTabs: { id: DashboardTab; label: string; icon: typeof LayoutGrid }[] = [
+    { id: "overview", label: "Overview", icon: LayoutGrid },
+    { id: "rates", label: "Rates & FX", icon: Landmark },
+    { id: "insights", label: "Insights", icon: Sparkles },
+    { id: "markets", label: "Markets", icon: BarChart3 },
+  ];
 
   return (
     <div className="space-y-0 min-w-0">
@@ -77,52 +114,35 @@ function DashboardInner() {
               {getGreeting()}, {firstName}
             </p>
           )}
-          <h1 className="text-xl sm:text-2xl font-bold font-serif mb-1">
-            {tab === "overview" ? "Market Overview" : "Markets"}
-          </h1>
-          <p className="text-sm text-muted">
-            {tab === "overview"
-              ? "Major indices, macro data, and market performance"
-              : "Sectors, valuations, analyst activity, and headlines"}
-          </p>
+          <h1 className="text-xl sm:text-2xl font-bold font-serif mb-1">{meta.title}</h1>
+          <p className="text-sm text-muted">{meta.subtitle}</p>
         </div>
         <div
-          className="flex w-full max-w-full items-stretch gap-1 rounded-xl bg-card border border-border p-1 sm:inline-flex sm:w-fit sm:rounded-lg sm:p-0.5"
+          className="flex w-full max-w-full gap-1 rounded-xl bg-card border border-border p-1 overflow-x-auto sm:flex-wrap sm:overflow-visible sm:w-fit sm:rounded-lg sm:p-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           role="tablist"
           aria-label="Dashboard view"
         >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "overview"}
-            onClick={() => setTab("overview")}
-            className={`flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-[500] transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent sm:flex-initial sm:rounded-md sm:px-4 sm:py-2 ${
-              tab === "overview"
-                ? "bg-accent text-white shadow-[0_0_12px_rgba(201,162,39,0.3)]"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            <LayoutGrid className="h-4 w-4 shrink-0" />
-            <span className="whitespace-nowrap">Overview</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "markets"}
-            onClick={() => setTab("markets")}
-            className={`flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-[500] transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent sm:flex-initial sm:rounded-md sm:px-4 sm:py-2 ${
-              tab === "markets"
-                ? "bg-accent text-white shadow-[0_0_12px_rgba(201,162,39,0.3)]"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            <BarChart3 className="h-4 w-4 shrink-0" />
-            <span className="whitespace-nowrap">Markets</span>
-          </button>
+          {dashboardTabs.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className={`flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-[500] transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent sm:rounded-md sm:px-4 sm:py-2 ${
+                tab === id
+                  ? "bg-accent text-white shadow-[0_0_12px_rgba(201,162,39,0.3)]"
+                  : "text-muted hover:text-foreground"
+              }`}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="whitespace-nowrap">{label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {tab === "overview" ? (
+      {tab === "overview" && (
         <div>
           <section aria-label="Macro indicators">
             <SectionHeader icon={Activity} label="Macro Indicators" />
@@ -152,7 +172,11 @@ function DashboardInner() {
           <section aria-label="Market indices" className="mt-6">
             <MarketOverview />
           </section>
+        </div>
+      )}
 
+      {tab === "rates" && (
+        <div>
           <section aria-label="Currencies">
             <SectionHeader icon={DollarSign} label="Currencies" />
             <CurrenciesPanel />
@@ -161,15 +185,19 @@ function DashboardInner() {
           <section aria-label="Yield curve" className="mt-6">
             <YieldCurveMonitor />
           </section>
+        </div>
+      )}
 
+      {tab === "insights" && (
+        <div>
           <section aria-label="Visual Capitalist insight">
             <SectionHeader icon={ImageIcon} label="Visual Capitalist Insight" />
             <VisualCapitalistCard />
           </section>
         </div>
-      ) : (
-        <DashboardMarketsPanel />
       )}
+
+      {tab === "markets" && <DashboardMarketsPanel />}
     </div>
   );
 }
