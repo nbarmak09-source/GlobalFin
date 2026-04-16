@@ -56,7 +56,7 @@ function SparkBlock({
     : null;
 
   return (
-    <div className="rounded-xl border border-border bg-card/80 p-3 min-w-0">
+    <div className="rounded-xl border border-border bg-card/80 p-3 min-w-0 overflow-hidden">
       <div className="flex items-start justify-between gap-2 mb-2">
         <h4 className="text-xs font-medium text-foreground leading-tight">
           {title}
@@ -68,9 +68,9 @@ function SparkBlock({
           </span>
         )}
       </div>
-      <div className="h-[72px] w-full">
+      <div className="h-[72px] w-full min-w-0 min-h-[72px]">
         {data.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minHeight={72}>
             <LineChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <XAxis
                 dataKey="year"

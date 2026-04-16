@@ -80,8 +80,11 @@ export default function RevenueLoopDashboardBand({
           </label>
         )}
       </div>
-      <div style={{ width: "100%", height: 220 }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div
+        className="min-w-0 w-full"
+        style={{ width: "100%", height: 220, minHeight: 220 }}
+      >
+        <ResponsiveContainer width="100%" height="100%" minHeight={220}>
           <BarChart
             data={chartData}
             margin={{ top: 8, right: 8, left: 4, bottom: 8 }}

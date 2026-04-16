@@ -70,10 +70,19 @@ export async function GET(request: NextRequest) {
     }
 
     const symbols = positions.map((p) => p.symbol);
-    const [quotes, sectorMap] = await Promise.all([
-      getMultipleQuotes(symbols),
-      getSectorsForSymbols(symbols),
-    ]);
+    let quotes: Awaited<ReturnType<typeof getMultipleQuotes>> = [];
+    let sectorMap = new Map<string, string>();
+    try {
+      [quotes, sectorMap] = await Promise.all([
+        getMultipleQuotes(symbols),
+        getSectorsForSymbols(symbols),
+      ]);
+    } catch (enrichErr) {
+      console.error(
+        "Portfolio GET enrichment (quotes/sectors) failed:",
+        enrichErr instanceof Error ? enrichErr.message : enrichErr
+      );
+    }
     const quoteMap = new Map(quotes.map((q) => [q.symbol, q]));
 
     const enriched: EnrichedPosition[] = positions.map((pos) => {
@@ -102,7 +111,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(enriched);
   } catch (error) {
-    console.error("Portfolio GET error:", error);
+    console.error(
+      "Portfolio GET error:",
+      error instanceof Error ? error.message : error,
+      error instanceof Error ? error.stack : ""
+    );
     return NextResponse.json(
       { error: "Failed to fetch portfolio" },
       { status: 500 }

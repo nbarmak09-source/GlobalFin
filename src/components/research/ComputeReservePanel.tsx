@@ -210,6 +210,7 @@ export default function ComputeReservePanel({
 
   // Ranking — sorted descending by GPU count
   const ranked = [...data].sort((a, b) => b.gpuClusterSizeK - a.gpuClusterSizeK);
+  const rankingChartHeight = Math.max(120, ranked.length * 36 + 20);
 
   return (
     <div className="flex flex-col gap-4 min-w-0">
@@ -265,16 +266,23 @@ export default function ComputeReservePanel({
       )}
 
       {/* ── Ranking bar chart ── */}
-      {showRanking && (
-        <div className="flex flex-col gap-2">
+      {showRanking && ranked.length > 0 && (
+        <div className="flex flex-col gap-2 min-w-0">
           <p className="text-[10px] font-medium text-muted uppercase tracking-wide">
             GPU Ranking — All Companies
           </p>
           <p className="text-[10px] text-muted">
             Click a bar to view that company&apos;s detail
           </p>
-          <div style={{ width: "100%", height: ranked.length * 36 + 20 }}>
-            <ResponsiveContainer width="100%" height="100%">
+          <div
+            className="min-w-0 w-full"
+            style={{ width: "100%", height: rankingChartHeight, minHeight: 120 }}
+          >
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+              minHeight={120}
+            >
               <BarChart
                 data={ranked}
                 layout="vertical"

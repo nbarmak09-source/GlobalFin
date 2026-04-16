@@ -30,10 +30,19 @@ export async function GET() {
     }
 
     const symbols = watchlist.map((w) => w.symbol);
-    const [quotes, sectorMap] = await Promise.all([
-      getMultipleQuotes(symbols),
-      getSectorsForSymbols(symbols),
-    ]);
+    let quotes: Awaited<ReturnType<typeof getMultipleQuotes>> = [];
+    let sectorMap = new Map<string, string>();
+    try {
+      [quotes, sectorMap] = await Promise.all([
+        getMultipleQuotes(symbols),
+        getSectorsForSymbols(symbols),
+      ]);
+    } catch (enrichErr) {
+      console.error(
+        "Watchlist GET enrichment (quotes/sectors) failed:",
+        enrichErr instanceof Error ? enrichErr.message : enrichErr
+      );
+    }
     const quoteMap = new Map(quotes.map((q) => [q.symbol, q]));
 
     const enriched: EnrichedWatchlistItem[] = watchlist.map((item) => {
@@ -54,7 +63,11 @@ export async function GET() {
 
     return NextResponse.json(enriched);
   } catch (error) {
-    console.error("Watchlist GET error:", error);
+    console.error(
+      "Watchlist GET error:",
+      error instanceof Error ? error.message : error,
+      error instanceof Error ? error.stack : ""
+    );
     return NextResponse.json(
       { error: "Failed to fetch watchlist" },
       { status: 500 }
