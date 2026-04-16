@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -60,6 +60,34 @@ const TOOLS_ITEMS = [
   { href: "/filings", label: "Filings AI", icon: FileText, desc: "AI summaries of 10-K / 10-Q" },
   { href: "/pitch", label: "Pitch Builder", icon: Wand2, desc: "AI investment memos" },
 ];
+
+const ALL_SECTIONS = [
+  { href: "/", label: "Dashboard", keywords: "home overview market indices" },
+  { href: "/supply-chain", label: "Supply Chain", keywords: "semiconductor oil gas ecosystem" },
+  { href: "/fixed-income", label: "Fixed Income", keywords: "bonds treasury yield curve rates" },
+  { href: "/alternatives", label: "Alternatives", keywords: "commodities reits housing real estate" },
+  { href: "/ecm", label: "Equities", keywords: "indices sectors deal flow equity" },
+  { href: "/research", label: "Equity Research", keywords: "analyst upgrades picks ideas" },
+  { href: "/portfolio", label: "Portfolio", keywords: "positions watchlist p&l holdings" },
+  { href: "/stocks", label: "Stocks", keywords: "fundamentals single name chart" },
+  { href: "/screener", label: "Screener", keywords: "filter fundamentals pe ratio" },
+  { href: "/allocation", label: "Allocation", keywords: "sector geographic exposure pie" },
+  { href: "/alerts", label: "Price Alerts", keywords: "targets notifications crossings" },
+  { href: "/calendar", label: "Calendar", keywords: "earnings dividends dates events" },
+  { href: "/models", label: "Valuation Models", keywords: "dcf comps lbo valuation" },
+  { href: "/filings", label: "Filings AI", keywords: "10-k 10-q sec ai summary" },
+  { href: "/pitch", label: "Pitch Builder", keywords: "investment memo ai generate" },
+  { href: "/account", label: "Account", keywords: "profile settings email password" },
+];
+
+function filterSections(query: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return ALL_SECTIONS.filter((s) => {
+    const hay = `${s.label} ${s.keywords}`.toLowerCase();
+    return hay.includes(q);
+  }).slice(0, 6);
+}
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 function isActive(pathname: string, href: string, exact: boolean) {
@@ -181,6 +209,21 @@ export default function Navbar() {
   const { openWelcome } = useTour(false);
   const { menuOpen: mobileOpen, closeMenu, toggleMenu } = useMobileNav();
   const [portalReady, setPortalReady] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileSearchQuery, setMobileSearchQuery] = useState("");
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchButtonsRef = useRef<HTMLDivElement>(null);
+  const mobileSearchPanelRef = useRef<HTMLDivElement>(null);
+
+  const closeMobileSearch = useCallback(() => {
+    setMobileSearchOpen(false);
+    setMobileSearchQuery("");
+  }, []);
+
+  const searchResults = useMemo(
+    () => filterSections(mobileSearchQuery),
+    [mobileSearchQuery]
+  );
 
   useEffect(() => {
     setPortalReady(true);
@@ -194,6 +237,39 @@ export default function Navbar() {
   useEffect(() => {
     closeMenu();
   }, [pathname, closeMenu]);
+
+  useEffect(() => {
+    closeMobileSearch();
+  }, [pathname, closeMobileSearch]);
+
+  useEffect(() => {
+    if (!mobileSearchOpen) return;
+    const id = requestAnimationFrame(() => {
+      mobileSearchInputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [mobileSearchOpen]);
+
+  useEffect(() => {
+    if (!mobileSearchOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      const t = e.target as Node;
+      if (mobileSearchButtonsRef.current?.contains(t)) return;
+      if (mobileSearchPanelRef.current?.contains(t)) return;
+      closeMobileSearch();
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [mobileSearchOpen, closeMobileSearch]);
+
+  useEffect(() => {
+    if (!mobileSearchOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") closeMobileSearch();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileSearchOpen, closeMobileSearch]);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
@@ -233,7 +309,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur-md pt-[env(safe-area-inset-top)]"
+      className="sticky top-0 z-40 flex flex-col border-b border-border bg-card/90 backdrop-blur-md pt-[env(safe-area-inset-top)]"
     >
       <div className="flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 sm:px-4">
         {/* Logo */}
@@ -337,11 +413,33 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile: hamburger */}
-        <div className="flex md:hidden items-center gap-1">
+        {/* Mobile: section search + hamburger */}
+        <div
+          ref={mobileSearchButtonsRef}
+          className="flex md:hidden items-center gap-1 shrink-0"
+        >
           <button
             type="button"
-            onClick={() => toggleMenu()}
+            onClick={() => {
+              if (mobileSearchOpen) closeMobileSearch();
+              else {
+                closeMenu();
+                setMobileSearchOpen(true);
+              }
+            }}
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-muted hover:bg-card-hover hover:text-foreground transition-colors duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+            aria-label={mobileSearchOpen ? "Close search" : "Search sections"}
+            aria-expanded={mobileSearchOpen}
+            aria-controls="gcm-mobile-search-panel"
+          >
+            <Search className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (mobileSearchOpen) closeMobileSearch();
+              toggleMenu();
+            }}
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-muted hover:bg-card-hover hover:text-foreground transition-colors duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
@@ -351,6 +449,71 @@ export default function Navbar() {
           </button>
         </div>
       </div>
+
+      {/* Mobile: full-width section search (pushes page content down) */}
+      {mobileSearchOpen && (
+        <div
+          id="gcm-mobile-search-panel"
+          ref={mobileSearchPanelRef}
+          className="md:hidden w-full border-t border-border bg-card/90 px-3 pb-3 pt-2 sm:px-4"
+        >
+          <div className="relative">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+              aria-hidden
+            />
+            <input
+              ref={mobileSearchInputRef}
+              type="search"
+              enterKeyHint="search"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              value={mobileSearchQuery}
+              onChange={(e) => setMobileSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  closeMobileSearch();
+                }
+              }}
+              placeholder="Search sections…"
+              className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-11 text-sm text-foreground placeholder:text-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              aria-autocomplete="list"
+              aria-controls="gcm-mobile-search-results"
+              aria-expanded={searchResults.length > 0}
+            />
+            <button
+              type="button"
+              onClick={() => closeMobileSearch()}
+              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              aria-label="Close search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          {searchResults.length > 0 && (
+            <ul
+              id="gcm-mobile-search-results"
+              role="listbox"
+              className="mt-2 max-h-[min(40vh,20rem)] overflow-y-auto overscroll-contain rounded-xl border border-border bg-card shadow-lg shadow-black/20"
+            >
+              {searchResults.map((s) => (
+                <li key={s.href} role="option">
+                  <Link
+                    href={s.href}
+                    className="block border-b border-border/60 px-3 py-2.5 transition-colors last:border-b-0 hover:bg-card-hover focus-visible:bg-card-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                    onClick={() => closeMobileSearch()}
+                  >
+                    <span className="text-sm font-[500] text-foreground">{s.label}</span>
+                    <span className="mt-0.5 block font-mono text-[11px] text-muted">{s.href}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Mobile: backdrop + drawer — portaled to body so position:fixed is not clipped by nav backdrop-blur (Safari/WebKit containing block). */}
       {portalReady &&
