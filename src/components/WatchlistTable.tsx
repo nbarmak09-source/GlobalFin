@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, Fragment, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Trash2,
@@ -30,6 +30,12 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import {
+  sortHoldingsRows,
+  type HoldingsTableSortMode,
+} from "@/lib/tableSort";
+
+const WATCHLIST_SORT_STORAGE_KEY = "portfolio-watchlist-sort";
 
 interface WatchlistTableProps {
   items: EnrichedWatchlistItem[];
@@ -58,11 +64,13 @@ function SortableRow({
   onRemove,
   isExpanded,
   onToggleExpand,
+  dragDisabled,
 }: {
   item: EnrichedWatchlistItem;
   onRemove: (id: string) => void;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  dragDisabled: boolean;
 }) {
   const {
     attributes,
@@ -71,7 +79,7 @@ function SortableRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: item.id });
+  } = useSortable({ id: item.id, disabled: dragDisabled });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -95,14 +103,25 @@ function SortableRow({
       }}
     >
       <td className="px-2 py-3 w-8">
-        <button
-          {...attributes}
-          {...listeners}
-          onClick={(e) => e.stopPropagation()}
-          className="cursor-grab active:cursor-grabbing rounded p-1 text-muted hover:text-foreground hover:bg-card-hover transition-colors touch-none"
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
+        {dragDisabled ? (
+          <span
+            className="inline-flex rounded p-1 cursor-not-allowed text-muted/40 opacity-50 touch-none"
+            title="Switch to Manual order to drag rows"
+          >
+            <GripVertical className="h-4 w-4" />
+          </span>
+        ) : (
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
+            title="Drag to reorder"
+            className="cursor-grab active:cursor-grabbing rounded p-1 text-muted hover:text-foreground hover:bg-card-hover transition-colors touch-none"
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        )}
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2 min-w-0">
@@ -127,6 +146,9 @@ function SortableRow({
             aria-hidden
           />
         </div>
+      </td>
+      <td className="px-4 py-3 text-sm text-muted max-w-[10rem] truncate" title={item.sector || undefined}>
+        {item.sector?.trim() ? item.sector : "—"}
       </td>
       <td className="px-4 py-3 text-right font-mono align-top">
         <div>${formatCurrency(item.currentPrice)}</div>
@@ -184,6 +206,34 @@ export default function WatchlistTable({
   loading = false,
 }: WatchlistTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<HoldingsTableSortMode>("manual");
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(WATCHLIST_SORT_STORAGE_KEY);
+      if (v === "sector" || v === "symbol" || v === "manual") {
+        setSortMode(v);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function setSortModePersist(next: HoldingsTableSortMode) {
+    setSortMode(next);
+    try {
+      localStorage.setItem(WATCHLIST_SORT_STORAGE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const displayItems = useMemo(
+    () => sortHoldingsRows(items, sortMode),
+    [items, sortMode]
+  );
+
+  const dragDisabled = sortMode !== "manual";
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -193,6 +243,7 @@ export default function WatchlistTable({
   );
 
   function handleDragEnd(event: DragEndEvent) {
+    if (dragDisabled) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = items.findIndex((w) => w.id === active.id);
@@ -211,6 +262,7 @@ export default function WatchlistTable({
               <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
                 <th className="px-2 py-3 w-8"></th>
                 <th className="px-4 py-3">Symbol</th>
+                <th className="px-4 py-3">Sector</th>
                 <th className="px-4 py-3 text-right">Price</th>
                 <th className="px-4 py-3 text-right">Day Change</th>
                 <th className="px-4 py-3 text-right">52W High</th>
@@ -222,7 +274,7 @@ export default function WatchlistTable({
             <tbody>
               {[1, 2, 3].map((i) => (
                 <tr key={i} className="border-b border-border/50">
-                  <td colSpan={8} className="px-4 py-3">
+                  <td colSpan={9} className="px-4 py-3">
                     <div className="h-12 w-full rounded-lg bg-card animate-pulse" />
                   </td>
                 </tr>
@@ -246,45 +298,70 @@ export default function WatchlistTable({
   }
 
   return (
-    <div className="rounded-xl bg-card border border-border overflow-hidden">
-      <div className="overflow-x-auto">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-          modifiers={[restrictToVerticalAxis]}
-        >
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
-                <th className="px-2 py-3 w-8"></th>
-                <th className="px-4 py-3">Symbol</th>
-                <th className="px-4 py-3 text-right">Price</th>
-                <th className="px-4 py-3 text-right">Day Change</th>
-                <th className="px-4 py-3 text-right">52W High</th>
-                <th className="px-4 py-3 text-right">52W Low</th>
-                <th className="px-4 py-3 text-right">Mkt Cap</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <SortableContext
-                items={items.map((w) => w.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {items.map((item) => (
-                  <Fragment key={item.id}>
-                    <SortableRow
-                      item={item}
-                      onRemove={onRemove}
-                      isExpanded={expandedId === item.id}
-                      onToggleExpand={() =>
-                        setExpandedId((id) => (id === item.id ? null : item.id))
-                      }
-                    />
-                    {expandedId === item.id && (
-                      <tr>
-                        <td colSpan={8} className="p-0 align-top">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label className="text-sm text-muted flex items-center gap-2">
+          Order
+          <select
+            value={sortMode}
+            onChange={(e) =>
+              setSortModePersist(e.target.value as HoldingsTableSortMode)
+            }
+            className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm text-foreground"
+          >
+            <option value="manual">Manual (drag)</option>
+            <option value="sector">Sector A–Z</option>
+            <option value="symbol">Symbol A–Z</option>
+          </select>
+        </label>
+        {sortMode !== "manual" && (
+          <p className="text-xs text-muted">
+            Drag reorder is available when Order is Manual.
+          </p>
+        )}
+      </div>
+
+      <div className="rounded-xl bg-card border border-border overflow-hidden">
+        <div className="overflow-x-auto">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            modifiers={[restrictToVerticalAxis]}
+          >
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
+                  <th className="px-2 py-3 w-8"></th>
+                  <th className="px-4 py-3">Symbol</th>
+                  <th className="px-4 py-3">Sector</th>
+                  <th className="px-4 py-3 text-right">Price</th>
+                  <th className="px-4 py-3 text-right">Day Change</th>
+                  <th className="px-4 py-3 text-right">52W High</th>
+                  <th className="px-4 py-3 text-right">52W Low</th>
+                  <th className="px-4 py-3 text-right">Mkt Cap</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <SortableContext
+                  items={displayItems.map((w) => w.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {displayItems.map((item) => (
+                    <Fragment key={item.id}>
+                      <SortableRow
+                        item={item}
+                        onRemove={onRemove}
+                        isExpanded={expandedId === item.id}
+                        onToggleExpand={() =>
+                          setExpandedId((id) => (id === item.id ? null : item.id))
+                        }
+                        dragDisabled={dragDisabled}
+                      />
+                      {expandedId === item.id && (
+                        <tr>
+                          <td colSpan={9} className="p-0 align-top">
                           <PositionDetailPanel
                             symbol={item.symbol}
                             onClose={() => setExpandedId(null)}
@@ -293,11 +370,12 @@ export default function WatchlistTable({
                       </tr>
                     )}
                   </Fragment>
-                ))}
-              </SortableContext>
-            </tbody>
-          </table>
-        </DndContext>
+                  ))}
+                </SortableContext>
+              </tbody>
+            </table>
+          </DndContext>
+        </div>
       </div>
     </div>
   );

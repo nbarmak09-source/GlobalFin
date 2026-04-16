@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, Fragment, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { Trash2, TrendingUp, TrendingDown, GripVertical, ChevronDown, Pencil } from "lucide-react";
 import PositionDetailPanel from "./PositionDetailPanel";
@@ -24,8 +24,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import {
+  sortHoldingsRows,
+  type HoldingsTableSortMode,
+} from "@/lib/tableSort";
 
 const MASK = "••••";
+
+const HOLDINGS_SORT_STORAGE_KEY = "portfolio-holdings-sort";
 
 interface PortfolioTableProps {
   positions: EnrichedPosition[];
@@ -60,6 +66,7 @@ function SortableRow({
   valuesVisible,
   isExpanded,
   onToggleExpand,
+  dragDisabled,
 }: {
   pos: EnrichedPosition;
   onDelete: (id: string) => void;
@@ -67,6 +74,7 @@ function SortableRow({
   valuesVisible: boolean;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  dragDisabled: boolean;
 }) {
   const {
     attributes,
@@ -75,7 +83,7 @@ function SortableRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: pos.id });
+  } = useSortable({ id: pos.id, disabled: dragDisabled });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -99,14 +107,25 @@ function SortableRow({
       }}
     >
       <td className="px-2 py-3 w-8">
-        <button
-          {...attributes}
-          {...listeners}
-          onClick={(e) => e.stopPropagation()}
-          className="cursor-grab active:cursor-grabbing rounded p-1 text-muted hover:text-foreground hover:bg-card-hover transition-colors touch-none"
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
+        {dragDisabled ? (
+          <span
+            className="inline-flex rounded p-1 cursor-not-allowed text-muted/40 opacity-50 touch-none"
+            title="Switch to Manual order to drag rows"
+          >
+            <GripVertical className="h-4 w-4" />
+          </span>
+        ) : (
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
+            title="Drag to reorder"
+            className="cursor-grab active:cursor-grabbing rounded p-1 text-muted hover:text-foreground hover:bg-card-hover transition-colors touch-none"
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        )}
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2 min-w-0">
@@ -130,6 +149,9 @@ function SortableRow({
             className={`h-4 w-4 text-muted transition-transform flex-shrink-0 ${isExpanded ? "rotate-180" : ""}`}
           />
         </div>
+      </td>
+      <td className="px-4 py-3 text-sm text-muted max-w-[10rem] truncate" title={pos.sector || undefined}>
+        {pos.sector?.trim() ? pos.sector : "—"}
       </td>
       <td className="px-4 py-3 font-mono">{pos.shares}</td>
       <td className="px-4 py-3 text-right font-mono">
@@ -210,6 +232,34 @@ export default function PortfolioTable({
   loading = false,
 }: PortfolioTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<HoldingsTableSortMode>("manual");
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(HOLDINGS_SORT_STORAGE_KEY);
+      if (v === "sector" || v === "symbol" || v === "manual") {
+        setSortMode(v);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function setSortModePersist(next: HoldingsTableSortMode) {
+    setSortMode(next);
+    try {
+      localStorage.setItem(HOLDINGS_SORT_STORAGE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const displayPositions = useMemo(
+    () => sortHoldingsRows(positions, sortMode),
+    [positions, sortMode]
+  );
+
+  const dragDisabled = sortMode !== "manual";
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -219,6 +269,7 @@ export default function PortfolioTable({
   );
 
   function handleDragEnd(event: DragEndEvent) {
+    if (dragDisabled) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = positions.findIndex((p) => p.id === active.id);
@@ -237,6 +288,7 @@ export default function PortfolioTable({
               <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
                 <th className="px-2 py-3 w-8"></th>
                 <th className="px-4 py-3">Symbol</th>
+                <th className="px-4 py-3">Sector</th>
                 <th className="px-4 py-3">Shares</th>
                 <th className="px-4 py-3 text-right">Avg Cost</th>
                 <th className="px-4 py-3 text-right">Current</th>
@@ -249,7 +301,7 @@ export default function PortfolioTable({
             <tbody>
               {[1, 2, 3].map((i) => (
                 <tr key={i} className="border-b border-border/50">
-                  <td colSpan={9} className="px-4 py-3">
+                  <td colSpan={10} className="px-4 py-3">
                     <div className="h-12 w-full rounded-lg bg-card animate-pulse" />
                   </td>
                 </tr>
@@ -272,11 +324,11 @@ export default function PortfolioTable({
     );
   }
 
-  const totalValue = positions.reduce((sum, p) => sum + p.marketValue, 0);
-  const totalCost = positions.reduce((sum, p) => sum + p.avgCost * p.shares, 0);
+  const totalValue = displayPositions.reduce((sum, p) => sum + p.marketValue, 0);
+  const totalCost = displayPositions.reduce((sum, p) => sum + p.avgCost * p.shares, 0);
   const totalPL = totalValue - totalCost;
   const totalPLPercent = totalCost > 0 ? (totalPL / totalCost) * 100 : 0;
-  const totalDayChange = positions.reduce((sum, p) => sum + p.dayChange * p.shares, 0);
+  const totalDayChange = displayPositions.reduce((sum, p) => sum + p.dayChange * p.shares, 0);
   const startOfDayValue = totalValue - totalDayChange;
   const totalDayChangePercent =
     startOfDayValue !== 0 ? (totalDayChange / startOfDayValue) * 100 : 0;
@@ -340,6 +392,28 @@ export default function PortfolioTable({
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label className="text-sm text-muted flex items-center gap-2">
+          Order
+          <select
+            value={sortMode}
+            onChange={(e) =>
+              setSortModePersist(e.target.value as HoldingsTableSortMode)
+            }
+            className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm text-foreground"
+          >
+            <option value="manual">Manual (drag)</option>
+            <option value="sector">Sector A–Z</option>
+            <option value="symbol">Symbol A–Z</option>
+          </select>
+        </label>
+        {sortMode !== "manual" && (
+          <p className="text-xs text-muted">
+            Drag reorder is available when Order is Manual.
+          </p>
+        )}
+      </div>
+
       <div className="rounded-xl bg-card border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <DndContext
@@ -353,6 +427,7 @@ export default function PortfolioTable({
                 <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
                   <th className="px-2 py-3 w-8"></th>
                   <th className="px-4 py-3">Symbol</th>
+                  <th className="px-4 py-3">Sector</th>
                   <th className="px-4 py-3">Shares</th>
                   <th className="px-4 py-3 text-right">Avg Cost</th>
                   <th className="px-4 py-3 text-right">Current</th>
@@ -364,10 +439,10 @@ export default function PortfolioTable({
               </thead>
               <tbody>
                 <SortableContext
-                  items={positions.map((p) => p.id)}
+                  items={displayPositions.map((p) => p.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  {positions.map((pos) => (
+                  {displayPositions.map((pos) => (
                     <Fragment key={pos.id}>
                       <SortableRow
                         pos={pos}
@@ -378,10 +453,11 @@ export default function PortfolioTable({
                         onToggleExpand={() =>
                           setExpandedId((id) => (id === pos.id ? null : pos.id))
                         }
+                        dragDisabled={dragDisabled}
                       />
                       {expandedId === pos.id && (
                         <tr>
-                          <td colSpan={9} className="p-0 align-top">
+                          <td colSpan={10} className="p-0 align-top">
                             <PositionDetailPanel
                               symbol={pos.symbol}
                               onClose={() => setExpandedId(null)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X, Search, Loader2 } from "lucide-react";
 import type { SearchResult } from "@/lib/types";
 
@@ -29,28 +29,38 @@ export default function AddPositionModal({
     new Date().toISOString().split("T")[0]
   );
   const [submitting, setSubmitting] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  async function handleSearch(q: string) {
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    []
+  );
+
+  function handleQueryChange(q: string) {
     setQuery(q);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     if (q.length < 1) {
       setResults([]);
       return;
     }
-
-    setSearching(true);
-    try {
-      const res = await fetch(
-        `/api/stocks?action=search&q=${encodeURIComponent(q)}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setResults(data);
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(
+          `/api/stocks?action=search&q=${encodeURIComponent(q)}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setResults(data);
+        }
+      } catch {
+        // silently fail
+      } finally {
+        setSearching(false);
       }
-    } catch {
-      // silently fail
-    } finally {
-      setSearching(false);
-    }
+    }, 300);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -98,7 +108,7 @@ export default function AddPositionModal({
                 <input
                   type="text"
                   value={query}
-                  onChange={(e) => handleSearch(e.target.value)}
+                  onChange={(e) => handleQueryChange(e.target.value)}
                   placeholder="Search for a stock..."
                   className="w-full rounded-lg bg-background border border-border pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/40 transition-colors duration-200"
                   autoFocus

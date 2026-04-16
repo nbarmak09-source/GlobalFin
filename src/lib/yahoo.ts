@@ -323,6 +323,63 @@ export async function getMultipleQuotes(
   }
 }
 
+const SECTOR_FETCH_CONCURRENCY = 6;
+
+async function fetchSectorFromYahoo(symbol: string): Promise<string> {
+  try {
+    const result = (await yf.quoteSummary(
+      symbol,
+      { modules: ["assetProfile", "summaryProfile"] },
+      { validateResult: false }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    )) as any;
+    const profile = result.assetProfile;
+    const summary = result.summaryProfile;
+    const sector = (profile?.sector || summary?.sector || "").trim();
+    return typeof sector === "string" ? sector : "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Yahoo sector labels for a set of symbols (deduped). Batched to limit parallel requests.
+ * Cached per unique symbol set for 24h — sector metadata changes rarely.
+ */
+export async function getSectorsForSymbols(
+  symbols: string[]
+): Promise<Map<string, string>> {
+  const unique = [
+    ...new Set(
+      symbols
+        .map((s) => s.trim().toUpperCase())
+        .filter((s) => s.length > 0)
+    ),
+  ].sort();
+  if (unique.length === 0) return new Map();
+
+  return unstable_cache(
+    async () => {
+      const map = new Map<string, string>();
+      for (let i = 0; i < unique.length; i += SECTOR_FETCH_CONCURRENCY) {
+        const chunk = unique.slice(i, i + SECTOR_FETCH_CONCURRENCY);
+        const results = await Promise.all(
+          chunk.map(async (sym) => {
+            const sector = await fetchSectorFromYahoo(sym);
+            return [sym, sector] as const;
+          })
+        );
+        for (const [sym, sector] of results) {
+          map.set(sym, sector);
+        }
+      }
+      return map;
+    },
+    ["yahoo-sectors-batch", unique.join(",")],
+    { revalidate: 86_400 }
+  )();
+}
+
 function getPeriodStart(period: string): { start: Date; interval: "1d" | "1wk" | "1mo" | "5m" | "15m" | "1h" } {
   const now = new Date();
   switch (period) {

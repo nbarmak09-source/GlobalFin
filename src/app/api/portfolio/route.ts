@@ -8,7 +8,7 @@ import {
   ensureDefaultPortfolio,
   assertPortfolioOwnership,
 } from "@/lib/portfolio";
-import { getMultipleQuotes } from "@/lib/yahoo";
+import { getMultipleQuotes, getSectorsForSymbols } from "@/lib/yahoo";
 import { getExtendedHoursLine } from "@/lib/extendedHours";
 import { auth } from "@/lib/auth";
 import type { EnrichedPosition } from "@/lib/types";
@@ -70,11 +70,15 @@ export async function GET(request: NextRequest) {
     }
 
     const symbols = positions.map((p) => p.symbol);
-    const quotes = await getMultipleQuotes(symbols);
+    const [quotes, sectorMap] = await Promise.all([
+      getMultipleQuotes(symbols),
+      getSectorsForSymbols(symbols),
+    ]);
     const quoteMap = new Map(quotes.map((q) => [q.symbol, q]));
 
     const enriched: EnrichedPosition[] = positions.map((pos) => {
       const quote = quoteMap.get(pos.symbol);
+      const sector = sectorMap.get(pos.symbol.trim().toUpperCase()) ?? "";
       const currentPrice = quote?.regularMarketPrice ?? pos.avgCost;
       const marketValue = currentPrice * pos.shares;
       const costBasis = pos.avgCost * pos.shares;
@@ -92,6 +96,7 @@ export async function GET(request: NextRequest) {
         totalPL,
         totalPLPercent,
         extendedHours: quote ? getExtendedHoursLine(quote) : null,
+        sector,
       };
     });
 

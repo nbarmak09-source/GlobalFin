@@ -5,7 +5,7 @@ import {
   removeFromWatchlist,
   reorderWatchlist,
 } from "@/lib/portfolio";
-import { getMultipleQuotes } from "@/lib/yahoo";
+import { getMultipleQuotes, getSectorsForSymbols } from "@/lib/yahoo";
 import { getExtendedHoursLine } from "@/lib/extendedHours";
 import { auth } from "@/lib/auth";
 import type { EnrichedWatchlistItem } from "@/lib/types";
@@ -30,11 +30,15 @@ export async function GET() {
     }
 
     const symbols = watchlist.map((w) => w.symbol);
-    const quotes = await getMultipleQuotes(symbols);
+    const [quotes, sectorMap] = await Promise.all([
+      getMultipleQuotes(symbols),
+      getSectorsForSymbols(symbols),
+    ]);
     const quoteMap = new Map(quotes.map((q) => [q.symbol, q]));
 
     const enriched: EnrichedWatchlistItem[] = watchlist.map((item) => {
       const quote = quoteMap.get(item.symbol);
+      const sector = sectorMap.get(item.symbol.trim().toUpperCase()) ?? "";
       return {
         ...item,
         currentPrice: quote?.regularMarketPrice ?? 0,
@@ -44,6 +48,7 @@ export async function GET() {
         fiftyTwoWeekLow: quote?.fiftyTwoWeekLow ?? 0,
         marketCap: quote?.marketCap ?? 0,
         extendedHours: quote ? getExtendedHoursLine(quote) : null,
+        sector,
       };
     });
 

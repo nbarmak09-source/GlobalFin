@@ -86,6 +86,8 @@ export interface EnrichedWatchlistItem extends WatchlistItem {
   marketCap: number;
   /** Pre-market or after-hours snapshot when Yahoo publishes it */
   extendedHours: ExtendedHoursLine | null;
+  /** From Yahoo quoteSummary (asset/summary profile); may be empty for some tickers */
+  sector?: string;
 }
 
 export interface EnrichedPosition extends PortfolioPosition {
@@ -97,6 +99,8 @@ export interface EnrichedPosition extends PortfolioPosition {
   totalPLPercent: number;
   /** Pre-market or after-hours snapshot when Yahoo publishes it */
   extendedHours: ExtendedHoursLine | null;
+  /** From Yahoo quoteSummary (asset/summary profile); may be empty for some tickers */
+  sector?: string;
 }
 
 export interface HistoricalDataPoint {
