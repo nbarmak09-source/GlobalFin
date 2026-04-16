@@ -344,7 +344,9 @@ async function fetchSectorFromYahoo(symbol: string): Promise<string> {
 
 /**
  * Yahoo sector labels for a set of symbols (deduped). Batched to limit parallel requests.
- * Cached per unique symbol set for 24h — sector metadata changes rarely.
+ *
+ * Note: Do not wrap the result in `unstable_cache` — Next's cache deserializes `Map` to
+ * plain objects, so `.get()` would throw on cache hits (500s on portfolio/watchlist APIs).
  */
 export async function getSectorsForSymbols(
   symbols: string[]
@@ -358,26 +360,20 @@ export async function getSectorsForSymbols(
   ].sort();
   if (unique.length === 0) return new Map();
 
-  return unstable_cache(
-    async () => {
-      const map = new Map<string, string>();
-      for (let i = 0; i < unique.length; i += SECTOR_FETCH_CONCURRENCY) {
-        const chunk = unique.slice(i, i + SECTOR_FETCH_CONCURRENCY);
-        const results = await Promise.all(
-          chunk.map(async (sym) => {
-            const sector = await fetchSectorFromYahoo(sym);
-            return [sym, sector] as const;
-          })
-        );
-        for (const [sym, sector] of results) {
-          map.set(sym, sector);
-        }
-      }
-      return map;
-    },
-    ["yahoo-sectors-batch", unique.join(",")],
-    { revalidate: 86_400 }
-  )();
+  const map = new Map<string, string>();
+  for (let i = 0; i < unique.length; i += SECTOR_FETCH_CONCURRENCY) {
+    const chunk = unique.slice(i, i + SECTOR_FETCH_CONCURRENCY);
+    const results = await Promise.all(
+      chunk.map(async (sym) => {
+        const sector = await fetchSectorFromYahoo(sym);
+        return [sym, sector] as const;
+      })
+    );
+    for (const [sym, sector] of results) {
+      map.set(sym, sector);
+    }
+  }
+  return map;
 }
 
 function getPeriodStart(period: string): { start: Date; interval: "1d" | "1wk" | "1mo" | "5m" | "15m" | "1h" } {
