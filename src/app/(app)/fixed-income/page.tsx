@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { LineChart, TrendingUp } from "lucide-react";
 import YieldCurveMonitor from "@/components/YieldCurveMonitor";
+import Treasury10y2yChart from "@/components/Treasury10y2yChart";
 
 type SovereignRow = { country: string; symbol: string; level: number; changePercent: number };
 type SpreadRow = { name: string; symbol: string; level: number; spreadVs10Y: number };
@@ -61,6 +62,10 @@ export default function FixedIncomePage() {
 
       <section aria-label="Yield curve">
         <YieldCurveMonitor />
+      </section>
+
+      <section aria-label="10Y and 2Y Treasury history">
+        <Treasury10y2yChart />
       </section>
 
       <section

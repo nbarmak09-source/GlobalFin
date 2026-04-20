@@ -7,6 +7,7 @@ import MarketOverview from "@/components/MarketOverview";
 import VisualCapitalistCard from "@/components/VisualCapitalistCard";
 import CurrenciesPanel from "@/components/CurrenciesPanel";
 import YieldCurveMonitor from "@/components/YieldCurveMonitor";
+import Treasury10y2yChart from "@/components/Treasury10y2yChart";
 import MacroIndicators from "@/components/MacroIndicators";
 import MacroCharts from "@/components/MacroCharts";
 import GlobalMacroPanel from "@/components/GlobalMacroPanel";
@@ -162,6 +163,9 @@ function DashboardInner() {
             <div className="mt-3">
               <MacroCharts />
             </div>
+            <div className="mt-4">
+              <Treasury10y2yChart />
+            </div>
           </section>
 
           <section aria-label="Global macro">
@@ -184,6 +188,10 @@ function DashboardInner() {
 
           <section aria-label="Yield curve" className="mt-6">
             <YieldCurveMonitor />
+          </section>
+
+          <section aria-label="10Y and 2Y Treasury history" className="mt-6">
+            <Treasury10y2yChart />
           </section>
         </div>
       )}
