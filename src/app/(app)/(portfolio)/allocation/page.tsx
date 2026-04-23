@@ -100,9 +100,12 @@ function DonutChartLabel(props: PieLabelRenderProps) {
 function DonutChart({
   slices,
   label,
+  showLabels = true,
 }: {
   slices: { name: string; value: number }[];
   label: string;
+  /** In-chart segment labels. Off for long multi-slice data (e.g. sectors) to avoid overlap; legend still lists names. */
+  showLabels?: boolean;
 }) {
   const total = slices.reduce((s, sl) => s + sl.value, 0);
   if (total === 0) return null;
@@ -128,7 +131,7 @@ function DonutChart({
       </h3>
       <div className="flex items-start gap-6">
         <div className="min-h-[260px] w-full min-w-0 flex-1 [&_.recharts-layer]:outline-none">
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height={260} minWidth={0}>
             <RechartsPieChart>
               <Pie
                 data={data}
@@ -139,7 +142,7 @@ function DonutChart({
                 innerRadius="58%"
                 outerRadius="82%"
                 paddingAngle={3}
-                label={DonutChartLabel}
+                label={showLabels ? DonutChartLabel : false}
                 labelLine={false}
                 isAnimationActive={false}
               >
@@ -326,8 +329,12 @@ export default function AllocationPage() {
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <DonutChart slices={sectorSlices} label="By Sector" />
+        <div className="rounded-xl border border-border bg-card p-5 min-w-0">
+          <DonutChart
+            slices={sectorSlices}
+            label="By Sector"
+            showLabels={false}
+          />
         </div>
         <div className="rounded-xl border border-border bg-card p-5">
           <DonutChart slices={countrySlices} label="By Geography" />
