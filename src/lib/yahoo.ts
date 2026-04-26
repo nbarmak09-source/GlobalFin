@@ -453,46 +453,114 @@ export async function getHistoricalData(
   }
 }
 
+/** Yahoo defaults search to `region: US`, which underweights LSE, XETRA, Euronext, etc. */
+const YAHOO_SEARCH_REGIONS: readonly { region: string; lang: string }[] = [
+  { region: "US", lang: "en-US" },
+  { region: "GB", lang: "en-GB" },
+  { region: "DE", lang: "de-DE" },
+  { region: "FR", lang: "fr-FR" },
+  { region: "NL", lang: "nl-NL" },
+  { region: "CH", lang: "de-CH" },
+  { region: "IT", lang: "it-IT" },
+  { region: "ES", lang: "es-ES" },
+];
+const YAHOO_SEARCH_QUOTES_PER_REGION = 6;
+const YAHOO_SEARCH_MAX_RESULTS = 20;
+/** Skip strict schema checks — Yahoo often returns `typeDisp: "equity"` vs "Equity", which trips validation. */
+const YAHOO_SEARCH_MODULE_OPTS = { validateResult: false } as const;
+
+function mapYahooSearchQuoteRow(q: Record<string, unknown>): SearchResult {
+  return {
+    symbol: String(q.symbol).toUpperCase(),
+    name: String(q.shortname || q.longname || q.symbol || "").trim() || String(q.symbol),
+    exchange: String(q.exchange || ""),
+    type: String(q.quoteType || ""),
+  };
+}
+
 export async function searchSymbols(query: string): Promise<SearchResult[]> {
-  const trimmed = query.trim().toUpperCase();
+  const q = query.trim();
+  if (!q) return [];
+  const trimmed = q.toUpperCase();
   const tickerPattern = /^[A-Z0-9.-]{1,10}$/;
 
   try {
-    const result = await yf.search(query, { newsCount: 0 });
-    let quotes = (result.quotes || [])
-      .filter((q: Record<string, unknown>) => q.symbol)
-      .slice(0, 8)
-      .map((q: Record<string, unknown>) => ({
-        symbol: (q.symbol as string).toUpperCase(),
-        name: (q.shortname || q.longname || q.symbol) as string,
-        exchange: (q.exchange || "") as string,
-        type: (q.quoteType || "") as string,
-      }));
+    const settled = await Promise.allSettled(
+      YAHOO_SEARCH_REGIONS.map(({ region, lang }) =>
+        yf.search(
+          q,
+          {
+            newsCount: 0,
+            quotesCount: YAHOO_SEARCH_QUOTES_PER_REGION,
+            region,
+            lang,
+          },
+          YAHOO_SEARCH_MODULE_OPTS
+        ) as Promise<{ quotes?: unknown[] }>
+      )
+    );
 
-    if (quotes.length === 0 && tickerPattern.test(trimmed)) {
+    const seen = new Set<string>();
+    const quotes: SearchResult[] = [];
+    for (const s of settled) {
+      if (s.status !== "fulfilled") continue;
+      const list = s.value?.quotes;
+      if (!Array.isArray(list)) continue;
+      for (const raw of list) {
+        if (!raw || typeof raw !== "object") continue;
+        const row = raw as Record<string, unknown>;
+        if (!row.symbol) continue;
+        const sym = String(row.symbol).toUpperCase();
+        if (seen.has(sym)) continue;
+        seen.add(sym);
+        quotes.push(mapYahooSearchQuoteRow(row));
+        if (quotes.length >= YAHOO_SEARCH_MAX_RESULTS) break;
+      }
+      if (quotes.length >= YAHOO_SEARCH_MAX_RESULTS) break;
+    }
+
+    if (quotes.length > 0) {
+      return quotes;
+    }
+
+    const fallback = (await yf.search(
+      q,
+      { newsCount: 0, quotesCount: 10, region: "US", lang: "en-US" },
+      YAHOO_SEARCH_MODULE_OPTS
+    )) as { quotes?: unknown[] };
+    let fromFallback = (fallback.quotes || [])
+      .filter((x: unknown): x is Record<string, unknown> => !!x && typeof x === "object" && !!(x as Record<string, unknown>).symbol)
+      .slice(0, 10)
+      .map(mapYahooSearchQuoteRow);
+
+    if (fromFallback.length === 0 && tickerPattern.test(trimmed)) {
       const quote = await getQuote(trimmed);
       if (quote) {
-        quotes = [{
-          symbol: quote.symbol.toUpperCase(),
-          name: quote.shortName || quote.symbol,
-          exchange: "",
-          type: "EQUITY",
-        }];
+        fromFallback = [
+          {
+            symbol: quote.symbol.toUpperCase(),
+            name: quote.shortName || quote.symbol,
+            exchange: "",
+            type: "EQUITY",
+          },
+        ];
       }
     }
 
-    return quotes;
+    return fromFallback;
   } catch {
     if (tickerPattern.test(trimmed)) {
       try {
         const quote = await getQuote(trimmed);
         if (quote) {
-          return [{
-            symbol: quote.symbol.toUpperCase(),
-            name: quote.shortName || quote.symbol,
-            exchange: "",
-            type: "EQUITY",
-          }];
+          return [
+            {
+              symbol: quote.symbol.toUpperCase(),
+              name: quote.shortName || quote.symbol,
+              exchange: "",
+              type: "EQUITY",
+            },
+          ];
         }
       } catch {
         // fall through to empty

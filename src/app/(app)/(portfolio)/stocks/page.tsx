@@ -341,6 +341,7 @@ function StocksPageContent() {
         onSelect={handleSymbolSelect}
         onClear={handleClearSymbol}
         initialSymbol={symbol}
+        placeholder="Search symbol (e.g. AAPL, ASML.AS, VOD.L)…"
       />
       {!symbol && (
         <div className="space-y-4 min-w-0">
