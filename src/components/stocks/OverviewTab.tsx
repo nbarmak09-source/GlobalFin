@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { QuoteSummaryData } from "@/lib/types";
+import BullsBears from "@/components/BullsBears";
 import TradingViewChart from "@/components/TradingViewChart";
 import PowerTierBadge from "@/components/research/PowerTierBadge";
 import {
@@ -111,6 +112,8 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
               </button>
             </div>
           )}
+
+          <BullsBears ticker={symbol || "AAPL"} />
 
           <div
             className="rounded-xl bg-card border border-border p-5 cursor-pointer group relative overflow-hidden flex flex-col h-[min(62vh,580px)] min-h-[320px]"

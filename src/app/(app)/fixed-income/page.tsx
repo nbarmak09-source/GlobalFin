@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LineChart, TrendingUp } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import YieldCurveMonitor from "@/components/YieldCurveMonitor";
 import Treasury10y2yChart from "@/components/Treasury10y2yChart";
 
@@ -42,21 +43,17 @@ export default function FixedIncomePage() {
   ) : null;
 
   return (
-    <div className="space-y-8 min-w-0">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-serif mb-1">
-            Fixed Income &amp; Credit
-          </h1>
-          <p className="text-sm text-muted">
-            Cost of capital dashboard: sovereign curves, spreads, and money markets.
-          </p>
-        </div>
-        <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
-          <LineChart className="h-3.5 w-3.5" />
-          <span>Rates &amp; spreads</span>
-        </div>
-      </header>
+    <div className="space-y-4 min-w-0">
+      <PageHeader
+        title="Fixed Income"
+        subtitle="Cost of capital dashboard: sovereign curves, spreads, and money markets."
+        action={
+          <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent shrink-0">
+            <LineChart className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Rates &amp; spreads</span>
+          </div>
+        }
+      />
 
       {loadingText}
 

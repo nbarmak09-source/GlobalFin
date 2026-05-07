@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
+import { PageHeader, SectionHeading } from "@/components/PageHeader";
 import type { EnrichedPosition } from "@/lib/types";
 
 interface PortfolioSnapshot {
@@ -183,28 +184,27 @@ export default function InvestingPage() {
   }, []);
 
   return (
-    <div className="space-y-8 min-w-0">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-serif mb-1">Investing</h1>
-          <p className="text-sm text-muted">
-            Your personal investing toolkit — portfolio, research, and alerts.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={toggleValuesVisible}
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted hover:text-foreground hover:bg-card-hover transition-colors"
-            title={valuesVisible ? "Hide values" : "Show values"}
-          >
-            <span>{valuesVisible ? "Hide values" : "Show values"}</span>
-          </button>
-          <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
-            <TrendingUp className="h-3.5 w-3.5" />
-            <span>Investing hub</span>
+    <div className="space-y-4 min-w-0">
+      <PageHeader
+        title="Investing"
+        subtitle="Your personal investing toolkit — portfolio, research, and alerts."
+        action={
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+            <button
+              type="button"
+              onClick={toggleValuesVisible}
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted hover:text-foreground hover:bg-card-hover transition-colors"
+              title={valuesVisible ? "Hide values" : "Show values"}
+            >
+              <span>{valuesVisible ? "Hide values" : "Show values"}</span>
+            </button>
+            <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
+              <TrendingUp className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Investing hub</span>
+            </div>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-5 space-y-2">
@@ -285,11 +285,9 @@ export default function InvestingPage() {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-muted uppercase tracking-wide">
-          Investing
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <section className="space-y-0">
+        <SectionHeading>At a glance</SectionHeading>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pt-1">
           {investingCards.map(({ href, icon: Icon, label, desc }) => (
             <Link
               key={href}
@@ -304,11 +302,9 @@ export default function InvestingPage() {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-muted uppercase tracking-wide">
-          Analysis Tools
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <section className="space-y-0">
+        <SectionHeading>Analysis</SectionHeading>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pt-1">
           {toolCards.map(({ href, icon: Icon, label, desc }) => (
             <Link
               key={href}

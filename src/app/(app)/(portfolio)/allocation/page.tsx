@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import {
   Cell,
@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   type PieLabelRenderProps,
 } from "recharts";
+import ChartExportButton from "@/components/ChartExportButton";
 import type { EnrichedPosition, QuoteSummaryData } from "@/lib/types";
 
 interface AllocationEntry {
@@ -107,6 +108,7 @@ function DonutChart({
   /** In-chart segment labels. Off for long multi-slice data (e.g. sectors) to avoid overlap; legend still lists names. */
   showLabels?: boolean;
 }) {
+  const chartRef = useRef<HTMLDivElement>(null);
   const total = slices.reduce((s, sl) => s + sl.value, 0);
   if (total === 0) return null;
 
@@ -129,7 +131,12 @@ function DonutChart({
       <h3 className="text-sm font-semibold text-muted uppercase tracking-wide">
         {label}
       </h3>
-      <div className="flex items-start gap-6">
+      <div ref={chartRef} className="relative flex items-start gap-6">
+        <ChartExportButton
+          chartRef={chartRef}
+          filename={`asset-allocation-${label}`}
+          title={`Asset Allocation - ${label}`}
+        />
         <div className="min-h-[260px] w-full min-w-0 flex-1 [&_.recharts-layer]:outline-none">
           <ResponsiveContainer width="100%" height={260} minWidth={0}>
             <RechartsPieChart>

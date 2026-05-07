@@ -9,6 +9,7 @@ import {
   ArrowDownRight,
   Landmark,
 } from "lucide-react";
+import { PageHeader, SectionHeading } from "@/components/PageHeader";
 import MarketOverview from "@/components/MarketOverview";
 import IndexCharts from "@/components/IndexCharts";
 import NewsCard from "@/components/NewsCard";
@@ -92,30 +93,24 @@ export default function EcmPage() {
     .sort((a, b) => (b.ytdChangePct ?? 0) - (a.ytdChangePct ?? 0));
 
   return (
-    <div className="space-y-8 min-w-0">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-serif mb-1">
-            Equities
-          </h1>
-          <p className="text-sm text-muted">
-            Market indices, sector performance, deal flow, and equity news.
-          </p>
-        </div>
-        <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Capital markets overview</span>
-        </div>
-      </header>
+    <div className="space-y-4 min-w-0">
+      <PageHeader
+        title="Equities"
+        subtitle="Market indices, sector performance, deal flow, and equity news."
+        action={
+          <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent shrink-0">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Capital markets overview</span>
+          </div>
+        }
+      />
 
-      <section aria-label="Equity snapshot" className="space-y-4">
-        <h2 className="text-sm font-semibold text-muted uppercase tracking-wide">
-          Equity snapshot
-        </h2>
+      <section aria-label="Equity indices snapshot" className="space-y-0">
+        <SectionHeading>Indices</SectionHeading>
         <MarketOverview />
       </section>
 
-      <section aria-label="Index charts" className="space-y-4">
+      <section aria-label="Index charts" className="space-y-0">
         <IndexCharts />
       </section>
 

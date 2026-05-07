@@ -353,7 +353,17 @@ export default function IndexCharts() {
   return (
     <section className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-card-hover/30">
-        <h2 className="text-sm font-semibold">Index price history</h2>
+        <div
+          style={{
+            fontSize: "0.65rem",
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "var(--text-muted)",
+          }}
+        >
+          Performance
+        </div>
         <div className="flex gap-1">
           {PERIODS.map((p) => (
             <button

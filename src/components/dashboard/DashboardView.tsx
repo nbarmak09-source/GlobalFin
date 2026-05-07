@@ -12,6 +12,8 @@ import MacroIndicators from "@/components/MacroIndicators";
 import MacroCharts from "@/components/MacroCharts";
 import GlobalMacroPanel from "@/components/GlobalMacroPanel";
 import DashboardMarketsPanel from "@/components/markets/DashboardMarketsPanel";
+import { LivePriceDemo } from "@/components/LivePriceDemo";
+import { SectionHeading } from "@/components/PageHeader";
 import {
   ImageIcon,
   DollarSign,
@@ -22,6 +24,7 @@ import {
   Globe,
   Landmark,
   Sparkles,
+  Radio,
 } from "lucide-react";
 
 type DashboardTab = "overview" | "rates" | "insights" | "markets";
@@ -33,7 +36,7 @@ function parseDashboardTab(param: string | null): DashboardTab {
 
 const TAB_META: Record<DashboardTab, { title: string; subtitle: string }> = {
   overview: {
-    title: "Market Overview",
+    title: "Overview",
     subtitle: "Major indices, macro data, and market performance",
   },
   rates: {
@@ -61,7 +64,7 @@ function SectionHeader({
 }) {
   return (
     <div
-      className="flex items-center gap-2 mt-6 mb-3"
+      className="flex items-center gap-2 mt-4 mb-2"
       style={{ borderLeft: `2px solid ${accentColor}`, paddingLeft: "10px" }}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
@@ -108,7 +111,7 @@ function DashboardInner() {
 
   return (
     <div className="space-y-0 min-w-0">
-      <div className="flex flex-col gap-4 mb-6">
+      <div className="flex flex-col gap-3 mb-4">
         <div>
           {firstName && (
             <p className="text-xs text-muted mb-1">
@@ -146,7 +149,7 @@ function DashboardInner() {
       {tab === "overview" && (
         <div>
           <section aria-label="Macro indicators">
-            <SectionHeader icon={Activity} label="Macro Indicators" />
+            <SectionHeader icon={Activity} label="Macro" />
             <MacroIndicators />
             <p className="mt-3 text-[11px] text-muted">
               Macro data sourced from{" "}
@@ -173,8 +176,18 @@ function DashboardInner() {
             <GlobalMacroPanel />
           </section>
 
-          <section aria-label="Market indices" className="mt-6">
+          <section aria-label="Market indices">
+            <SectionHeading>Indices</SectionHeading>
             <MarketOverview />
+          </section>
+
+          <section aria-label="Live quotes" className="mt-4">
+            <SectionHeader icon={Radio} label="Live quotes" />
+            <LivePriceDemo />
+            <p className="mt-3 text-[11px] text-muted">
+              Quotes refresh about every 20 seconds while this tab is visible.
+              Data is delayed; not for trading decisions.
+            </p>
           </section>
         </div>
       )}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
 import type { TickerItem } from "@/lib/types";
 
 const INDEX_SYMBOLS = ["^GSPC", "^DJI", "^IXIC", "^VIX", "^GSPTSE"];
@@ -51,11 +50,18 @@ export default function MarketOverview() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div
+        className="flex overflow-x-auto border-b"
+        style={{ borderColor: "var(--border)" }}
+      >
         {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="h-28 rounded-xl bg-card border border-border animate-pulse"
+            className="shrink-0 px-5 py-3 h-[76px] animate-pulse bg-card-hover/20"
+            style={{
+              minWidth: 160,
+              borderRight: i < 5 ? "1px solid var(--border)" : undefined,
+            }}
           />
         ))}
       </div>
@@ -63,41 +69,50 @@ export default function MarketOverview() {
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-      {indices.map((index) => {
+    <div
+      className="flex overflow-x-auto"
+      style={{ borderBottom: "1px solid var(--border)" }}
+    >
+      {indices.map((index, i) => {
         const isPositive = index.change >= 0;
-        const isUSD = index.currency === "USD";
         return (
           <div
             key={index.symbol}
-            className="rounded-xl bg-card border border-border p-4 hover:bg-card-hover transition-all duration-200 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
+            className="flex flex-col gap-0.5 shrink-0 px-5 py-3"
+            style={{
+              minWidth: 160,
+              borderRight:
+                i < indices.length - 1 ? "1px solid var(--border)" : "none",
+            }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[13px] font-[400] text-muted leading-tight">
-                {index.name}
-              </span>
-              {isPositive ? (
-                <TrendingUp className="h-4 w-4 text-green shrink-0" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-red shrink-0" />
-              )}
-            </div>
-            <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
+            <span
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-secondary)",
+                fontWeight: 500,
+              }}
+            >
+              {index.name}
+            </span>
+            <span
+              style={{
+                fontSize: "1.05rem",
+                fontWeight: 700,
+                fontFamily: "var(--font-mono)",
+              }}
+            >
               {fmtCurrency(index.priceUSD, "USD")}
-            </div>
-            <div
-              className={`text-[13px] font-[400] font-mono mt-2 ${
-                isPositive ? "text-green" : "text-red"
-              }`}
+            </span>
+            <span
+              style={{
+                fontSize: "0.75rem",
+                fontFamily: "var(--font-mono)",
+                color: isPositive ? "var(--green)" : "var(--red)",
+              }}
             >
               {isPositive ? "+" : ""}
               {index.changePercent.toFixed(2)}%
-            </div>
-            {!isUSD && (
-              <div className="text-[11px] font-[400] font-mono text-muted mt-1" style={{ opacity: 0.7 }}>
-                {fmtCurrency(index.price, index.currency)}
-              </div>
-            )}
+            </span>
           </div>
         );
       })}

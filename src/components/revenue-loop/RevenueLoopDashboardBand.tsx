@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -11,6 +11,7 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
+import ChartExportButton from "@/components/ChartExportButton";
 import type { RevenueLoopsFile } from "@/lib/revenueLoopTypes";
 import { useOrganicRevenueOnly } from "@/lib/revenue-loop-context";
 import { fmtBn } from "@/lib/formatBn";
@@ -29,6 +30,7 @@ interface RevenueLoopDashboardBandProps {
 export default function RevenueLoopDashboardBand({
   showOrganicToggle = false,
 }: RevenueLoopDashboardBandProps) {
+  const chartRef = useRef<HTMLDivElement>(null);
   const { organicOnly, setOrganicOnly } = useOrganicRevenueOnly();
   const [data, setData] = useState<RevenueLoopsFile | null>(null);
 
@@ -81,9 +83,15 @@ export default function RevenueLoopDashboardBand({
         )}
       </div>
       <div
-        className="min-w-0 w-full"
+        ref={chartRef}
+        className="relative min-w-0 w-full"
         style={{ width: "100%", height: 220, minHeight: 220 }}
       >
+        <ChartExportButton
+          chartRef={chartRef}
+          filename="inferred-round-trip-cloud-revenue"
+          title="Inferred Round-Trip Cloud Revenue"
+        />
         <ResponsiveContainer width="100%" height="100%" minHeight={220}>
           <BarChart
             data={chartData}

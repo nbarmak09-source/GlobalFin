@@ -1,46 +1,285 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
+/* ── Colour tokens ─────────────────────────────────────────────────────── */
 :root {
-  /* Wall Street professional palette */
-  --background: #0c0e14;
-  --foreground: #e8e6e1;
-  --card: #13161d;
-  --card-hover: #1c2128;
-  --border: #2d333b;
-  --muted: #8b949e;
-  --green: #22c55e;
-  --red: #ef4444;
-  --accent: #c9a227;
-  --accent-hover: #d4ad2e;
-  --ring: rgba(201, 162, 39, 0.35);
-  /* Chart-specific (mirrors theme) */
-  --chart-bg: #13161d;
-  --chart-text: #8b949e;
-  --chart-grid: #2d333b;
-  --chart-accent: #c9a227;
+  /* Backgrounds — layered dark surfaces, not pure black */
+  --bg-base:        #0d1117;   /* page / outermost shell          */
+  --bg-surface:     #161b22;   /* cards, panels, sidebar          */
+  --bg-elevated:    #1c2128;   /* popovers, dropdowns, modals     */
+  --bg-hover:       #21262d;   /* row hover, menu item hover      */
+  --bg-active:      #262c36;   /* pressed / selected states       */
+
+  /* Borders */
+  --border:         rgba(48, 54, 61, 1);    /* default 1 px divider  */
+  --border-strong:  rgba(68, 76, 86, 1);    /* table header, section */
+
+  /* Text */
+  --text-primary:   #e6edf3;   /* body copy, values               */
+  --text-secondary: #8b949e;   /* labels, column headers          */
+  --text-muted:     #484f58;   /* placeholders, disabled          */
+
+  /* Accent — gold, consistent with the original brand */
+  --accent:         #c9a227;
+  --accent-subtle:  rgba(201, 162, 39, 0.12);
+  --accent-hover:   #d4ad2e;
+
+  /* Semantic colours */
+  --green:          #3fb950;   /* positive change                 */
+  --green-subtle:   rgba(63, 185, 80, 0.12);
+  --red:            #f85149;   /* negative change                 */
+  --red-subtle:     rgba(248, 81, 73, 0.12);
+  --amber:          #d29922;   /* warnings, pending               */
+
+  /* Typography */
+  --font-sans:      'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono:      'IBM Plex Mono', 'Fira Code', monospace;
+
+  /* Spacing scale — 4 px base */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.6);
+
+  /* Sidebar width */
+  --sidebar-w:           88px;
+  --sidebar-w-collapsed: 88px;   /* always compact — no collapse on this pattern */
+
+  /* Legacy aliases — kept so existing components that reference these don't break */
+  --background:  var(--bg-base);
+  --foreground:  var(--text-primary);
+  --card:        var(--bg-surface);
+  --card-hover:  var(--bg-hover);
+  --muted:       var(--text-secondary);
+  --ring:        rgba(201, 162, 39, 0.35);
+  --chart-bg:    var(--bg-surface);
+  --chart-text:  var(--text-secondary);
+  --chart-grid:  var(--border);
+  --chart-accent: var(--accent);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-hover: var(--card-hover);
-  --color-border: var(--border);
-  --color-muted: var(--muted);
-  --color-green: var(--green);
-  --color-red: var(--red);
-  --color-accent: var(--accent);
+  /* Backgrounds */
+  --color-bg-base:     var(--bg-base);
+  --color-bg-surface:  var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover:    var(--bg-hover);
+  --color-bg-active:   var(--bg-active);
+  /* Semantic */
+  --color-border:      var(--border);
+  --color-accent:      var(--accent);
+  --color-up:          var(--green);
+  --color-down:        var(--red);
+  --color-primary:     var(--text-primary);
+  --color-secondary:   var(--text-secondary);
+  --color-muted:       var(--text-muted);
+  /* Legacy */
+  --color-background:  var(--bg-base);
+  --color-foreground:  var(--text-primary);
+  --color-card:        var(--bg-surface);
+  --color-card-hover:  var(--bg-hover);
+  --color-green:       var(--green);
+  --color-red:         var(--red);
   --color-accent-hover: var(--accent-hover);
-  --color-ring: var(--ring);
-  --font-sans: var(--font-sans-pro);
-  --font-serif: var(--font-serif-display);
-  --font-mono: var(--font-mono-pro);
+  --color-ring:        var(--ring);
+  /* Fonts */
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Fira Code', monospace;
+  /* Font sizes */
+  --font-size-xxs:  0.7rem;
+  --font-size-xs:   0.75rem;
+  --font-size-sm:   0.8125rem;
+  --font-size-base: 0.875rem;
+  --font-size-md:   1rem;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-size: 14px;           /* terminal density — 14px base */
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Numeric values always use monospaced, tabular figures */
+.num, [data-num], td.num, span.price, .price-cell__price {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Cards / Panels ─────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.card--elevated {
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Section headers ────────────────────────────────────────────────────── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ── Data tables ─────────────────────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.data-table th {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-strong);
+  text-align: right;
+  white-space: nowrap;
+}
+.data-table th:first-child { text-align: left; }
+
+.data-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+.data-table td:first-child {
+  text-align: left;
+  font-family: var(--font-sans);
+  font-weight: 500;
+}
+
+.data-table tbody tr:hover { background: var(--bg-hover); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── Positive / Negative ─────────────────────────────────────────────────── */
+.text-up   { color: var(--green); }
+.text-down { color: var(--red);   }
+.bg-up     { background: var(--green-subtle); }
+.bg-down   { background: var(--red-subtle);   }
+
+/* ── Badges ──────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.badge--up      { background: var(--green-subtle); color: var(--green); }
+.badge--down    { background: var(--red-subtle);   color: var(--red);   }
+.badge--neutral { background: var(--bg-hover);     color: var(--text-secondary); }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  transition: background 120ms, border-color 120ms;
+}
+.btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+/* ── Inputs ──────────────────────────────────────────────────────────────── */
+.input {
+  background: var(--bg-base);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  padding: var(--space-2) var(--space-3);
+  outline: none;
+  width: 100%;
+  transition: border-color 120ms;
+}
+.input:focus { border-color: var(--accent); }
+.input::placeholder { color: var(--text-muted); }
+
+/* WebKit search field clear (×) — muted grey instead of system accent blue */
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 20 20' fill='none'%3E%3Cpath stroke='%238b949e' stroke-width='2' stroke-linecap='round' d='M6 6l8 8M14 6l-8 8'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
+  opacity: 0.85;
+}
+input[type="search"]::-webkit-search-cancel-button:hover {
+  opacity: 1;
+}
+/* ── Dividers ────────────────────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  border: none;
+  margin: 0;
+}
+
+/* ── Layout guards ───────────────────────────────────────────────────────── */
+/* When sidebar is visible, align the top-bar left edge to the sidebar end */
+@media (min-width: 768px) {
+  .topbar-offset { left: var(--sidebar-w); }
 }
 
 html.gcm-hide-ticker [data-gcm-ticker] {
@@ -86,23 +325,11 @@ html.gcm-hide-ticker [data-gcm-ticker] {
   }
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--background);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
-}
+/* ── Scrollbars ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 .ticker-scrollbar-hide {
   scrollbar-width: none;
@@ -471,4 +698,163 @@ a, button, [role="button"], [role="tab"] {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* --------------------------------------------------------------------------
+   PriceCell — live price display with flash animations
+   -------------------------------------------------------------------------- */
+.price-cell {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.1em;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 0.1s ease;
+  border-radius: 3px;
+  padding: 1px 3px;
+}
+
+@keyframes price-flash-up {
+  0% {
+    background-color: transparent;
+  }
+  15% {
+    background-color: color-mix(in srgb, var(--green) 25%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes price-flash-down {
+  0% {
+    background-color: transparent;
+  }
+  15% {
+    background-color: color-mix(in srgb, var(--red) 25%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.price-cell--flash-up {
+  animation: price-flash-up 0.8s ease-out forwards;
+}
+
+.price-cell--flash-down {
+  animation: price-flash-down 0.8s ease-out forwards;
+}
+
+.price-cell--skeleton .price-cell__price {
+  opacity: 0.35;
+  letter-spacing: 0.05em;
+}
+
+.price-cell__symbol {
+  font-size: 0.7em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.price-cell__name {
+  font-size: 0.7em;
+  opacity: 0.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 12ch;
+}
+
+.price-cell__price {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.price-cell__market-state {
+  font-size: 0.55em;
+  opacity: 0.5;
+  vertical-align: super;
+}
+
+.price-cell__change {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  font-size: 0.78em;
+  font-weight: 500;
+}
+
+.price-cell__change--up {
+  color: var(--green);
+}
+
+.price-cell__change--down {
+  color: var(--red);
+}
+
+.price-cell__arrow {
+  font-size: 0.7em;
+  line-height: 1;
+}
+
+.price-cell__pct {
+  opacity: 0.75;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .price-cell--flash-up,
+  .price-cell--flash-down {
+    animation: none;
+  }
+  .price-cell--flash-up {
+    background-color: color-mix(in srgb, var(--green) 15%, transparent);
+  }
+  .price-cell--flash-down {
+    background-color: color-mix(in srgb, var(--red) 15%, transparent);
+  }
+}
+
+.live-price-demo__status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.live-price-demo__badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.live-price-demo__badge--loading {
+  background: var(--card-hover);
+  color: var(--muted);
+}
+
+.live-price-demo__badge--error {
+  background: color-mix(in srgb, var(--red) 18%, transparent);
+  color: var(--red);
+}
+
+.live-price-demo__badge--ok {
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+  color: var(--green);
+}
+
+.live-price-demo__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.live-price-demo__card {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--card);
 }

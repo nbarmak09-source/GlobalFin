@@ -75,7 +75,10 @@ export default function TickerTape() {
 
   if (loading) {
     return (
-      <div className="h-10 overflow-x-hidden bg-card border-b border-border flex items-center justify-center">
+      <div
+        data-gcm-ticker
+        className="h-10 overflow-x-hidden bg-card border-b border-border flex items-center justify-center"
+      >
         <div className="text-muted text-xs">Loading market data...</div>
       </div>
     );
