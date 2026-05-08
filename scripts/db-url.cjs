@@ -7,6 +7,7 @@
  *   node scripts/db-url.cjs set           # reads .env.database.url
  *   node scripts/db-url.cjs vercel-pull   # vercel env pull production → merge if non-empty
  *   node scripts/db-url.cjs doctor         # prisma migrate status + links
+ *   node scripts/db-url.cjs vercel-push    # DATABASE_URL .env → Vercel prod+preview
  */
 const fs = require("fs");
 const path = require("path");
@@ -30,6 +31,7 @@ Other commands:
 
   npm run db:url:vercel-pull   Pull DATABASE_URL from Vercel Production (CLI); merge if present.
   npm run db:doctor            Check connection (prisma migrate status).
+  npm run db:url:vercel-push   Upload DATABASE_URL from .env → Vercel Production (Preview: dashboard).
 
 Files .env.database.url are gitignored (via .env*). Never commit secrets.
 `);
@@ -172,36 +174,84 @@ function parseDotenvForKey(filepath, key) {
 }
 
 function cmdDoctor() {
+  let out = "";
   try {
-    const out = execFileSync(
-      "npx",
-      ["prisma", "migrate", "status"],
-      {
-        cwd: root,
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "pipe"],
-        env: { ...process.env },
-      }
-    );
-    console.log("\n✓ Prisma can talk to the database:\n");
+    out = execFileSync("npx", ["prisma", "migrate", "status"], {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env },
+    });
+    console.log("\n✓ Database reachable; schema status:\n");
     console.log(out);
   } catch (e) {
     const msg = `${e.stderr || ""}${e.stdout || ""}${e.message || ""}`;
+    const authFail =
+      /P1000|P1001|authentication failed|password authentication failed/i.test(
+        msg
+      );
+    const unreachable = /can't reach database server|ECONNREFUSED/i.test(msg);
+    /** `prisma migrate status` exits 1 when migrations are pending — DB is still reachable. */
+    const pendingMigrations =
+      /have not yet been applied|migration.*not.*applied|pending migration/i.test(
+        msg
+      );
+
+    if ((pendingMigrations || /drift/i.test(msg)) && !authFail && !unreachable) {
+      console.log("\n✓ Database reachable. Prisma migrate status:\n");
+      console.log(e.stdout || "");
+      console.log(e.stderr || "");
+      console.log(
+        "\n→ Apply pending migrations:\n    npm run db:migrate:deploy\n"
+      );
+      return;
+    }
+
     console.error("\n✗ Connection / migration status failed:\n");
     console.error(msg);
     printLinksHint();
-    if (/P1000|authentication failed/i.test(msg)) {
+    if (authFail) {
       console.error(
         "\n→ Password/login mismatch. Reset DB password in Supabase then:\n    npm run db:url:set\n"
       );
     }
-    if (/P1001|can't reach/i.test(msg)) {
+    if (unreachable) {
       console.error(
         "\n→ Network/host issue or wrong host. Confirm Session pooler host/port."
       );
     }
     process.exit(1);
   }
+}
+
+/** Push DATABASE_URL from .env to Vercel Production (Preview must be set in dashboard or per-branch — see VERCEL_SETUP.md). */
+function cmdVercelPush() {
+  const url = readEnvPlainKey(path.join(root, ".env"), "DATABASE_URL");
+  if (!url || url.length < 24 || /YOUR-PASSWORD/i.test(url)) {
+    console.error("Invalid or placeholder DATABASE_URL in .env.");
+    printLinksHint();
+    process.exit(1);
+  }
+  execFileSync(
+    "npx",
+    [
+      "vercel",
+      "env",
+      "add",
+      "DATABASE_URL",
+      "production",
+      "--sensitive",
+      "--force",
+      "--yes",
+      "--value",
+      url,
+    ],
+    { cwd: root, stdio: "inherit", env: { ...process.env } }
+  );
+  console.log(
+    "\nVercel Production DATABASE_URL updated.\n" +
+      "Preview: set the same value in the dashboard for Preview (or per Git branch), or redeploy from main if Preview inherits Production on your plan.\n"
+  );
 }
 
 const cmd = process.argv[2];
@@ -214,6 +264,9 @@ switch (cmd) {
     break;
   case "doctor":
     cmdDoctor();
+    break;
+  case "vercel-push":
+    cmdVercelPush();
     break;
   default:
     usage();

@@ -14,6 +14,7 @@
     "db:url": "node scripts/db-url.cjs",
     "db:url:set": "node scripts/db-url.cjs set",
     "db:url:vercel-pull": "node scripts/db-url.cjs vercel-pull",
+    "db:url:vercel-push": "node scripts/db-url.cjs vercel-push",
     "db:doctor": "node scripts/db-url.cjs doctor"
   },
   "dependencies": {
