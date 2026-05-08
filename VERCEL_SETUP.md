@@ -4,6 +4,42 @@ Get your Capital Markets app deployed on Vercel and wired to your database and a
 
 ---
 
+## Fastest fix: “Portfolio / Database login failed” (local + Vercel)
+
+You’re missing or have an outdated **`DATABASE_URL`** (Supabase usually shows **Prisma error P1000**).
+
+**Locally (minimal clicks):**
+
+1. Open **[Supabase](https://supabase.com/dashboard)** → your project → **Project Settings → Database**.
+2. **Reset database password** (save it somewhere safe), then copy the connection string labeled **Session mode** pooler (**port `5432`**).
+3. In this repo root, create a file named **`.env.database.url`** (gitignored automatically) containing **exactly one line**: the full `postgresql://...` URI.
+4. Run:
+
+```bash
+npm run db:url:set
+npm run db:doctor
+npm run db:migrate:deploy
+```
+
+5. Restart **`npm run dev`**.
+
+**Vercel:**
+
+1. In **Vercel** → **Settings → Environment Variables**, set **`DATABASE_URL`** for **Production** (and **Preview** if needed) to the **same** URI. Remove any placeholder that is literally empty.
+2. Redeploy.
+
+**CLI alternative (when Vercel already has `DATABASE_URL` set):**
+
+```bash
+npm run db:url:vercel-pull
+```
+
+That pulls Production env and merges `DATABASE_URL` into `.env` and `.env.local` when the CLI returns it.
+
+See also: **`npm run db:url`** (prints this flow).
+
+---
+
 ## 1. Prerequisites
 
 - Code in a **Git** repo (GitHub, GitLab, or Bitbucket).
