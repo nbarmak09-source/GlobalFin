@@ -8,6 +8,21 @@ import {
   deletePortfolio,
 } from "@/lib/portfolio";
 import { auth } from "@/lib/auth";
+import { databaseUserMessage } from "@/lib/db-error-message";
+
+function jsonFromDbCatch(
+  logLabel: string,
+  error: unknown,
+  fallback: string,
+  statusFallback = 500
+) {
+  console.error(logLabel, error);
+  const msg = databaseUserMessage(error);
+  if (msg) {
+    return NextResponse.json({ error: msg }, { status: 503 });
+  }
+  return NextResponse.json({ error: fallback }, { status: statusFallback });
+}
 
 export async function GET() {
   try {
@@ -20,10 +35,11 @@ export async function GET() {
     const portfolios = await getPortfolios(session.user.id);
     return NextResponse.json(portfolios);
   } catch (error) {
-    console.error("Portfolios GET error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch portfolios" },
-      { status: 500 }
+    return jsonFromDbCatch(
+      "Portfolios GET error:",
+      error,
+      "Failed to fetch portfolios.",
+      500
     );
   }
 }
@@ -57,10 +73,11 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(portfolio, { status: 201 });
   } catch (error) {
-    console.error("Portfolios POST error:", error);
-    return NextResponse.json(
-      { error: "Failed to create portfolio" },
-      { status: 500 }
+    return jsonFromDbCatch(
+      "Portfolios POST error:",
+      error,
+      "Failed to create portfolio.",
+      500
     );
   }
 }
@@ -120,10 +137,11 @@ export async function PATCH(request: NextRequest) {
     }
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Portfolios PATCH error:", error);
-    return NextResponse.json(
-      { error: "Failed to update portfolio" },
-      { status: 500 }
+    return jsonFromDbCatch(
+      "Portfolios PATCH error:",
+      error,
+      "Failed to update portfolio.",
+      500
     );
   }
 }
@@ -156,10 +174,11 @@ export async function DELETE(request: NextRequest) {
     }
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Portfolios DELETE error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete portfolio" },
-      { status: 500 }
+    return jsonFromDbCatch(
+      "Portfolios DELETE error:",
+      error,
+      "Failed to delete portfolio.",
+      500
     );
   }
 }

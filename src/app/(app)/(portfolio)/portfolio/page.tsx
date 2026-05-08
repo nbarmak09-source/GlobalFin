@@ -105,10 +105,6 @@ export default function PortfolioPage() {
         } catch {
           /* ignore */
         }
-        if (res.status === 500) {
-          msg +=
-            " The database may need migrations (e.g. run `npx prisma migrate deploy` on the server).";
-        }
         setPortfoliosError(msg);
         setPortfolios([]);
         return;
