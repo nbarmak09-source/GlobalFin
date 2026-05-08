@@ -2,11 +2,14 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { useState } from "react";
 import { ChevronDown, TrendingDown, TrendingUp } from "lucide-react";
 import ExtendedHoursInline from "@/components/ExtendedHoursInline";
 import type { EnrichedPosition, EnrichedWatchlistItem } from "@/lib/types";
 
 const MASK = "••••";
+
+export type NumberScale = "K" | "M" | "B";
 
 function fmtCurrency(value: number): string {
   return value.toLocaleString(undefined, {
@@ -15,18 +18,51 @@ function fmtCurrency(value: number): string {
   });
 }
 
-function formatMarketCap(value: number): string {
-  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
-  if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-  return `$${fmtCurrency(value)}`;
+function suffixForScale(scale: NumberScale): string {
+  switch (scale) {
+    case "K":
+      return "K";
+    case "M":
+      return "M";
+    case "B":
+      return "B";
+    default:
+      return "B";
+  }
 }
 
-function formatVolume(vol: number): string {
-  if (vol >= 1e9) return `${(vol / 1e9).toFixed(2)}B`;
-  if (vol >= 1e6) return `${(vol / 1e6).toFixed(2)}M`;
-  if (vol >= 1e3) return `${(vol / 1e3).toFixed(2)}K`;
-  return vol.toLocaleString();
+function divisorForScale(scale: NumberScale): number {
+  switch (scale) {
+    case "K":
+      return 1e3;
+    case "M":
+      return 1e6;
+    case "B":
+      return 1e9;
+    default:
+      return 1e9;
+  }
+}
+
+/** Format USD amounts using the selected scale suffix (not auto T/B/M). */
+export function formatUsdScaled(value: number, scale: NumberScale): string {
+  const d = divisorForScale(scale);
+  const v = value / d;
+  const suffix = suffixForScale(scale);
+  return `$${Math.abs(v).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}${suffix}`;
+}
+
+function formatVolumeScaled(vol: number, scale: NumberScale): string {
+  const d = divisorForScale(scale);
+  const v = vol / d;
+  const suffix = suffixForScale(scale);
+  return `${Math.abs(v).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}${suffix}`;
 }
 
 const RIGHT_KEYS = new Set([
@@ -59,6 +95,44 @@ export interface MetricCellOpts {
   stocksHref: string;
   attachChevron: boolean;
   isExpanded: boolean;
+  /** Holdings/table large-number formatting; watchlist ignores where unused */
+  numberScale?: NumberScale;
+}
+
+function ClearbitOrLetterAvatar({ symbol }: { symbol: string }) {
+  const letter = (symbol.trim().charAt(0) || "?").toUpperCase();
+  const slug = symbol.split(/[.-]/)[0]?.trim().toLowerCase() ?? "";
+  const domainGuess = slug && /^[a-z]+$/.test(slug) ? `${slug}.com` : "";
+  const logoUrl = domainGuess
+    ? `https://logo.clearbit.com/${domainGuess}`
+    : "";
+
+  const [imgOk, setImgOk] = useState(Boolean(logoUrl));
+
+  if (!logoUrl || !imgOk) {
+    return (
+      <span
+        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-card border border-border text-[10px] font-semibold text-muted"
+        aria-hidden
+      >
+        {letter}
+      </span>
+    );
+  }
+
+  return (
+    <span className="relative h-5 w-5 shrink-0 overflow-hidden rounded-sm border border-border bg-card">
+      {/* eslint-disable-next-line @next/next/no-img-element -- external Clearbit logo */}
+      <img
+        src={logoUrl}
+        alt=""
+        width={20}
+        height={20}
+        className="h-5 w-5 object-cover"
+        onError={() => setImgOk(false)}
+      />
+    </span>
+  );
 }
 
 export function renderPortfolioWatchlistMetricCell(
@@ -66,25 +140,57 @@ export function renderPortfolioWatchlistMetricCell(
   pack: RowPack,
   opts: MetricCellOpts
 ): ReactNode {
-  const { stocksHref, attachChevron, isExpanded } = opts;
+  const { stocksHref, attachChevron, isExpanded, numberScale = "B" } = opts;
   const row = pack.row;
   const isHoldings = pack.mode === "holdings";
 
   switch (metricKey) {
     case "ticker":
+      if (isHoldings) {
+        const hp = pack.row;
+        return (
+          <td className={`${metricCellThClass(metricKey)} min-w-0`}>
+            <div className="flex items-center gap-2 min-w-0">
+              <ClearbitOrLetterAvatar symbol={hp.symbol} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1 min-w-0">
+                  <Link
+                    href={stocksHref}
+                    onClick={(e) => e.stopPropagation()}
+                    className="block min-w-0 truncate font-medium text-[13px] text-foreground hover:text-accent hover:underline"
+                  >
+                    {hp.name}
+                  </Link>
+                  {attachChevron ? (
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 text-muted transition-transform ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
+                      aria-hidden
+                    />
+                  ) : null}
+                </div>
+                <div className="truncate text-[10px] text-muted">
+                  —:{hp.symbol}
+                </div>
+              </div>
+            </div>
+          </td>
+        );
+      }
       return (
         <td className={`${metricCellThClass(metricKey)} min-w-0`}>
           <div className="flex items-center gap-2 min-w-0">
             <Link
               href={stocksHref}
               onClick={(e) => e.stopPropagation()}
-              className="font-semibold text-accent hover:underline block truncate shrink-0"
+              className="block shrink-0 truncate font-semibold text-accent hover:underline"
             >
               {row.symbol}
             </Link>
             {attachChevron ? (
               <ChevronDown
-                className={`h-4 w-4 text-muted transition-transform shrink-0 ${
+                className={`h-4 w-4 shrink-0 text-muted transition-transform ${
                   isExpanded ? "rotate-180" : ""
                 }`}
                 aria-hidden
@@ -100,13 +206,13 @@ export function renderPortfolioWatchlistMetricCell(
             <Link
               href={stocksHref}
               onClick={(e) => e.stopPropagation()}
-              className="text-sm text-muted hover:text-accent hover:underline block truncate min-w-0"
+              className="block min-w-0 truncate text-sm text-muted hover:text-accent hover:underline"
             >
               {row.name}
             </Link>
             {attachChevron ? (
               <ChevronDown
-                className={`h-4 w-4 text-muted transition-transform shrink-0 ${
+                className={`h-4 w-4 shrink-0 text-muted transition-transform ${
                   isExpanded ? "rotate-180" : ""
                 }`}
                 aria-hidden
@@ -118,7 +224,7 @@ export function renderPortfolioWatchlistMetricCell(
     case "sector":
       return (
         <td
-          className={`${metricCellThClass(metricKey)} text-sm text-muted max-w-[10rem] truncate`}
+          className={`${metricCellThClass(metricKey)} max-w-[10rem] truncate text-sm text-muted`}
           title={(row.sector || "").trim() || undefined}
         >
           {(row.sector || "").trim() ? row.sector : "—"}
@@ -173,7 +279,9 @@ export function renderPortfolioWatchlistMetricCell(
     case "marketCap":
       return (
         <td className="px-4 py-3 text-right font-mono">
-          {(row.marketCap ?? 0) > 0 ? formatMarketCap(row.marketCap!) : "—"}
+          {(row.marketCap ?? 0) > 0
+            ? formatUsdScaled(row.marketCap!, numberScale)
+            : "—"}
         </td>
       );
     case "pe":
@@ -185,7 +293,9 @@ export function renderPortfolioWatchlistMetricCell(
     case "volume":
       return (
         <td className="px-4 py-3 text-right font-mono text-muted">
-          {(row.volume ?? 0) > 0 ? formatVolume(row.volume!) : "—"}
+          {(row.volume ?? 0) > 0
+            ? formatVolumeScaled(row.volume!, numberScale)
+            : "—"}
         </td>
       );
     case "ytdReturn":
@@ -229,7 +339,7 @@ export function renderPortfolioWatchlistMetricCell(
         <td className="px-4 py-3 text-right font-mono">
           {isHoldings
             ? pack.valuesVisible
-              ? `$${fmtCurrency(pack.row.marketValue)}`
+              ? formatUsdScaled(pack.row.marketValue, numberScale)
               : MASK
             : "—"}
         </td>
@@ -249,7 +359,7 @@ export function renderPortfolioWatchlistMetricCell(
                 )}`}
               </div>
               <div
-                className={`text-xs font-mono ${
+                className={`font-mono text-xs ${
                   pack.row.totalPLPercent >= 0 ? "text-green" : "text-red"
                 }`}
               >

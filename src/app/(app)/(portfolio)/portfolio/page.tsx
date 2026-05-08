@@ -1,26 +1,43 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Plus, RefreshCw, Briefcase, Eye, EyeOff, FolderPlus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Plus,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  FolderPlus,
+  Trash2,
+  X,
+  Download,
+} from "lucide-react";
 import PortfolioTable from "@/components/PortfolioTable";
 import PortfolioPerformanceChart from "@/components/PortfolioPerformanceChart";
 import PortfolioEarningsUpcoming from "@/components/PortfolioEarningsUpcoming";
+import PortfolioStats from "@/components/portfolio/PortfolioStats";
 import AddPositionModal from "@/components/AddPositionModal";
 import EditPositionModal from "@/components/EditPositionModal";
 import WatchlistTable from "@/components/WatchlistTable";
 import AddToWatchlistModal from "@/components/AddToWatchlistModal";
 import type { EnrichedPosition, EnrichedWatchlistItem, UserPortfolio } from "@/lib/types";
+import { useColumnPreferences } from "@/hooks/useColumnPreferences";
+import { AVAILABLE_METRICS, tableMetricLabel } from "@/lib/metrics";
+import type { NumberScale } from "@/components/PortfolioWatchlistMetricCells";
 
-type PortfolioTab = "holdings" | "watchlist";
+type PortfolioTab = "summary" | "performance" | "watchlist";
 
 const ACTIVE_PORTFOLIO_KEY = "active-portfolio-id";
+const NUMBER_SCALE_KEY = "gcm-number-scale";
 
 /** Ensures session cookies are sent for API routes (same as other app pages). */
 const apiFetch = (input: string, init?: RequestInit) =>
   fetch(input, { ...init, credentials: "include" });
 
+const ghostBtn =
+  "inline-flex items-center gap-2 rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12px] font-medium text-muted transition-colors hover:bg-card hover:text-foreground";
+
 export default function PortfolioPage() {
-  const [activeTab, setActiveTab] = useState<PortfolioTab>("holdings");
+  const [activeTab, setActiveTab] = useState<PortfolioTab>("summary");
   const [portfolios, setPortfolios] = useState<UserPortfolio[]>([]);
   const [portfoliosLoading, setPortfoliosLoading] = useState(true);
   const [portfoliosError, setPortfoliosError] = useState<string | null>(null);
@@ -39,10 +56,41 @@ export default function PortfolioPage() {
   const [valuesVisible, setValuesVisible] = useState(true);
   const [editingPosition, setEditingPosition] = useState<EnrichedPosition | null>(null);
 
+  const [visibleKeys, toggleKey] = useColumnPreferences();
+  const [metricQuery, setMetricQuery] = useState("");
+  const [numberScale, setNumberScale] = useState<NumberScale>("B");
+
   useEffect(() => {
     const stored = localStorage.getItem("portfolio-values-visible");
     if (stored !== null) setValuesVisible(stored === "true");
   }, []);
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(NUMBER_SCALE_KEY);
+      if (v === "K" || v === "M" || v === "B") setNumberScale(v);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function persistNumberScale(next: NumberScale) {
+    setNumberScale(next);
+    try {
+      localStorage.setItem(NUMBER_SCALE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const filteredMetrics = useMemo(() => {
+    const q = metricQuery.trim().toLowerCase();
+    if (!q) return AVAILABLE_METRICS;
+    return AVAILABLE_METRICS.filter(
+      (m) =>
+        m.label.toLowerCase().includes(q) || m.key.toLowerCase().includes(q)
+    );
+  }, [metricQuery]);
 
   const fetchPortfolios = useCallback(async () => {
     setPortfoliosLoading(true);
@@ -291,12 +339,12 @@ export default function PortfolioPage() {
   }
 
   function handleRefresh() {
-    if (activeTab === "holdings") {
-      fetchPositions(false);
-      fetchPortfolios();
-    } else {
+    if (activeTab === "watchlist") {
       fetchWatchlist(false);
+      return;
     }
+    fetchPositions(false);
+    fetchPortfolios();
   }
 
   function toggleValuesVisible() {
@@ -311,70 +359,40 @@ export default function PortfolioPage() {
     setEditingPosition(position);
   }
 
+  function addMetricColumn(key: string) {
+    if (!visibleKeys.includes(key)) toggleKey(key);
+    setMetricQuery("");
+  }
+
+  const tabPill = (id: PortfolioTab, label: string) => {
+    const active = activeTab === id;
+    return (
+      <button
+        type="button"
+        onClick={() => setActiveTab(id)}
+        className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+          active
+            ? "border border-accent/20 bg-accent/10 text-accent"
+            : "border border-transparent text-muted hover:text-foreground"
+        }`}
+      >
+        {label}
+      </button>
+    );
+  };
+
   const activePortfolio = portfolios.find((p) => p.id === activePortfolioId);
 
   return (
-    <div className="min-w-0">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold font-serif">Portfolio</h1>
-          <p className="text-sm text-muted">
-            {activePortfolio
-              ? `${activePortfolio.name} — track your holdings and watchlist`
-              : "Track your holdings and watchlist"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          <button
-            onClick={toggleValuesVisible}
-            className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted hover:text-foreground hover:bg-card-hover transition-colors"
-            title={valuesVisible ? "Hide market values" : "Show market values"}
-          >
-            {valuesVisible ? (
-              <>
-                <EyeOff className="h-4 w-4" />
-                <span className="hidden sm:inline">Hide Mkt Value</span>
-              </>
-            ) : (
-              <>
-                <Eye className="h-4 w-4" />
-                <span className="hidden sm:inline">Show Mkt Value</span>
-              </>
-            )}
-          </button>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted hover:text-foreground hover:bg-card-hover transition-colors disabled:opacity-40"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </button>
-          {activeTab === "holdings" ? (
-            <button
-              onClick={() => setShowPositionModal(true)}
-              disabled={!activePortfolioId}
-              className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-40"
-            >
-              <Plus className="h-4 w-4" />
-              Add Position
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowWatchlistModal(true)}
-              className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Add to Watchlist
-            </button>
-          )}
-        </div>
+    <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex flex-wrap gap-2">
+        {tabPill("summary", "Summary")}
+        {tabPill("performance", "Performance")}
+        {tabPill("watchlist", "Watchlist")}
       </div>
 
       {portfoliosError && (
-        <div className="mb-4 rounded-lg border border-red/40 bg-red/10 px-4 py-3 text-sm text-red-200">
+        <div className="rounded-lg border border-red/40 bg-red/10 px-4 py-3 text-sm text-red-200">
           <p className="font-medium">Portfolio data</p>
           <p className="mt-1 text-red-200/90">{portfoliosError}</p>
           <button
@@ -387,110 +405,190 @@ export default function PortfolioPage() {
         </div>
       )}
 
-      {/* Portfolio switcher — separate lists per portfolio (same idea as Yahoo portfolios) */}
-      <div className="mb-6 flex flex-col gap-2">
-        <p className="text-xs text-muted max-w-2xl">
-          Use <span className="text-foreground/90">New portfolio</span> to add another list of holdings.
-          Each portfolio has its own positions and performance chart; switch tabs to pick which one you are editing.
+      <div className="flex flex-col gap-3">
+        <p className="max-w-2xl text-xs text-muted">
+          {activePortfolio ? (
+            <span className="text-foreground/90">{activePortfolio.name}</span>
+          ) : (
+            "Portfolio"
+          )}
+          {" · "}
+          Use <span className="text-foreground/90">New portfolio</span> for separate holdings lists.
+          Switch <span className="text-foreground/90">Summary</span> /{" "}
+          <span className="text-foreground/90">Performance</span> /{" "}
+          <span className="text-foreground/90">Watchlist</span> above.
         </p>
         <div className="flex flex-wrap items-center gap-2">
-        {portfoliosLoading ? (
-          <div className="h-10 w-48 rounded-lg bg-card border border-border animate-pulse" />
-        ) : portfolios.length <= 4 ? (
-          <div className="flex flex-wrap items-center gap-1 rounded-lg border border-border p-1 bg-card/50">
-            {portfolios.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setActivePortfolioId(p.id)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                  p.id === activePortfolioId
-                    ? "bg-accent text-white"
-                    : "text-muted hover:text-foreground hover:bg-card-hover"
-                }`}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <select
-            value={activePortfolioId ?? ""}
-            onChange={(e) => setActivePortfolioId(e.target.value || null)}
-            className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground min-w-[12rem]"
-          >
-            {portfolios.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        )}
-        <button
-          type="button"
-          onClick={() => setShowNewPortfolioModal(true)}
-          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted hover:text-foreground hover:bg-card-hover transition-colors"
-        >
-          <FolderPlus className="h-4 w-4" />
-          New portfolio
-        </button>
-        {activeTab === "holdings" && portfolios.length > 1 && activePortfolioId && (
+          {portfoliosLoading ? (
+            <div className="h-10 w-48 animate-pulse rounded-lg border border-border bg-card" />
+          ) : portfolios.length <= 4 ? (
+            <div className="flex flex-wrap items-center gap-1 rounded-lg border border-border bg-card/50 p-1">
+              {portfolios.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setActivePortfolioId(p.id)}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    p.id === activePortfolioId
+                      ? "bg-accent text-white"
+                      : "text-muted hover:bg-card-hover hover:text-foreground"
+                  }`}
+                >
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <select
+              value={activePortfolioId ?? ""}
+              onChange={(e) => setActivePortfolioId(e.target.value || null)}
+              className="min-w-[12rem] rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground"
+            >
+              {portfolios.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          )}
           <button
             type="button"
-            onClick={handleDeleteActivePortfolio}
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-red hover:bg-red/10 transition-colors"
-            title="Delete current portfolio"
+            onClick={() => setShowNewPortfolioModal(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-card-hover hover:text-foreground"
           >
-            <Trash2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Delete portfolio</span>
+            <FolderPlus className="h-4 w-4" />
+            New portfolio
           </button>
-        )}
+          {activeTab === "summary" &&
+            portfolios.length > 1 &&
+            activePortfolioId && (
+              <button
+                type="button"
+                onClick={handleDeleteActivePortfolio}
+                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-red transition-colors hover:bg-red/10"
+                title="Delete current portfolio"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Delete portfolio</span>
+              </button>
+            )}
         </div>
       </div>
 
-      <div className="flex gap-1 mb-6 border-b border-border">
-        <button
-          onClick={() => setActiveTab("holdings")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
-            activeTab === "holdings"
-              ? "text-accent"
-              : "text-muted hover:text-foreground"
-          }`}
-        >
-          <Briefcase className="h-4 w-4" />
-          Holdings
-          {positions.length > 0 && (
-            <span className="text-xs bg-accent/15 text-accent rounded-full px-1.5 py-0.5 font-mono">
-              {positions.length}
-            </span>
-          )}
-          {activeTab === "holdings" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab("watchlist")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
-            activeTab === "watchlist"
-              ? "text-accent"
-              : "text-muted hover:text-foreground"
-          }`}
-        >
-          <Eye className="h-4 w-4" />
-          Watchlist
-          {watchlist.length > 0 && (
-            <span className="text-xs bg-accent/15 text-accent rounded-full px-1.5 py-0.5 font-mono">
-              {watchlist.length}
-            </span>
-          )}
-          {activeTab === "watchlist" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-t" />
-          )}
-        </button>
-      </div>
+      {activeTab === "summary" && (
+        <>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+            <div className="relative min-w-[12rem] max-w-md flex-1">
+              <input
+                type="search"
+                value={metricQuery}
+                onChange={(e) => setMetricQuery(e.target.value)}
+                placeholder="Select & search metrics..."
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-[12px] text-foreground placeholder:text-muted outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
+                aria-label="Search columns to add"
+              />
+              {metricQuery.trim() && filteredMetrics.length > 0 && (
+                <ul className="absolute left-0 right-0 top-full z-30 mt-1 max-h-48 overflow-auto rounded-lg border border-border bg-card py-1 shadow-lg">
+                  {filteredMetrics.map((m) => (
+                    <li key={m.key}>
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2 text-left text-[12px] text-foreground transition-colors hover:bg-card-hover"
+                        onClick={() => addMetricColumn(m.key)}
+                      >
+                        {m.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              {visibleKeys.map((key) => (
+                <span
+                  key={key}
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-0.5 text-[11px] font-medium text-foreground"
+                >
+                  {tableMetricLabel(key)}
+                  <button
+                    type="button"
+                    className="rounded-full p-0.5 text-muted hover:text-foreground"
+                    aria-label={`Remove ${tableMetricLabel(key)}`}
+                    onClick={() => toggleKey(key)}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
 
-      {activeTab === "holdings" ? (
-        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleValuesVisible}
+                className={ghostBtn}
+                title={valuesVisible ? "Hide market values" : "Show market values"}
+              >
+                {valuesVisible ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPositionModal(true)}
+                disabled={!activePortfolioId}
+                className={`${ghostBtn} disabled:opacity-40`}
+              >
+                <Plus className="h-4 w-4" />
+                Add Position
+              </button>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className={`${ghostBtn} disabled:opacity-40`}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex overflow-hidden rounded-lg border border-border">
+                {(["K", "M", "B"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => persistNumberScale(s)}
+                    className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      numberScale === s
+                        ? "bg-accent/10 text-accent"
+                        : "text-muted hover:bg-card hover:text-foreground"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              {/* TODO: export holdings table */}
+              <button
+                type="button"
+                className={ghostBtn}
+                title="Export coming soon"
+                onClick={() => {
+                  /* TODO: holdings export */
+                }}
+              >
+                <Download className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
           {positionsError && !loading && (
             <div className="rounded-lg border border-red/40 bg-red/10 px-4 py-3 text-sm text-red-200">
               {positionsError}
@@ -503,40 +601,84 @@ export default function PortfolioPage() {
               </button>
             </div>
           )}
-          {loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="h-20 rounded-xl bg-card border border-border animate-pulse"
-                />
-              ))}
-            </div>
-          )}
+
           <PortfolioEarningsUpcoming />
-          {!loading && (
-            <PortfolioPerformanceChart portfolioId={activePortfolioId} />
-          )}
-          {loading && (
-            <div className="h-64 rounded-xl bg-card border border-border animate-pulse" />
-          )}
+
           <PortfolioTable
             positions={positions}
+            visibleKeys={visibleKeys}
+            numberScale={numberScale}
             onDelete={handleDeletePosition}
             onReorder={handleReorderPositions}
             valuesVisible={valuesVisible}
             onEdit={handleEditPositionRequest}
             loading={loading}
           />
+
+          <PortfolioStats positions={positions} />
+        </>
+      )}
+
+      {activeTab === "performance" && (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className={`${ghostBtn} disabled:opacity-40`}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </button>
+          </div>
+          <PortfolioPerformanceChart portfolioId={activePortfolioId} />
         </div>
-      ) : (
-        <WatchlistTable
-          items={watchlist}
-          onRemove={handleRemoveWatchlist}
-          onReorder={handleReorderWatchlist}
-          valuesVisible={valuesVisible}
-          loading={loading}
-        />
+      )}
+
+      {activeTab === "watchlist" && (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleValuesVisible}
+                className={ghostBtn}
+                title={valuesVisible ? "Hide market values" : "Show market values"}
+              >
+                {valuesVisible ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+              <button type="button" onClick={() => setShowWatchlistModal(true)} className={ghostBtn}>
+                <Plus className="h-4 w-4" />
+                Add to Watchlist
+              </button>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className={`${ghostBtn} disabled:opacity-40`}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </button>
+            </div>
+          </div>
+          <WatchlistTable
+            items={watchlist}
+            onRemove={handleRemoveWatchlist}
+            onReorder={handleReorderWatchlist}
+            valuesVisible={valuesVisible}
+            loading={loading}
+          />
+        </div>
       )}
 
       {showPositionModal && (
@@ -567,9 +709,9 @@ export default function PortfolioPage() {
       )}
 
       {showNewPortfolioModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold">New portfolio</h2>
               <button
                 type="button"
@@ -584,7 +726,7 @@ export default function PortfolioPage() {
             </div>
             <form onSubmit={handleCreatePortfolio} className="space-y-4">
               <div>
-                <label className="block text-sm text-muted mb-1">Name</label>
+                <label className="mb-1 block text-sm text-muted">Name</label>
                 <input
                   type="text"
                   value={newPortfolioName}
@@ -601,14 +743,14 @@ export default function PortfolioPage() {
                     setShowNewPortfolioModal(false);
                     setNewPortfolioName("");
                   }}
-                  className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-card-hover"
+                  className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-card-hover"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creatingPortfolio || !newPortfolioName.trim()}
-                  className="px-4 py-2 text-sm rounded-lg bg-accent text-white hover:bg-accent/90 disabled:opacity-40"
+                  className="rounded-lg bg-accent px-4 py-2 text-sm text-white hover:bg-accent/90 disabled:opacity-40"
                 >
                   {creatingPortfolio ? "Creating…" : "Create"}
                 </button>

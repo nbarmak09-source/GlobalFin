@@ -54,8 +54,25 @@ function getRateLimitTier(pathname: string): LimitTier {
   return "default";
 }
 
+const MODEL_TAB_REDIRECT: Record<string, string> = {
+  DCF: "/models/dcf",
+  LBO: "/models/lbo",
+  "Comps / Multiples": "/models/comps",
+};
+
 const authHandler = auth(async (req) => {
   const pathname = req.nextUrl.pathname;
+
+  // Legacy /models?tab=… → /models/dcf|comps|lbo (preserves symbol, etc.)
+  if (pathname === "/models") {
+    const tab = req.nextUrl.searchParams.get("tab");
+    if (tab && MODEL_TAB_REDIRECT[tab]) {
+      const url = req.nextUrl.clone();
+      url.pathname = MODEL_TAB_REDIRECT[tab];
+      url.searchParams.delete("tab");
+      return withSecurityHeaders(NextResponse.redirect(url));
+    }
+  }
 
   // Auth, register, and verify-email: no session required
   if (
@@ -134,7 +151,10 @@ export function proxy(request: NextRequest, context?: ProxyContext) {
 
 export const config = {
   matcher: [
-    "/api/:path*",
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Match all /api/* except /api/auth/* — NextAuth's own endpoints must reach
+    // the route handler directly so they return JSON, not an HTML redirect.
+    "/api/((?!auth/).*)",
+    // Match all page routes; skip Next.js internals and static assets.
+    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

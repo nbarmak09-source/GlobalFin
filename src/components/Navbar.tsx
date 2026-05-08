@@ -206,7 +206,7 @@ function DropdownGroup({
 export default function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { openWelcome } = useTour(false);
+  const { openWelcome } = useTour();
   const { menuOpen: mobileOpen, closeMenu, toggleMenu } = useMobileNav();
   const [portalReady, setPortalReady] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -226,7 +226,8 @@ export default function Navbar() {
   );
 
   useEffect(() => {
-    setPortalReady(true);
+    const id = requestAnimationFrame(() => setPortalReady(true));
+    return () => cancelAnimationFrame(id);
   }, []);
   const {
     open: accountOpen,
@@ -235,11 +236,13 @@ export default function Navbar() {
   } = useDropdown();
 
   useEffect(() => {
-    closeMenu();
+    const id = requestAnimationFrame(() => closeMenu());
+    return () => cancelAnimationFrame(id);
   }, [pathname, closeMenu]);
 
   useEffect(() => {
-    closeMobileSearch();
+    const id = requestAnimationFrame(() => closeMobileSearch());
+    return () => cancelAnimationFrame(id);
   }, [pathname, closeMobileSearch]);
 
   useEffect(() => {
@@ -465,6 +468,7 @@ export default function Navbar() {
             <input
               ref={mobileSearchInputRef}
               type="search"
+              role="combobox"
               enterKeyHint="search"
               autoComplete="off"
               autoCorrect="off"
@@ -482,6 +486,7 @@ export default function Navbar() {
               aria-autocomplete="list"
               aria-controls="gcm-mobile-search-results"
               aria-expanded={searchResults.length > 0}
+              aria-haspopup="listbox"
             />
             <button
               type="button"
@@ -499,7 +504,7 @@ export default function Navbar() {
               className="mt-2 max-h-[min(40vh,20rem)] overflow-y-auto overscroll-contain rounded-xl border border-border bg-card shadow-lg shadow-black/20"
             >
               {searchResults.map((s) => (
-                <li key={s.href} role="option">
+                <li key={s.href} role="option" aria-selected={false}>
                   <Link
                     href={s.href}
                     className="block border-b border-border/60 px-3 py-2.5 transition-colors last:border-b-0 hover:bg-card-hover focus-visible:bg-card-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"

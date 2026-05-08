@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment, useMemo, useEffect } from "react";
+import { useState, Fragment, useMemo } from "react";
 import { Trash2, GripVertical } from "lucide-react";
 import PositionDetailPanel from "./PositionDetailPanel";
 import type { EnrichedWatchlistItem } from "@/lib/types";
@@ -136,32 +136,32 @@ function SortableRow({
   );
 }
 
+function loadWatchlistSortMode(): HoldingsTableSortMode {
+  try {
+    const v = localStorage.getItem(WATCHLIST_SORT_STORAGE_KEY);
+    if (v === "sector" || v === "symbol" || v === "manual") return v;
+  } catch {
+    /* ignore */
+  }
+  return "manual";
+}
+
 export default function WatchlistTable({
   items,
   onRemove,
   onReorder,
-  valuesVisible: _valuesVisible = true,
   loading = false,
 }: WatchlistTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [sortMode, setSortMode] = useState<HoldingsTableSortMode>("manual");
+  const [sortMode, setSortMode] = useState<HoldingsTableSortMode>(
+    loadWatchlistSortMode,
+  );
   const [visibleKeys, toggleKey, resetToDefault] = useColumnPreferences();
 
   const chevronAnchorKey =
     visibleKeys.find((k) => k === "ticker" || k === "name") ?? visibleKeys[0];
 
   const colCount = 1 + visibleKeys.length + 1;
-
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem(WATCHLIST_SORT_STORAGE_KEY);
-      if (v === "sector" || v === "symbol" || v === "manual") {
-        setSortMode(v);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
 
   function setSortModePersist(next: HoldingsTableSortMode) {
     setSortMode(next);

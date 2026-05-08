@@ -27,7 +27,7 @@ market-summary-cache.json
 visual-capitalist-cache.json
 vc-daily-cache.json
 sec-financials-cache.json
-capital-markets-project.zip
+capital-markets*.zip
 public/vc-daily.*
 *.pem
 

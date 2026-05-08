@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, type MouseEvent as ReactMouseEvent } from 'react'
 import {
   ComposedChart, Bar, Line, Area, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
@@ -68,6 +68,21 @@ function TBtn({ active, onClick, children, title }: {
     >
       {children}
     </button>
+  )
+}
+
+function ChartToggle({ on, onToggle, color = ACCENT }: { on: boolean; onToggle: () => void; color?: string }) {
+  return (
+    <div onClick={onToggle} style={{
+      width: 28, height: 16, borderRadius: 8,
+      background: on ? color : 'var(--bg-hover)',
+      position: 'relative', cursor: 'pointer', transition: 'background 150ms', flexShrink: 0,
+    }}>
+      <div style={{
+        position: 'absolute', top: 2, left: on ? 14 : 2, width: 12, height: 12,
+        borderRadius: '50%', background: '#000', transition: 'left 150ms',
+      }} />
+    </div>
   )
 }
 
@@ -303,6 +318,33 @@ function SingleMetricPicker({ selected, onChange }: { selected: string | null; o
   )
 }
 
+function TimelineSliderHandle({
+  posPct,
+  onMouseDown,
+}: {
+  posPct: number
+  onMouseDown: (e: ReactMouseEvent<HTMLDivElement>) => void
+}) {
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      style={{
+        position: 'absolute',
+        left: `${posPct}%`,
+        top: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 14, height: 14,
+        borderRadius: '50%',
+        background: ACCENT,
+        border: '2px solid #000',
+        cursor: 'ew-resize',
+        zIndex: 3,
+        boxShadow: '0 0 0 2px rgba(0,0,0,0.3)',
+      }}
+    />
+  )
+}
+
 function TimelineSlider({ min, max, value, onChange, labels }: {
   min: number; max: number; value: [number, number]
   onChange: (v: [number, number]) => void; labels: string[]
@@ -338,28 +380,6 @@ function TimelineSlider({ min, max, value, onChange, labels }: {
   const leftLabel  = labels[value[0] - min] ?? String(value[0])
   const rightLabel = labels[value[1] - min] ?? String(value[1])
 
-  const Handle = ({ side }: { side: 'left' | 'right' }) => {
-    const pos = side === 'left' ? pct(value[0]) : pct(value[1])
-    return (
-      <div
-        onMouseDown={e => { e.preventDefault(); dragging.current = side }}
-        style={{
-          position: 'absolute',
-          left: `${pos}%`,
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 14, height: 14,
-          borderRadius: '50%',
-          background: ACCENT,
-          border: '2px solid #000',
-          cursor: 'ew-resize',
-          zIndex: 3,
-          boxShadow: '0 0 0 2px rgba(0,0,0,0.3)',
-        }}
-      />
-    )
-  }
-
   return (
     <div style={{ padding: '4px 10px 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -394,8 +414,14 @@ function TimelineSlider({ min, max, value, onChange, labels }: {
             opacity: 0.5, zIndex: 1,
           }} />
         ))}
-        <Handle side="left" />
-        <Handle side="right" />
+        <TimelineSliderHandle
+          posPct={pct(value[0])}
+          onMouseDown={(e) => { e.preventDefault(); dragging.current = 'left' }}
+        />
+        <TimelineSliderHandle
+          posPct={pct(value[1])}
+          onMouseDown={(e) => { e.preventDefault(); dragging.current = 'right' }}
+        />
       </div>
     </div>
   )
@@ -419,24 +445,20 @@ const chartIcons = {
   ),
 }
 
-function MetricSeriesToolbar({
+function MetricSeriesIconBtn({
+  type,
+  title,
   chartType,
-  visible,
   colorActive,
   onSetType,
-  onToggleVisible,
-  onRemove,
-  showRemove = true,
 }: {
+  type: ChartType
+  title: string
   chartType: ChartType
-  visible: boolean
   colorActive: string
   onSetType: (t: ChartType) => void
-  onToggleVisible: () => void
-  onRemove: () => void
-  showRemove?: boolean
 }) {
-  const IconBtn = ({ type, title }: { type: ChartType; title: string }) => (
+  return (
     <button
       type="button"
       title={title}
@@ -458,12 +480,30 @@ function MetricSeriesToolbar({
       {chartIcons[type]}
     </button>
   )
+}
 
+function MetricSeriesToolbar({
+  chartType,
+  visible,
+  colorActive,
+  onSetType,
+  onToggleVisible,
+  onRemove,
+  showRemove = true,
+}: {
+  chartType: ChartType
+  visible: boolean
+  colorActive: string
+  onSetType: (t: ChartType) => void
+  onToggleVisible: () => void
+  onRemove: () => void
+  showRemove?: boolean
+}) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-      <IconBtn type="line" title="Line" />
-      <IconBtn type="bar" title="Bar" />
-      <IconBtn type="area" title="Area" />
+      <MetricSeriesIconBtn type="line" title="Line" chartType={chartType} colorActive={colorActive} onSetType={onSetType} />
+      <MetricSeriesIconBtn type="bar" title="Bar" chartType={chartType} colorActive={colorActive} onSetType={onSetType} />
+      <MetricSeriesIconBtn type="area" title="Area" chartType={chartType} colorActive={colorActive} onSetType={onSetType} />
       <button
         type="button"
         title={visible ? 'Hide series' : 'Show series'}
@@ -521,12 +561,11 @@ function MetricSeriesToolbar({
   )
 }
 
-function ChartTooltip({ active, payload, label, scale, metricKeys }: {
+function ChartTooltip({ active, payload, label, scale }: {
   active?: boolean
   payload?: { dataKey: string; value: number; color: string }[]
   label?: string
   scale: Scale
-  metricKeys: string[]
 }) {
   if (!active || !payload?.length) return null
   return (
@@ -572,10 +611,9 @@ export default function ChartingPage() {
 
   useEffect(() => {
     if (!company) return
-    setLoading(true)
-    setDataErr(null)
     const sym = company.symbol
     const p   = period
+    let cancelled = false
 
     const load = async (path: string) => {
       const res = await fetch(`/api/${path}?symbol=${sym}&period=${p}`)
@@ -590,8 +628,12 @@ export default function ChartingPage() {
       return Array.isArray(body) ? body : []
     }
 
-    Promise.allSettled([load('fmp/financials'), load('fmp/metrics')])
-      .then(([fin, met]) => {
+    void (async () => {
+      setLoading(true)
+      setDataErr(null)
+      try {
+        const [fin, met] = await Promise.allSettled([load('fmp/financials'), load('fmp/metrics')])
+        if (cancelled) return
         const finData = fin.status === 'fulfilled' ? fin.value : []
         const metData = met.status === 'fulfilled' ? met.value : []
         setRows(finData)
@@ -605,8 +647,14 @@ export default function ChartingPage() {
         } else if (met.status === 'rejected') {
           setDataErr(`Key metrics: ${met.reason?.message ?? 'failed'}`)
         }
-      })
-      .finally(() => setLoading(false))
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [company, period])
 
   const allData = useMemo(() => {
@@ -681,19 +729,6 @@ export default function ChartingPage() {
     valueDef
       ? `${valueDef.label}${valueDef.format === 'currency' ? ' ($)' : ''}`
       : ''
-
-  const Toggle = ({ on, onToggle, color = ACCENT }: { on: boolean; onToggle: () => void; color?: string }) => (
-    <div onClick={onToggle} style={{
-      width: 28, height: 16, borderRadius: 8,
-      background: on ? color : 'var(--bg-hover)',
-      position: 'relative', cursor: 'pointer', transition: 'background 150ms', flexShrink: 0,
-    }}>
-      <div style={{
-        position: 'absolute', top: 2, left: on ? 14 : 2, width: 12, height: 12,
-        borderRadius: '50%', background: '#000', transition: 'left 150ms',
-      }} />
-    </div>
-  )
 
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: '20px 20px 40px' }}>
@@ -832,7 +867,7 @@ export default function ChartingPage() {
           borderTop: metricKey ? '1px solid var(--border)' : 'none',
         }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.75rem', color: indexZero ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-            <Toggle on={indexZero} onToggle={() => setIndexZero(o => !o)} />
+            <ChartToggle on={indexZero} onToggle={() => setIndexZero(o => !o)} />
             Index to 0
           </label>
 
@@ -980,7 +1015,7 @@ export default function ChartingPage() {
                 />
               )}
               <Tooltip
-                content={<ChartTooltip scale={scale} metricKeys={metricKey ? [metricKey] : []} />}
+                content={<ChartTooltip scale={scale} />}
                 cursor={{ fill: 'rgba(255,255,255,0.025)' }}
               />
               {pctVisible && (

@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { ExternalLink, Clock } from "lucide-react";
 import type { NewsArticle } from "@/lib/types";
+import { allowOptimizeNewsThumbnail } from "@/lib/newsThumbnailHosts";
 
 function timeAgo(dateStr: string): string {
   const now = new Date();
@@ -25,11 +27,14 @@ export default function NewsCard({ article }: { article: NewsArticle }) {
       className="group flex gap-4 rounded-xl bg-card border border-border p-4 hover:bg-card-hover transition-all duration-200 cursor-pointer shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
     >
       {article.thumbnail && (
-        <div className="hidden sm:block flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-border">
-          <img
+        <div className="relative hidden sm:block h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-border">
+          <Image
             src={article.thumbnail}
             alt=""
-            className="w-full h-full object-cover"
+            width={96}
+            height={96}
+            className="h-full w-full object-cover"
+            unoptimized={!allowOptimizeNewsThumbnail(article.thumbnail)}
           />
         </div>
       )}

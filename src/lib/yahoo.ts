@@ -545,8 +545,41 @@ export async function searchSymbols(query: string): Promise<SearchResult[]> {
   }
 }
 
+/** Raw Yahoo quoteSummary shape for heavy-only modules (loosely typed). */
+type YahooQuoteSummaryHeavyRaw = {
+  upgradeDowngradeHistory?: {
+    history?: Array<{
+      epochGradeDate?: number | Date;
+      firm?: string;
+      toGrade?: string;
+      fromGrade?: string;
+      action?: string;
+    }>;
+  };
+  insiderTransactions?: {
+    transactions?: Array<{
+      filerName?: string;
+      filerRelation?: string;
+      transactionText?: string;
+      shares?: number;
+      value?: number;
+      startDate?: Date | string | number;
+      ownership?: string;
+    }>;
+  };
+  netSharePurchaseActivity?: {
+    buyInfoCount?: number;
+    buyInfoShares?: number;
+    sellInfoCount?: number;
+    sellInfoShares?: number;
+    netInfoCount?: number;
+    netInfoShares?: number;
+    totalInsiderShares?: number;
+  } | null;
+};
+
 /** Maps Yahoo heavy-only quoteSummary modules (shared with core + heavy fetch). */
-function mapYahooHeavyModules(result: any): QuoteSummaryHeavyPatch {
+function mapYahooHeavyModules(result: YahooQuoteSummaryHeavyRaw): QuoteSummaryHeavyPatch {
   const udh = result.upgradeDowngradeHistory;
   const it = result.insiderTransactions;
   const nspa = result.netSharePurchaseActivity;
@@ -563,7 +596,7 @@ function mapYahooHeavyModules(result: any): QuoteSummaryHeavyPatch {
             action?: string;
           }) => ({
             date: new Date(h.epochGradeDate as number | Date).toISOString().split("T")[0],
-            firm: h.firm,
+            firm: h.firm ?? "",
             toGrade: String(h.toGrade),
             fromGrade: String(h.fromGrade ?? ""),
             action: String(h.action),
@@ -580,10 +613,10 @@ function mapYahooHeavyModules(result: any): QuoteSummaryHeavyPatch {
           startDate?: Date | string | number;
           ownership?: string;
         }) => ({
-          filerName: t.filerName,
+          filerName: String(t.filerName ?? ""),
           filerRelation: String(t.filerRelation),
-          transactionText: t.transactionText,
-          shares: t.shares,
+          transactionText: String(t.transactionText ?? ""),
+          shares: t.shares ?? 0,
           value: t.value,
           startDate: new Date(t.startDate as string | number | Date).toISOString().split("T")[0],
           ownership: String(t.ownership),
@@ -591,13 +624,13 @@ function mapYahooHeavyModules(result: any): QuoteSummaryHeavyPatch {
       ) ?? [],
     netSharePurchaseActivity: nspa
       ? {
-          buyInfoCount: nspa.buyInfoCount,
-          buyInfoShares: nspa.buyInfoShares,
-          sellInfoCount: nspa.sellInfoCount,
+          buyInfoCount: nspa.buyInfoCount ?? 0,
+          buyInfoShares: nspa.buyInfoShares ?? 0,
+          sellInfoCount: nspa.sellInfoCount ?? 0,
           sellInfoShares: nspa.sellInfoShares ?? 0,
-          netInfoCount: nspa.netInfoCount,
-          netInfoShares: nspa.netInfoShares,
-          totalInsiderShares: nspa.totalInsiderShares,
+          netInfoCount: nspa.netInfoCount ?? 0,
+          netInfoShares: nspa.netInfoShares ?? 0,
+          totalInsiderShares: nspa.totalInsiderShares ?? 0,
         }
       : null,
   };
@@ -617,8 +650,7 @@ async function fetchQuoteSummaryHeavyFromYahoo(
         ],
       },
       { validateResult: false }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    )) as any;
+    )) as YahooQuoteSummaryHeavyRaw;
     return mapYahooHeavyModules(result);
   } catch (error) {
     console.error("quoteSummary heavy error:", error);

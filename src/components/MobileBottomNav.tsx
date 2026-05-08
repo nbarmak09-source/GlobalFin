@@ -16,7 +16,7 @@ function isActivePath(pathname: string, href: string, exact: boolean) {
 
 const ITEMS = [
   { href: "/", label: "Home", icon: LayoutDashboard, exact: true },
-  { href: "/research", label: "Research", icon: Search, exact: false },
+  { href: "/analysis", label: "Analysis", icon: Search, exact: false },
   { href: "/portfolio", label: "Portfolio", icon: Briefcase, exact: false },
 ] as const;
 

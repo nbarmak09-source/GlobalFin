@@ -307,7 +307,7 @@ export default function ValuationTab({ data }: { data: QuoteSummaryData }) {
                 <strong className="text-foreground">analyst consensus mean target</strong>{" "}
                 as a proxy (not a discounted cash flow model). Use{" "}
                 <Link
-                  href={`/models?symbol=${encodeURIComponent(data.symbol)}&tab=DCF`}
+                  href={`/models/dcf?symbol=${encodeURIComponent(data.symbol)}`}
                   className="text-accent hover:underline"
                 >
                   Financial Models
@@ -689,7 +689,7 @@ export default function ValuationTab({ data }: { data: QuoteSummaryData }) {
           Build a proper DCF, trading comps, or LBO in Financial Models.
         </p>
         <Link
-          href={`/models?symbol=${encodeURIComponent(data.symbol)}&tab=DCF`}
+          href={`/models/dcf?symbol=${encodeURIComponent(data.symbol)}`}
           className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
         >
           Open Financial Models

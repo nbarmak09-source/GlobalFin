@@ -1,13 +1,62 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState, useRef } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { Suspense, useState, useRef, type ReactNode } from 'react'
 import { GlobalFinBrand } from '@/components/Logo'
+
+/** Stable empty search params for nav fallback (desktop collapsed state). */
+const EMPTY_SEARCH_PARAMS = new URLSearchParams()
 
 const SIDEBAR_W = 88
 
-const NAV_ITEMS = [
+/** Match flyout row active state; path + query must match when the child href includes search params. */
+function isSidebarChildActive(
+  childHref: string,
+  pathname: string,
+  searchParams: URLSearchParams,
+): boolean {
+  let url: URL
+  try {
+    url = new URL(childHref, 'http://localhost')
+  } catch {
+    return pathname === childHref
+  }
+
+  if (pathname !== url.pathname) return false
+
+  const queryKeys = [...url.searchParams.keys()]
+  if (queryKeys.length === 0) {
+    return true
+  }
+
+  for (const key of queryKeys) {
+    const expected = url.searchParams.get(key)
+    const actual = searchParams.get(key)
+    if (key === 'tab' && pathname === '/analysis') {
+      const exp = (expected ?? '').toLowerCase()
+      const actRaw = (actual ?? '').trim().toLowerCase()
+      const act = exp === 'overview' && actRaw === '' ? 'overview' : actRaw
+      if (act !== exp) return false
+      continue
+    }
+    if (actual !== expected) return false
+  }
+  return true
+}
+
+type NavFlyoutChild = { label: string; href: string; icon: string }
+
+type NavEntry = {
+  label: string
+  href: string
+  icon: ReactNode
+  children: NavFlyoutChild[]
+  /** Extra path prefixes where this nav group should show as selected (e.g. /pitch under Tools). */
+  extraActivePrefixes?: string[]
+}
+
+const NAV_ITEMS: NavEntry[] = [
   {
     label: 'Dashboard',
     href: '/dashboard',
@@ -33,6 +82,28 @@ const NAV_ITEMS = [
       </svg>
     ),
     children: [],
+  },
+  {
+    label: 'Analysis',
+    href: '/analysis',
+    icon: (
+      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="7"/>
+        <line x1="16.5" y1="16.5" x2="22" y2="22"/>
+        <line x1="11" y1="8" x2="11" y2="14"/>
+        <line x1="8" y1="11" x2="14" y2="11"/>
+      </svg>
+    ),
+    children: [
+      { label: 'Overview',         href: '/analysis?tab=overview',    icon: '◎' },
+      { label: 'Valuation',        href: '/analysis?tab=valuation',   icon: '▦' },
+      { label: 'Financials',       href: '/analysis?tab=financials',  icon: '≋' },
+      { label: 'Forecast',         href: '/analysis?tab=forecast',    icon: '△' },
+      { label: 'Compare',          href: '/analysis?tab=compare',     icon: '⤢' },
+      { label: 'Historical Price', href: '/analysis?tab=historical',  icon: '◈' },
+      { label: 'Solvency',         href: '/analysis?tab=solvency',    icon: '⊞' },
+      { label: 'SEC Filings',      href: '/analysis?tab=sec-filings', icon: '⬡' },
+    ],
   },
   {
     label: 'Macro',
@@ -105,6 +176,28 @@ const NAV_ITEMS = [
     ],
   },
   {
+    label: 'Tools',
+    href: '/models',
+    extraActivePrefixes: ['/pitch', '/filings'],
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <rect x="3" y="3" width="14" height="14" rx="2" />
+        <line x1="7" y1="3" x2="7" y2="17" />
+        <line x1="13" y1="3" x2="13" y2="17" />
+        <line x1="3" y1="8" x2="17" y2="8" />
+        <line x1="3" y1="13" x2="17" y2="13" />
+      </svg>
+    ),
+    children: [
+      { label: 'Overview',              href: '/models',      icon: '◎' },
+      { label: 'DCF',                   href: '/models/dcf',  icon: '△' },
+      { label: 'Comps / Multiples',     href: '/models/comps', icon: '▦' },
+      { label: 'LBO',                   href: '/models/lbo',   icon: '⊞' },
+      { label: 'Pitch builder',        href: '/pitch',       icon: '✦' },
+      { label: 'SEC filing summaries', href: '/filings',    icon: '▤' },
+    ],
+  },
+  {
     label: 'Portfolio',
     href: '/portfolio',
     icon: (
@@ -141,7 +234,7 @@ const NAV_ITEMS = [
   },
 ]
 
-const NAV_BOTTOM = [
+const NAV_BOTTOM: NavEntry[] = [
   {
     label: 'Settings',
     href: '/account',
@@ -155,7 +248,13 @@ const NAV_BOTTOM = [
   },
 ]
 
-export function Sidebar() {
+function SidebarNavPanel({
+  items,
+  searchParams,
+}: {
+  items: NavEntry[]
+  searchParams: URLSearchParams
+}) {
   const pathname = usePathname()
   const [activeHover, setActiveHover] = useState<string | null>(null)
   const [flyoutTop, setFlyoutTop] = useState<number>(0)
@@ -169,8 +268,15 @@ export function Sidebar() {
     closeTimer.current = setTimeout(() => setActiveHover(null), 100)
   }
 
-  const NavItem = ({ item }: { item: typeof NAV_ITEMS[0] }) => {
-    const active = pathname === item.href || pathname.startsWith(item.href + '/')
+  const NavItem = ({ item }: { item: NavEntry }) => {
+    const extra =
+      item.extraActivePrefixes?.some(
+        (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+      ) ?? false
+    const active =
+      pathname === item.href ||
+      pathname.startsWith(`${item.href}/`) ||
+      extra
     const isHovered = activeHover === item.label
     const hasChildren = item.children.length > 0
     const itemRef = useRef<HTMLDivElement>(null)
@@ -256,10 +362,10 @@ export function Sidebar() {
             </div>
 
             {item.children.map((child) => {
-              const childActive = pathname === child.href
+              const childActive = isSidebarChildActive(child.href, pathname, searchParams)
               return (
                 <Link
-                  key={child.href}
+                  key={`${child.label}-${child.href}`}
                   href={child.href}
                   className="flex items-center gap-3 transition-colors duration-75"
                   style={{
@@ -299,6 +405,25 @@ export function Sidebar() {
 
   return (
     <>
+      {items.map((item) => (
+        <NavItem key={item.href} item={item} />
+      ))}
+    </>
+  )
+}
+
+function SidebarMainNavSuspended() {
+  const searchParams = useSearchParams()
+  return (
+    <nav className="flex flex-col flex-1 pt-2 overflow-y-auto" aria-label="Primary">
+      <SidebarNavPanel items={NAV_ITEMS} searchParams={searchParams} />
+    </nav>
+  )
+}
+
+export function Sidebar() {
+  return (
+    <>
       <style>{`
         @keyframes flyout-in {
           from { opacity: 0; transform: translateX(-6px); }
@@ -331,18 +456,22 @@ export function Sidebar() {
           </Link>
         </div>
 
-        {/* Main nav */}
-        <nav className="flex flex-col flex-1 pt-2 overflow-y-auto" aria-label="Primary">
-          {NAV_ITEMS.map((item) => (
-            <NavItem key={item.href} item={item} />
-          ))}
-        </nav>
+        {/* Main nav — Suspense for useSearchParams (Tools → model tabs) */}
+        <Suspense
+          fallback={
+            <nav className="flex flex-col flex-1 pt-2 overflow-y-auto" aria-label="Primary">
+              <SidebarNavPanel items={NAV_ITEMS} searchParams={EMPTY_SEARCH_PARAMS} />
+            </nav>
+          }
+        >
+          <SidebarMainNavSuspended />
+        </Suspense>
 
         {/* Bottom: settings + version badge */}
         <div style={{ borderTop: '1px solid var(--color-border)', paddingBottom: 8 }}>
-          {NAV_BOTTOM.map((item) => (
-            <NavItem key={item.href} item={item} />
-          ))}
+          <nav className="flex flex-col" aria-label="Account">
+            <SidebarNavPanel items={NAV_BOTTOM} searchParams={EMPTY_SEARCH_PARAMS} />
+          </nav>
           <div className="flex justify-center pb-1 pt-0.5">
             <span style={{
               fontSize: '10px',

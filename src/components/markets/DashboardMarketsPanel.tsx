@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   BarChart3,
   TrendingDown,
@@ -13,6 +14,7 @@ import { SkeletonCard, SkeletonText } from "@/components/Skeleton";
 import SectorPerformance from "@/components/markets/SectorPerformance";
 import MarketValuations from "@/components/markets/MarketValuations";
 import type { NewsArticle } from "@/lib/types";
+import { allowOptimizeNewsThumbnail } from "@/lib/newsThumbnailHosts";
 
 interface ScreenerResult {
   symbol: string;
@@ -214,11 +216,14 @@ export default function DashboardMarketsPanel() {
                   className="group flex gap-3 rounded-xl border border-border bg-card p-4 hover:bg-card-hover transition-colors"
                 >
                   {article.thumbnail && (
-                    <div className="hidden sm:block shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-border">
-                      <img
+                    <div className="relative hidden sm:block h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-border">
+                      <Image
                         src={article.thumbnail}
                         alt=""
-                        className="w-full h-full object-cover"
+                        width={64}
+                        height={64}
+                        className="h-full w-full object-cover"
+                        unoptimized={!allowOptimizeNewsThumbnail(article.thumbnail)}
                       />
                     </div>
                   )}

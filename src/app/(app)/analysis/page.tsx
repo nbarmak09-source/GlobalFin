@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import SymbolSearch from "@/components/SymbolSearch";
-import BullsBears from "@/components/BullsBears";
 import OverviewTab from "@/components/stocks/OverviewTab";
 import ValuationTab from "@/components/stocks/ValuationTab";
 import FinancialsTab from "@/components/stocks/FinancialsTab";
@@ -32,7 +31,6 @@ import {
 
 const SUB_TABS = [
   "Overview",
-  "Bulls & Bears",
   "Valuation",
   "Financials",
   "Forecast",
@@ -46,6 +44,34 @@ const SUB_TABS = [
 ] as const;
 
 type SubTab = (typeof SUB_TABS)[number];
+
+const SUBTAB_TO_SLUG: Record<SubTab, string> = {
+  Overview: "overview",
+  Valuation: "valuation",
+  Financials: "financials",
+  Forecast: "forecast",
+  Compare: "compare",
+  "Historical Price": "historical",
+  Solvency: "solvency",
+  Dividends: "dividends",
+  Transactions: "transactions",
+  People: "people",
+  "SEC Filings": "sec-filings",
+};
+
+const SLUG_TO_SUBTAB: Record<string, SubTab> = Object.fromEntries(
+  (Object.entries(SUBTAB_TO_SLUG) as [SubTab, string][]).map(([label, slug]) => [slug, label]),
+) as Record<string, SubTab>;
+
+function subTabFromSlug(raw: string | null): SubTab {
+  if (!raw?.trim()) return "Overview";
+  const slug = raw.trim().toLowerCase();
+  return SLUG_TO_SUBTAB[slug] ?? "Overview";
+}
+
+function subTabToSlug(tab: SubTab): string {
+  return SUBTAB_TO_SLUG[tab];
+}
 
 function formatMarketCap(v: number): string {
   if (v >= 1e12) return `$${(v / 1e12).toFixed(2)}T`;
@@ -99,13 +125,13 @@ function HeaderSkeleton() {
   );
 }
 
-function StocksPageContent() {
+function AnalysisPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tabBarRef = useRef<HTMLDivElement>(null);
   const [symbol, setSymbol] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [activeTab, setActiveTab] = useState<SubTab>("Overview");
+  const activeTab = subTabFromSlug(searchParams.get("tab"));
   const [data, setData] = useState<QuoteSummaryData | null>(null);
   const [quote, setQuote] = useState<StockQuote | null>(null);
   const [loading, setLoading] = useState(false);
@@ -195,11 +221,6 @@ function StocksPageContent() {
     const urlSymbol = searchParams.get("symbol")?.trim().toUpperCase();
     if (urlSymbol) setSymbol(urlSymbol);
     else setSymbol("");
-
-    const urlTab = searchParams.get("tab") as SubTab | null;
-    if (urlTab && (SUB_TABS as readonly string[]).includes(urlTab)) {
-      setActiveTab(urlTab as SubTab);
-    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -214,29 +235,30 @@ function StocksPageContent() {
     return () => ac.abort();
   }, [symbol, fetchSymbolData]);
 
+  function analysisHref(next: { symbol?: string; tab: SubTab }) {
+    const qs = new URLSearchParams();
+    const sym = next.symbol !== undefined ? next.symbol : symbol;
+    if (sym.trim()) qs.set("symbol", sym.trim());
+    qs.set("tab", subTabToSlug(next.tab));
+    const q = qs.toString();
+    return q ? `/analysis?${q}` : "/analysis";
+  }
+
   function handleSymbolSelect(sym: string, name: string) {
     setSymbol(sym);
     setDisplayName(name);
-    router.replace(
-      `/stocks?symbol=${encodeURIComponent(sym)}&tab=${encodeURIComponent(activeTab)}`,
-      { scroll: false }
-    );
+    router.replace(analysisHref({ symbol: sym, tab: activeTab }), { scroll: false });
   }
 
   function handleClearSymbol() {
     setDisplayName("");
-    setActiveTab("Overview");
     setSymbol("");
     setQuote(null);
-    router.replace("/stocks", { scroll: false });
+    router.replace("/analysis", { scroll: false });
   }
 
   function handleTabChange(tab: SubTab) {
-    setActiveTab(tab);
-    router.replace(
-      `/stocks?symbol=${encodeURIComponent(symbol)}&tab=${encodeURIComponent(tab)}`,
-      { scroll: false }
-    );
+    router.replace(analysisHref({ tab }), { scroll: false });
     // scroll active tab into view
     setTimeout(() => {
       const el = tabBarRef.current;
@@ -261,9 +283,6 @@ function StocksPageContent() {
     }
     if (activeTab === "Historical Price") {
       return <HistoricalPriceTab symbol={symbol} summaryData={data ?? undefined} />;
-    }
-    if (activeTab === "Bulls & Bears") {
-      return <BullsBears ticker={symbol} />;
     }
     if (activeTab === "SEC Filings") {
       return <SECFilingsTab symbol={symbol} />;
@@ -479,7 +498,7 @@ function StocksPageContent() {
   );
 }
 
-export default function StocksPage() {
+export default function AnalysisPage() {
   return (
     <Suspense
       fallback={
@@ -490,7 +509,7 @@ export default function StocksPage() {
         </div>
       }
     >
-      <StocksPageContent />
+      <AnalysisPageContent />
     </Suspense>
   );
 }

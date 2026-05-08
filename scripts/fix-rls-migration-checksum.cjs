@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS maintenance script */
 /**
  * Fixes "migration was modified after it was applied" for 20260318150000_enable_rls
  * by setting _prisma_migrations.checksum to SHA-256 of the current migration.sql.

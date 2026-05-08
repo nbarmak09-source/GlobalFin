@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   AVAILABLE_METRIC_KEY_SET,
   defaultPortfolioWatchlistVisibleKeys,
@@ -51,12 +51,8 @@ export function useColumnPreferences(): readonly [
   () => void,
 ] {
   const [visibleKeys, setVisibleKeys] = useState<string[]>(() =>
-    defaultPortfolioWatchlistVisibleKeys()
+    loadFromStorage()
   );
-
-  useEffect(() => {
-    setVisibleKeys(loadFromStorage());
-  }, []);
 
   const toggleKey = useCallback((key: string) => {
     if (!AVAILABLE_METRIC_KEY_SET.has(key)) return;

@@ -112,7 +112,7 @@ export function TourProvider({
   return <TourContext.Provider value={value}>{children}</TourContext.Provider>;
 }
 
-export function useTour(_autoStart?: boolean) {
+export function useTour() {
   const ctx = useContext(TourContext);
   if (!ctx) {
     throw new Error("useTour must be used within TourProvider");

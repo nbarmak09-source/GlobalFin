@@ -76,22 +76,24 @@ interface Props {
 
 export default function HistoricalPriceTab({ symbol, summaryData, initialQuote }: Props) {
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>(PERIODS[6]);
-  const [quote, setQuote] = useState<StockQuote | null>(initialQuote ?? null);
-
-  useEffect(() => {
-    setQuote(initialQuote ?? null);
-  }, [symbol, initialQuote]);
+  const [fetchedQuote, setFetchedQuote] = useState<StockQuote | null>(null);
 
   useEffect(() => {
     if (initialQuote) return;
-    async function fetchQuote() {
+    let cancelled = false;
+    void (async () => {
+      setFetchedQuote(null);
       try {
         const res = await fetch(`/api/stocks?action=quote&symbol=${encodeURIComponent(symbol)}`);
-        if (res.ok) setQuote(await res.json());
+        if (res.ok && !cancelled) setFetchedQuote(await res.json());
       } catch { /* silently fail */ }
-    }
-    fetchQuote();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [symbol, initialQuote]);
+
+  const quote = initialQuote ?? fetchedQuote;
 
   const d = summaryData;
 

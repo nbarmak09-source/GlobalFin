@@ -318,7 +318,7 @@ export default function DiscoverTab() {
             Recent upgrades &amp; downgrades
           </h2>
           <p className="text-xs text-muted mb-4">
-            Last 60 days · Click a row to open that symbol's analyst forecast, targets, and rating history.
+            Last 60 days · Click a row to open that symbol&apos;s analyst forecast, targets, and rating history.
           </p>
           <div className="rounded-2xl border border-border bg-card overflow-hidden">
             <div className="overflow-x-auto">

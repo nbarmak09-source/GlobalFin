@@ -67,8 +67,10 @@ export default function StepTooltip({
   const [entered, setEntered] = useState(false);
 
   useLayoutEffect(() => {
-    setEntered(false);
-    const id = requestAnimationFrame(() => setEntered(true));
+    const id = requestAnimationFrame(() => {
+      setEntered(false);
+      requestAnimationFrame(() => setEntered(true));
+    });
     return () => cancelAnimationFrame(id);
   }, [step.id]);
 

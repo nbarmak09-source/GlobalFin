@@ -6,7 +6,8 @@ This document summarizes security measures in place and additional steps you can
 
 - **Authentication**: NextAuth with credentials (bcrypt) and optional OAuth (Google/GitHub). JWT sessions (30 days). Email verification required in production before sign-in.
 - **Authorization**: Protected API routes call `auth()` and scope all data by `session.user.id` (portfolio, watchlist, pitches, alerts). No cross-user data access.
-- **Proxy (middleware)**: Auth and rate limiting run in `src/proxy.ts`. Unauthenticated users are redirected to login; protected APIs return 401 without a session.
+- **Proxy (middleware)**: Auth and rate limiting run in `src/proxy.ts`, wired from `src/middleware.ts`. Unauthenticated users are redirected to login; protected APIs return 401 without a session (unless dev bypass below).
+- **Local dev bypass**: With `NODE_ENV=development` and `DISABLE_AUTH=true`, middleware skips the login redirect and server `auth()` can impersonate a real user (`DEV_IMPERSONATE_USER_ID` or the oldest user in the DB). **Never enable in production.**
 - **Rate limiting**: In-memory, per-IP. AI routes (chat, pitch generate): 10 req/min. Other APIs: 60 req/min. 401/429 responses include rate-limit headers.
 - **Security headers**: Set on responses from the proxy: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`.
 - **Passwords**: bcrypt with 10 salt rounds. Min length 8 on registration. Never logged or returned in API responses.

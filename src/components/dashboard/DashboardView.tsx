@@ -12,6 +12,7 @@ import MacroIndicators from "@/components/MacroIndicators";
 import MacroCharts from "@/components/MacroCharts";
 import GlobalMacroPanel from "@/components/GlobalMacroPanel";
 import DashboardMarketsPanel from "@/components/markets/DashboardMarketsPanel";
+import DashboardPortfolioPanel from "@/components/dashboard/DashboardPortfolioPanel";
 import { LivePriceDemo } from "@/components/LivePriceDemo";
 import { SectionHeading } from "@/components/PageHeader";
 import {
@@ -25,12 +26,13 @@ import {
   Landmark,
   Sparkles,
   Radio,
+  Briefcase,
 } from "lucide-react";
 
-type DashboardTab = "overview" | "rates" | "insights" | "markets";
+type DashboardTab = "overview" | "rates" | "insights" | "markets" | "portfolio";
 
 function parseDashboardTab(param: string | null): DashboardTab {
-  if (param === "markets" || param === "rates" || param === "insights") return param;
+  if (param === "markets" || param === "rates" || param === "insights" || param === "portfolio") return param;
   return "overview";
 }
 
@@ -50,6 +52,10 @@ const TAB_META: Record<DashboardTab, { title: string; subtitle: string }> = {
   markets: {
     title: "Markets",
     subtitle: "Sectors, valuations, analyst activity, and headlines",
+  },
+  portfolio: {
+    title: "Portfolio",
+    subtitle: "Your holdings and watchlist at a glance",
   },
 };
 
@@ -103,6 +109,7 @@ function DashboardInner() {
     { id: "rates", label: "Rates & FX", icon: Landmark },
     { id: "insights", label: "Insights", icon: Sparkles },
     { id: "markets", label: "Markets", icon: BarChart3 },
+    { id: "portfolio", label: "Portfolio", icon: Briefcase },
   ];
 
   return (
@@ -227,6 +234,12 @@ function DashboardInner() {
       )}
 
       {tab === "markets" && <DashboardMarketsPanel />}
+
+      {tab === "portfolio" && (
+        <Suspense fallback={<div className="skeleton h-64 w-full rounded-xl" />}>
+          <DashboardPortfolioPanel />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, Fragment, useMemo, useEffect } from "react";
-import { Trash2, TrendingUp, TrendingDown, GripVertical, Pencil } from "lucide-react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import PositionDetailPanel from "./PositionDetailPanel";
 import type { EnrichedPosition } from "@/lib/types";
-import MetricColumnPicker from "@/components/MetricColumnPicker";
-import { useColumnPreferences } from "@/hooks/useColumnPreferences";
 import { tableMetricLabel } from "@/lib/metrics";
 import {
   metricCellThClass,
   renderPortfolioWatchlistMetricCell,
+  formatUsdScaled,
+  type NumberScale,
 } from "@/components/PortfolioWatchlistMetricCells";
 import {
   DndContext,
@@ -40,6 +40,8 @@ const HOLDINGS_SORT_STORAGE_KEY = "portfolio-holdings-sort";
 
 interface PortfolioTableProps {
   positions: EnrichedPosition[];
+  visibleKeys: string[];
+  numberScale: NumberScale;
   onDelete: (id: string) => void;
   onReorder: (positions: EnrichedPosition[]) => void;
   valuesVisible?: boolean;
@@ -54,16 +56,6 @@ function formatCurrency(value: number): string {
   });
 }
 
-function formatLargeCurrency(value: number): string {
-  if (Math.abs(value) >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(2)}M`;
-  }
-  if (Math.abs(value) >= 1_000) {
-    return `$${(value / 1_000).toFixed(2)}K`;
-  }
-  return `$${formatCurrency(value)}`;
-}
-
 function SortableRow({
   pos,
   onDelete,
@@ -74,6 +66,7 @@ function SortableRow({
   dragDisabled,
   visibleKeys,
   chevronAnchorKey,
+  numberScale,
 }: {
   pos: EnrichedPosition;
   onDelete: (id: string) => void;
@@ -84,6 +77,7 @@ function SortableRow({
   dragDisabled: boolean;
   visibleKeys: string[];
   chevronAnchorKey: string | undefined;
+  numberScale: NumberScale;
 }) {
   const {
     attributes,
@@ -107,17 +101,10 @@ function SortableRow({
   return (
     <tr
       ref={setNodeRef}
-      className={`transition-colors ${!isExpanded ? "cursor-pointer" : ""}`}
+      className={`border-b border-border transition-colors ${!isExpanded ? "cursor-pointer hover:bg-card-hover" : ""}`}
       style={{
         ...style,
-        borderBottom: "1px solid var(--color-border)",
         background: isExpanded ? "rgba(201,162,39,0.03)" : undefined,
-      }}
-      onMouseEnter={(e) => {
-        if (!isExpanded) (e.currentTarget as HTMLElement).style.background = "rgba(201,162,39,0.04)";
-      }}
-      onMouseLeave={(e) => {
-        if (!isExpanded) (e.currentTarget as HTMLElement).style.background = isExpanded ? "rgba(201,162,39,0.03)" : "";
       }}
       onClick={(e) => {
         const target = e.target as HTMLElement;
@@ -125,10 +112,10 @@ function SortableRow({
         onToggleExpand();
       }}
     >
-      <td className="px-2 py-3 w-8">
+      <td className="w-8 px-2 py-3">
         {dragDisabled ? (
           <span
-            className="inline-flex rounded p-1 cursor-not-allowed text-muted/40 opacity-50 touch-none"
+            className="inline-flex cursor-not-allowed rounded p-1 text-muted/40 opacity-50 touch-none"
             title="Switch to Manual order to drag rows"
           >
             <GripVertical className="h-4 w-4" />
@@ -140,18 +127,23 @@ function SortableRow({
             {...listeners}
             onClick={(e) => e.stopPropagation()}
             title="Drag to reorder"
-            className="cursor-grab active:cursor-grabbing rounded p-1 text-muted hover:text-foreground hover:bg-card-hover transition-colors touch-none"
+            className="cursor-grab touch-none rounded p-1 text-muted transition-colors hover:bg-card-hover hover:text-foreground active:cursor-grabbing"
           >
             <GripVertical className="h-4 w-4" />
           </button>
         )}
       </td>
       {visibleKeys.map((metricKey) =>
-        renderPortfolioWatchlistMetricCell(metricKey, { mode: "holdings", row: pos, valuesVisible }, {
-          stocksHref,
-          attachChevron: metricKey === chevronAnchorKey,
-          isExpanded,
-        })
+        renderPortfolioWatchlistMetricCell(
+          metricKey,
+          { mode: "holdings", row: pos, valuesVisible },
+          {
+            stocksHref,
+            attachChevron: metricKey === chevronAnchorKey,
+            isExpanded,
+            numberScale,
+          }
+        )
       )}
       <td className="px-4 py-3">
         <div className="flex items-center gap-1">
@@ -161,7 +153,7 @@ function SortableRow({
                 e.stopPropagation();
                 onEdit(pos);
               }}
-              className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-muted hover:text-accent hover:bg-accent/10 transition-colors"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-muted transition-colors hover:bg-accent/10 hover:text-accent"
               title="Edit position"
             >
               <Pencil className="h-4 w-4" />
@@ -172,7 +164,7 @@ function SortableRow({
               e.stopPropagation();
               onDelete(pos.id);
             }}
-            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-muted hover:text-red hover:bg-red/10 transition-colors"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-muted transition-colors hover:bg-red/10 hover:text-red"
             title="Delete position"
           >
             <Trash2 className="h-4 w-4" />
@@ -183,8 +175,39 @@ function SortableRow({
   );
 }
 
+function weightedByMarketValue(
+  rows: EnrichedPosition[],
+  pick: (p: EnrichedPosition) => number | null | undefined,
+  include?: (v: number) => boolean
+): number | null {
+  let num = 0;
+  let den = 0;
+  for (const p of rows) {
+    const w = p.marketValue;
+    if (w <= 0) continue;
+    const v = pick(p);
+    if (v == null || !Number.isFinite(v)) continue;
+    if (include && !include(v)) continue;
+    num += v * w;
+    den += w;
+  }
+  return den > 0 ? num / den : null;
+}
+
+function loadHoldingsSortMode(): HoldingsTableSortMode {
+  try {
+    const v = localStorage.getItem(HOLDINGS_SORT_STORAGE_KEY);
+    if (v === "sector" || v === "symbol" || v === "manual") return v;
+  } catch {
+    /* ignore */
+  }
+  return "manual";
+}
+
 export default function PortfolioTable({
   positions,
+  visibleKeys,
+  numberScale,
   onDelete,
   onReorder,
   valuesVisible = true,
@@ -192,23 +215,14 @@ export default function PortfolioTable({
   loading = false,
 }: PortfolioTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [sortMode, setSortMode] = useState<HoldingsTableSortMode>("manual");
-  const [visibleKeys, toggleKey, resetToDefault] = useColumnPreferences();
+  const [sortMode, setSortMode] = useState<HoldingsTableSortMode>(
+    loadHoldingsSortMode
+  );
 
   const chevronAnchorKey =
     visibleKeys.find((k) => k === "ticker" || k === "name") ?? visibleKeys[0];
 
   const colCount = 1 + visibleKeys.length + 1;
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem(HOLDINGS_SORT_STORAGE_KEY);
-      if (v === "sector" || v === "symbol" || v === "manual") {
-        setSortMode(v);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
 
   function setSortModePersist(next: HoldingsTableSortMode) {
     setSortMode(next);
@@ -244,29 +258,31 @@ export default function PortfolioTable({
     }
   }
 
+  const headerTh =
+    "border-b border-border bg-transparent px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted";
+
   if (loading && positions.length === 0) {
     return (
-      <div className="card overflow-hidden" style={{ padding: 0 }}>
-        <div className="divider-gold" />
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="table-fade-right">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: "rgba(255,255,255,0.02)", borderBottom: "1px solid var(--color-border)" }}>
-                  <th className="px-2 py-3 w-8"></th>
+                <tr>
+                  <th className={`${headerTh} w-8 px-2`} />
                   {visibleKeys.map((key) => (
-                    <th key={key} className={`${metricCellThClass(key)} text-label`}>
+                    <th key={key} className={`${metricCellThClass(key)} ${headerTh}`}>
                       {tableMetricLabel(key)}
                     </th>
                   ))}
-                  <th className="px-4 py-3"></th>
+                  <th className={`${headerTh} px-4`} />
                 </tr>
               </thead>
               <tbody>
                 {[1, 2, 3].map((i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                  <tr key={i} className="border-b border-border">
                     <td colSpan={colCount} className="px-4 py-3">
-                      <div className="skeleton h-10 w-full" />
+                      <div className="skeleton h-10 w-full rounded-lg" />
                     </td>
                   </tr>
                 ))}
@@ -280,8 +296,8 @@ export default function PortfolioTable({
 
   if (positions.length === 0) {
     return (
-      <div className="text-center py-16 text-muted">
-        <p className="text-lg mb-1">No positions yet</p>
+      <div className="py-16 text-center text-muted">
+        <p className="mb-1 text-lg">No positions yet</p>
         <p className="text-sm">
           Add your first stock position to start tracking your portfolio.
         </p>
@@ -290,96 +306,158 @@ export default function PortfolioTable({
   }
 
   const totalValue = displayPositions.reduce((sum, p) => sum + p.marketValue, 0);
-  const totalCost = displayPositions.reduce((sum, p) => sum + p.avgCost * p.shares, 0);
+  const totalCost = displayPositions.reduce(
+    (sum, p) => sum + p.avgCost * p.shares,
+    0
+  );
+  const totalShares = displayPositions.reduce((sum, p) => sum + p.shares, 0);
   const totalPL = totalValue - totalCost;
   const totalPLPercent = totalCost > 0 ? (totalPL / totalCost) * 100 : 0;
-  const totalDayChange = displayPositions.reduce((sum, p) => sum + p.dayChange * p.shares, 0);
+  const totalDayChange = displayPositions.reduce(
+    (sum, p) => sum + p.dayChange * p.shares,
+    0
+  );
   const startOfDayValue = totalValue - totalDayChange;
   const totalDayChangePercent =
     startOfDayValue !== 0 ? (totalDayChange / startOfDayValue) * 100 : 0;
 
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div className="card-solid hover-lift p-4">
-          <div className="text-label mb-1">Total Value</div>
-          <div className="stat-value text-lg text-mono">
-            {valuesVisible ? formatLargeCurrency(totalValue) : MASK}
-          </div>
-        </div>
-        <div className="card-solid hover-lift p-4">
-          <div className="text-label mb-1">Cost Basis</div>
-          <div className="stat-value text-lg text-mono">
-            {valuesVisible ? formatLargeCurrency(totalCost) : MASK}
-          </div>
-        </div>
-        <div className="card-solid hover-lift p-4">
-          <div className="text-label mb-1">Total P&L</div>
-          <div
-            className={`stat-value text-lg text-mono ${
-              valuesVisible && totalPL >= 0 ? "stat-positive" : valuesVisible ? "stat-negative" : ""
-            }`}
-          >
-            {valuesVisible ? `${totalPL >= 0 ? "+" : ""}$${formatCurrency(totalPL)}` : MASK}
-          </div>
-        </div>
-        <div className="card-solid hover-lift p-4">
-          <div className="text-label mb-1">Return %</div>
-          <div
-            className={`stat-value text-lg text-mono flex items-center gap-1 ${
-              totalPLPercent >= 0 ? "stat-positive" : "stat-negative"
-            }`}
-          >
-            {totalPLPercent >= 0 ? (
-              <TrendingUp className="h-4 w-4" />
-            ) : (
-              <TrendingDown className="h-4 w-4" />
-            )}
-            {totalPLPercent >= 0 ? "+" : ""}
-            {totalPLPercent.toFixed(2)}%
-          </div>
-        </div>
-        <div className="rounded-xl bg-card border border-border p-4">
-          <div className="text-xs text-muted mb-1">1D %</div>
-          <div
-            className={`stat-value text-lg text-mono flex items-center gap-1 ${
-              totalDayChangePercent >= 0 ? "stat-positive" : "stat-negative"
-            }`}
-          >
-            {totalDayChangePercent >= 0 ? (
-              <TrendingUp className="h-4 w-4" />
-            ) : (
-              <TrendingDown className="h-4 w-4" />
-            )}
-            {totalDayChangePercent >= 0 ? "+" : ""}
-            {totalDayChangePercent.toFixed(2)}%
-          </div>
-        </div>
-      </div>
+  const wMarketCap = weightedByMarketValue(
+    displayPositions,
+    (p) => (p.marketCap > 0 ? p.marketCap : null),
+    (v) => v > 0
+  );
+  const wPe = weightedByMarketValue(
+    displayPositions,
+    (p) => (p.pe > 0 ? p.pe : null),
+    (v) => v > 0
+  );
+  const wYtd = weightedByMarketValue(displayPositions, (p) =>
+    p.ytdReturn != null && Number.isFinite(p.ytdReturn) ? p.ytdReturn : null
+  );
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="text-sm flex items-center gap-2" style={{ color: "var(--color-muted)" }}>
-            Order
-            <select
-              value={sortMode}
-              onChange={(e) =>
-                setSortModePersist(e.target.value as HoldingsTableSortMode)
-              }
-              className="input"
-              style={{ minHeight: "unset", height: 36, padding: "0 12px", fontSize: 13 }}
+  function totalCell(metricKey: string): ReactNode {
+    switch (metricKey) {
+      case "ticker":
+        return (
+          <td className={`${metricCellThClass(metricKey)} font-medium text-[13px] text-foreground`}>
+            Total Position
+          </td>
+        );
+      case "name":
+      case "sector":
+      case "volume":
+      case "price":
+      case "week52High":
+      case "week52Low":
+        return (
+          <td className={metricCellThClass(metricKey)}>
+            <span className="text-muted">—</span>
+          </td>
+        );
+      case "shares":
+        return (
+          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+            {totalShares.toLocaleString()}
+          </td>
+        );
+      case "avgCost":
+        return (
+          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+            {totalShares > 0 ? `$${formatCurrency(totalCost / totalShares)}` : "—"}
+          </td>
+        );
+      case "marketValue":
+        return (
+          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+            {valuesVisible ? formatUsdScaled(totalValue, numberScale) : MASK}
+          </td>
+        );
+      case "totalPL":
+        return (
+          <td className="px-4 py-3 text-right font-medium text-[13px]">
+            <div
+              className={`font-mono ${
+                totalPL >= 0 ? "text-green" : "text-red"
+              }`}
             >
-              <option value="manual">Manual (drag)</option>
-              <option value="sector">Sector A–Z</option>
-              <option value="symbol">Symbol A–Z</option>
-            </select>
-          </label>
-          <MetricColumnPicker
-            visibleKeys={visibleKeys}
-            toggleKey={toggleKey}
-            resetToDefault={resetToDefault}
-          />
-        </div>
+              {`${totalPL >= 0 ? "+" : ""}$${formatCurrency(Math.abs(totalPL))}`}
+            </div>
+            <div
+              className={`font-mono text-xs ${
+                totalPLPercent >= 0 ? "text-green" : "text-red"
+              }`}
+            >
+              {`${totalPLPercent >= 0 ? "+" : ""}${totalPLPercent.toFixed(2)}%`}
+            </div>
+          </td>
+        );
+      case "change":
+        return (
+          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+            {`${totalDayChange >= 0 ? "+" : ""}${totalDayChange.toFixed(2)}`}
+          </td>
+        );
+      case "changePercent":
+        return (
+          <td
+            className={`px-4 py-3 text-right font-mono font-medium text-[13px] ${
+              totalDayChangePercent >= 0 ? "text-green" : "text-red"
+            }`}
+          >
+            {`${totalDayChangePercent >= 0 ? "+" : ""}${totalDayChangePercent.toFixed(2)}%`}
+          </td>
+        );
+      case "marketCap":
+        return (
+          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+            {wMarketCap != null ? formatUsdScaled(wMarketCap, numberScale) : "—"}
+          </td>
+        );
+      case "pe":
+        return (
+          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+            {wPe != null ? wPe.toFixed(2) : "—"}
+          </td>
+        );
+      case "ytdReturn":
+        return (
+          <td className="px-4 py-3 text-right font-mono font-medium text-[13px]">
+            {wYtd != null ? (
+              <span className={wYtd >= 0 ? "text-green" : "text-red"}>
+                {`${wYtd >= 0 ? "+" : ""}${wYtd.toFixed(2)}%`}
+              </span>
+            ) : (
+              <span className="text-muted">—</span>
+            )}
+          </td>
+        );
+      default:
+        return (
+          <td className={metricCellThClass(metricKey)}>
+            <span className="text-muted">—</span>
+          </td>
+        );
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label className="flex items-center gap-2 text-sm text-muted">
+          Order
+          <select
+            value={sortMode}
+            onChange={(e) =>
+              setSortModePersist(e.target.value as HoldingsTableSortMode)
+            }
+            className="input rounded-lg border border-border bg-card px-2 py-1.5 text-[13px] text-foreground"
+            style={{ minHeight: 36 }}
+          >
+            <option value="manual">Manual (drag)</option>
+            <option value="sector">Sector A–Z</option>
+            <option value="symbol">Symbol A–Z</option>
+          </select>
+        </label>
         {sortMode !== "manual" && (
           <p className="text-xs text-muted">
             Drag reorder is available when Order is Manual.
@@ -387,9 +465,7 @@ export default function PortfolioTable({
         )}
       </div>
 
-      <div className="card overflow-hidden" style={{ padding: 0 }}>
-        {/* Gold accent line */}
-        <div className="divider-gold" />
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="table-fade-right">
           <div className="overflow-x-auto">
             <DndContext
@@ -398,59 +474,67 @@ export default function PortfolioTable({
               onDragEnd={handleDragEnd}
               modifiers={[restrictToVerticalAxis]}
             >
-            <table className="w-full text-sm">
-              <thead>
-                <tr
-                  style={{
-                    background: "rgba(255,255,255,0.02)",
-                    borderBottom: "1px solid var(--color-border)",
-                  }}
-                >
-                  <th className="px-2 py-3 w-8"></th>
-                  {visibleKeys.map((key) => (
-                    <th key={key} className={`${metricCellThClass(key)} text-label`}>
-                      {tableMetricLabel(key)}
-                    </th>
-                  ))}
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <SortableContext
-                  items={displayPositions.map((p) => p.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {displayPositions.map((pos) => (
-                    <Fragment key={pos.id}>
-                      <SortableRow
-                        pos={pos}
-                        onDelete={onDelete}
-                        onEdit={onEdit}
-                        valuesVisible={valuesVisible}
-                        isExpanded={expandedId === pos.id}
-                        onToggleExpand={() =>
-                          setExpandedId((id) => (id === pos.id ? null : pos.id))
-                        }
-                        dragDisabled={dragDisabled}
-                        visibleKeys={visibleKeys}
-                        chevronAnchorKey={chevronAnchorKey}
-                      />
-                      {expandedId === pos.id && (
-                        <tr>
-                          <td colSpan={colCount} className="p-0 align-top">
-                            <PositionDetailPanel
-                              symbol={pos.symbol}
-                              onClose={() => setExpandedId(null)}
-                            />
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  ))}
-                </SortableContext>
-              </tbody>
-            </table>
-          </DndContext>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className={`${headerTh} w-8 px-2`} />
+                    {visibleKeys.map((key) => (
+                      <th
+                        key={key}
+                        className={`${metricCellThClass(key)} ${headerTh}`}
+                      >
+                        {tableMetricLabel(key)}
+                      </th>
+                    ))}
+                    <th className={`${headerTh} px-4`} />
+                  </tr>
+                </thead>
+                <tbody>
+                  <SortableContext
+                    items={displayPositions.map((p) => p.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {displayPositions.map((pos) => (
+                      <Fragment key={pos.id}>
+                        <SortableRow
+                          pos={pos}
+                          onDelete={onDelete}
+                          onEdit={onEdit}
+                          valuesVisible={valuesVisible}
+                          isExpanded={expandedId === pos.id}
+                          onToggleExpand={() =>
+                            setExpandedId((id) =>
+                              id === pos.id ? null : pos.id
+                            )
+                          }
+                          dragDisabled={dragDisabled}
+                          visibleKeys={visibleKeys}
+                          chevronAnchorKey={chevronAnchorKey}
+                          numberScale={numberScale}
+                        />
+                        {expandedId === pos.id && (
+                          <tr>
+                            <td colSpan={colCount} className="p-0 align-top">
+                              <PositionDetailPanel
+                                symbol={pos.symbol}
+                                onClose={() => setExpandedId(null)}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    ))}
+                  </SortableContext>
+                  <tr className="border-t border-border bg-card/60">
+                    <td className="w-8 px-2 py-3" />
+                    {visibleKeys.map((key) => (
+                      <Fragment key={`total-${key}`}>{totalCell(key)}</Fragment>
+                    ))}
+                    <td className="px-4 py-3" />
+                  </tr>
+                </tbody>
+              </table>
+            </DndContext>
           </div>
         </div>
       </div>
