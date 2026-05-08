@@ -30,10 +30,16 @@ function parseIndustry(raw: string | null): string {
   return "semiconductors";
 }
 
-export default function SupplyChainPage() {
+export default function SupplyChainPage({
+  defaultIndustry,
+}: {
+  /** Used when there is no `?industry=` query (e.g. sidebar sub-routes). */
+  defaultIndustry?: string;
+} = {}) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const activeIndustry = parseIndustry(searchParams.get("industry"));
+  const fromQuery = searchParams.get("industry");
+  const activeIndustry = parseIndustry(fromQuery ?? defaultIndustry ?? null);
 
   function setIndustry(id: string) {
     router.replace(`/supply-chain?industry=${id}`, { scroll: false });

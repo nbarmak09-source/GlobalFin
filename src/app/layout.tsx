@@ -3,9 +3,9 @@ import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 
 export const metadata: Metadata = {
-  title: "Global Capital Markets HQ",
+  title: "Capital Markets Hub",
   description:
-    "Global Capital Markets HQ - Personal stock market dashboard with live data, research, and portfolio tracking",
+    "Capital Markets Hub - Personal stock market dashboard with live data, research, and portfolio tracking",
   icons: {
     icon: "/logo.svg",
   },
@@ -24,7 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="dark" className="bg-[#0d1117]" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme="dark"
+      className="bg-[#0d1117] gcm-hide-ticker"
+      suppressHydrationWarning
+    >
       <body
         className="bg-[--bg-base] text-[--text-primary] font-sans antialiased min-h-dvh"
         suppressHydrationWarning

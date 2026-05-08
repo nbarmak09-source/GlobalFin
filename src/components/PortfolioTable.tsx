@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, Fragment, useMemo, useEffect } from "react";
-import Link from "next/link";
-import { Trash2, TrendingUp, TrendingDown, GripVertical, ChevronDown, Pencil } from "lucide-react";
+import { Trash2, TrendingUp, TrendingDown, GripVertical, Pencil } from "lucide-react";
 import PositionDetailPanel from "./PositionDetailPanel";
-import ExtendedHoursInline from "./ExtendedHoursInline";
 import type { EnrichedPosition } from "@/lib/types";
+import MetricColumnPicker from "@/components/MetricColumnPicker";
+import { useColumnPreferences } from "@/hooks/useColumnPreferences";
+import { tableMetricLabel } from "@/lib/metrics";
+import {
+  metricCellThClass,
+  renderPortfolioWatchlistMetricCell,
+} from "@/components/PortfolioWatchlistMetricCells";
 import {
   DndContext,
   closestCenter,
@@ -67,6 +72,8 @@ function SortableRow({
   isExpanded,
   onToggleExpand,
   dragDisabled,
+  visibleKeys,
+  chevronAnchorKey,
 }: {
   pos: EnrichedPosition;
   onDelete: (id: string) => void;
@@ -75,6 +82,8 @@ function SortableRow({
   isExpanded: boolean;
   onToggleExpand: () => void;
   dragDisabled: boolean;
+  visibleKeys: string[];
+  chevronAnchorKey: string | undefined;
 }) {
   const {
     attributes,
@@ -127,72 +136,13 @@ function SortableRow({
           </button>
         )}
       </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="min-w-0">
-            <Link
-              href={stocksHref}
-              onClick={(e) => e.stopPropagation()}
-              className="font-semibold text-accent hover:underline block truncate"
-            >
-              {pos.symbol}
-            </Link>
-            <Link
-              href={stocksHref}
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs text-muted hover:text-accent hover:underline block truncate"
-            >
-              {pos.name}
-            </Link>
-          </div>
-          <ChevronDown
-            className={`h-4 w-4 text-muted transition-transform flex-shrink-0 ${isExpanded ? "rotate-180" : ""}`}
-          />
-        </div>
-      </td>
-      <td className="px-4 py-3 text-sm text-muted max-w-[10rem] truncate" title={pos.sector || undefined}>
-        {pos.sector?.trim() ? pos.sector : "—"}
-      </td>
-      <td className="px-4 py-3 font-mono">{pos.shares}</td>
-      <td className="px-4 py-3 text-right font-mono">
-        ${formatCurrency(pos.avgCost)}
-      </td>
-      <td className="px-4 py-3 text-right font-mono align-top">
-        <div>${formatCurrency(pos.currentPrice)}</div>
-        {pos.extendedHours && (
-          <ExtendedHoursInline line={pos.extendedHours} compact className="mt-0.5 justify-end" />
-        )}
-      </td>
-      <td className="px-4 py-3 text-right font-mono">
-        {valuesVisible ? `$${formatCurrency(pos.marketValue)}` : MASK}
-      </td>
-      <td className="px-4 py-3 text-right">
-        <span
-          className={`font-mono ${
-            pos.dayChange >= 0 ? "text-green" : "text-red"
-          }`}
-        >
-          {pos.dayChange >= 0 ? "+" : ""}
-          {pos.dayChange.toFixed(2)} ({pos.dayChangePercent >= 0 ? "+" : ""}
-          {pos.dayChangePercent.toFixed(2)}%)
-        </span>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <div
-          className={`font-mono font-medium ${
-            pos.totalPL >= 0 ? "text-green" : "text-red"
-          }`}
-        >
-          {`${pos.totalPL >= 0 ? "+" : ""}$${formatCurrency(Math.abs(pos.totalPL))}`}
-        </div>
-        <div
-          className={`text-xs font-mono ${
-            pos.totalPLPercent >= 0 ? "text-green" : "text-red"
-          }`}
-        >
-          {`${pos.totalPLPercent >= 0 ? "+" : ""}${pos.totalPLPercent.toFixed(2)}%`}
-        </div>
-      </td>
+      {visibleKeys.map((metricKey) =>
+        renderPortfolioWatchlistMetricCell(metricKey, { mode: "holdings", row: pos, valuesVisible }, {
+          stocksHref,
+          attachChevron: metricKey === chevronAnchorKey,
+          isExpanded,
+        })
+      )}
       <td className="px-4 py-3">
         <div className="flex items-center gap-1">
           {onEdit && (
@@ -233,7 +183,12 @@ export default function PortfolioTable({
 }: PortfolioTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<HoldingsTableSortMode>("manual");
+  const [visibleKeys, toggleKey, resetToDefault] = useColumnPreferences();
 
+  const chevronAnchorKey =
+    visibleKeys.find((k) => k === "ticker" || k === "name") ?? visibleKeys[0];
+
+  const colCount = 1 + visibleKeys.length + 1;
   useEffect(() => {
     try {
       const v = localStorage.getItem(HOLDINGS_SORT_STORAGE_KEY);
@@ -288,21 +243,21 @@ export default function PortfolioTable({
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
                 <th className="px-2 py-3 w-8"></th>
-                <th className="px-4 py-3">Symbol</th>
-                <th className="px-4 py-3">Sector</th>
-                <th className="px-4 py-3">Shares</th>
-                <th className="px-4 py-3 text-right">Avg Cost</th>
-                <th className="px-4 py-3 text-right">Current</th>
-                <th className="px-4 py-3 text-right">Mkt Value</th>
-                <th className="px-4 py-3 text-right">Day Chg</th>
-                <th className="px-4 py-3 text-right">Total P&L</th>
+                {visibleKeys.map((key) => (
+                  <th
+                    key={key}
+                    className={`${metricCellThClass(key)} text-xs uppercase tracking-wider`}
+                  >
+                    {tableMetricLabel(key)}
+                  </th>
+                ))}
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
               {[1, 2, 3].map((i) => (
                 <tr key={i} className="border-b border-border/50">
-                  <td colSpan={10} className="px-4 py-3">
+                  <td colSpan={colCount} className="px-4 py-3">
                     <div className="h-12 w-full rounded-lg bg-card animate-pulse" />
                   </td>
                 </tr>
@@ -395,20 +350,27 @@ export default function PortfolioTable({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <label className="text-sm text-muted flex items-center gap-2">
-          Order
-          <select
-            value={sortMode}
-            onChange={(e) =>
-              setSortModePersist(e.target.value as HoldingsTableSortMode)
-            }
-            className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm text-foreground"
-          >
-            <option value="manual">Manual (drag)</option>
-            <option value="sector">Sector A–Z</option>
-            <option value="symbol">Symbol A–Z</option>
-          </select>
-        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-sm text-muted flex items-center gap-2">
+            Order
+            <select
+              value={sortMode}
+              onChange={(e) =>
+                setSortModePersist(e.target.value as HoldingsTableSortMode)
+              }
+              className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm text-foreground"
+            >
+              <option value="manual">Manual (drag)</option>
+              <option value="sector">Sector A–Z</option>
+              <option value="symbol">Symbol A–Z</option>
+            </select>
+          </label>
+          <MetricColumnPicker
+            visibleKeys={visibleKeys}
+            toggleKey={toggleKey}
+            resetToDefault={resetToDefault}
+          />
+        </div>
         {sortMode !== "manual" && (
           <p className="text-xs text-muted">
             Drag reorder is available when Order is Manual.
@@ -429,14 +391,14 @@ export default function PortfolioTable({
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
                   <th className="px-2 py-3 w-8"></th>
-                  <th className="px-4 py-3">Symbol</th>
-                  <th className="px-4 py-3">Sector</th>
-                  <th className="px-4 py-3">Shares</th>
-                  <th className="px-4 py-3 text-right">Avg Cost</th>
-                  <th className="px-4 py-3 text-right">Current</th>
-                  <th className="px-4 py-3 text-right">Mkt Value</th>
-                  <th className="px-4 py-3 text-right">Day Chg</th>
-                  <th className="px-4 py-3 text-right">Total P&L</th>
+                  {visibleKeys.map((key) => (
+                    <th
+                      key={key}
+                      className={`${metricCellThClass(key)} text-xs uppercase tracking-wider`}
+                    >
+                      {tableMetricLabel(key)}
+                    </th>
+                  ))}
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -457,10 +419,12 @@ export default function PortfolioTable({
                           setExpandedId((id) => (id === pos.id ? null : pos.id))
                         }
                         dragDisabled={dragDisabled}
+                        visibleKeys={visibleKeys}
+                        chevronAnchorKey={chevronAnchorKey}
                       />
                       {expandedId === pos.id && (
                         <tr>
-                          <td colSpan={10} className="p-0 align-top">
+                          <td colSpan={colCount} className="p-0 align-top">
                             <PositionDetailPanel
                               symbol={pos.symbol}
                               onClose={() => setExpandedId(null)}

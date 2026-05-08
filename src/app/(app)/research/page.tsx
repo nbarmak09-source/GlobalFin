@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import ResearchPageClient from "@/components/research/ResearchPageClient";
 
 export const metadata: Metadata = {
-  title: "Research | Global Capital Markets HQ",
+  title: "Research | Capital Markets Hub",
   description:
     "Discover investing ideas, top analyst picks, upgrades and downgrades, and market news.",
 };

@@ -28,7 +28,7 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "supply-chain",
-    tag: "Unique to GCM HQ",
+    tag: "Unique to Capital Markets Hub",
     title: "Supply Chain — Industrial dependency maps",
     icon: "Boxes",
     description:

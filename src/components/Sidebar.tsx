@@ -24,6 +24,19 @@ const NAV_ITEMS = [
     children: [],
   },
   {
+    label: 'Charting',
+    href: '/charting',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <rect x="2" y="11" width="4" height="7" rx="1"/>
+        <rect x="8" y="7"  width="4" height="11" rx="1"/>
+        <rect x="14" y="3" width="4" height="15" rx="1"/>
+        <line x1="2" y1="19" x2="18" y2="19"/>
+      </svg>
+    ),
+    children: [],
+  },
+  {
     label: 'Macro',
     href: '/macro',
     icon: (
@@ -133,7 +146,7 @@ const NAV_ITEMS = [
 const NAV_BOTTOM = [
   {
     label: 'Settings',
-    href: '/settings',
+    href: '/account',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
         <circle cx="10" cy="10" r="2.5"/>
@@ -148,6 +161,7 @@ const NAV_BOTTOM = [
 export function Sidebar() {
   const pathname = usePathname()
   const [activeHover, setActiveHover] = useState<string | null>(null)
+  const [flyoutTop, setFlyoutTop] = useState<number>(0)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Delay closing so cursor can move from nav item to flyout without it closing
@@ -163,11 +177,21 @@ export function Sidebar() {
     const active = pathname === item.href || pathname.startsWith(item.href + '/')
     const isHovered = activeHover === item.label
     const hasChildren = item.children.length > 0
+    const itemRef = useRef<HTMLDivElement>(null)
+
+    const onEnter = () => {
+      if (itemRef.current) {
+        const rect = itemRef.current.getBoundingClientRect()
+        setFlyoutTop(rect.top)
+      }
+      handleMouseEnter(item.label)
+    }
 
     return (
       <div
+        ref={itemRef}
         className="relative"
-        onMouseEnter={() => handleMouseEnter(item.label)}
+        onMouseEnter={onEnter}
         onMouseLeave={handleMouseLeave}
       >
         {/* Nav item button / link */}
@@ -216,9 +240,11 @@ export function Sidebar() {
             style={{
               position: 'fixed',
               left: SIDEBAR_W,
-              top: 'auto',        /* vertically aligned by JS below — see note */
+              top: flyoutTop,
               zIndex: 50,
               minWidth: 220,
+              maxHeight: `calc(100dvh - ${flyoutTop}px - 16px)`,
+              overflowY: 'auto',
               background: 'var(--bg-elevated)',
               border: '1px solid var(--border-strong)',
               borderRadius: 'var(--radius-md)',

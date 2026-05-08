@@ -55,6 +55,8 @@ type YahooQuoteRow = {
   fiftyTwoWeekLow?: number;
   marketCap?: number;
   trailingPE?: number;
+  /** Year-to-date return % (Yahoo; often on funds) */
+  ytdReturn?: number;
   currency?: string;
   exchange?: unknown;
   fullExchangeName?: unknown;
@@ -146,6 +148,7 @@ function stockQuoteFromYahoo(quote: YahooQuoteRow, fallbackSymbol: string): Stoc
     fiftyTwoWeekLow: quote.fiftyTwoWeekLow ?? 0,
     marketCap: quote.marketCap ?? 0,
     trailingPE: quote.trailingPE ?? 0,
+    ytdReturn: yahooOptionalNum(q.ytdReturn),
     currency: quote.currency ?? "USD",
     marketState:
       q.marketState != null ? String(q.marketState) : undefined,

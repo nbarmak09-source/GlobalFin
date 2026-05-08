@@ -106,6 +106,12 @@ export async function GET(request: NextRequest) {
         totalPLPercent,
         extendedHours: quote ? getExtendedHoursLine(quote) : null,
         sector,
+        fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh ?? 0,
+        fiftyTwoWeekLow: quote?.fiftyTwoWeekLow ?? 0,
+        marketCap: quote?.marketCap ?? 0,
+        volume: quote?.regularMarketVolume ?? 0,
+        pe: quote?.trailingPE ?? 0,
+        ytdReturn: quote?.ytdReturn != null && Number.isFinite(quote.ytdReturn) ? quote.ytdReturn : null,
       };
     });
 

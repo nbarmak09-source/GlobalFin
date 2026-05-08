@@ -19,6 +19,8 @@ export interface StockQuote {
   fiftyTwoWeekLow: number;
   marketCap: number;
   trailingPE: number;
+  /** Yahoo year-to-date return (often ETFs); null when unavailable */
+  ytdReturn?: number | null;
   currency: string;
   /** Yahoo `marketState` (e.g. PRE, REGULAR, POST, CLOSED) */
   marketState?: string;
@@ -84,6 +86,12 @@ export interface EnrichedWatchlistItem extends WatchlistItem {
   fiftyTwoWeekHigh: number;
   fiftyTwoWeekLow: number;
   marketCap: number;
+  /** Daily volume (regular session) */
+  volume: number;
+  /** Trailing P/E when Yahoo provides it */
+  pe: number;
+  /** Year-to-date return % when Yahoo provides it */
+  ytdReturn: number | null;
   /** Pre-market or after-hours snapshot when Yahoo publishes it */
   extendedHours: ExtendedHoursLine | null;
   /** From Yahoo quoteSummary (asset/summary profile); may be empty for some tickers */
@@ -97,6 +105,12 @@ export interface EnrichedPosition extends PortfolioPosition {
   dayChangePercent: number;
   totalPL: number;
   totalPLPercent: number;
+  fiftyTwoWeekHigh: number;
+  fiftyTwoWeekLow: number;
+  marketCap: number;
+  volume: number;
+  pe: number;
+  ytdReturn: number | null;
   /** Pre-market or after-hours snapshot when Yahoo publishes it */
   extendedHours: ExtendedHoursLine | null;
   /** From Yahoo quoteSummary (asset/summary profile); may be empty for some tickers */

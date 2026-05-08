@@ -3,7 +3,7 @@ import { Resend } from "resend";
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const FROM_EMAIL = process.env.EMAIL_FROM ?? "onboarding@resend.dev";
-const APP_NAME = "Global Capital Markets HQ";
+const APP_NAME = "Capital Markets Hub";
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<{ ok: boolean; error?: string }> {
   if (!resend) {

@@ -235,9 +235,9 @@ body {
 .btn--primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: #000;          /* gold accent needs black text for WCAG contrast */
 }
-.btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #000; }
 
 /* ── Inputs ──────────────────────────────────────────────────────────────── */
 .input {
@@ -629,75 +629,6 @@ html, body {
   .content-below-bottom-nav {
     padding-bottom: calc(3.75rem + env(safe-area-inset-bottom) + 0.5rem);
   }
-}
-
-/* ── Mobile optimizations ──────────────────────────────────────────────────── */
-
-html, body {
-  overflow-x: hidden;
-  max-width: 100vw;
-}
-
-/* Momentum scrolling on iOS */
-.overflow-x-auto,
-.overflow-y-auto,
-.overflow-y-scroll,
-.overflow-x-scroll {
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Prevent iOS zoom on input focus — font-size must be >= 16px */
-@media (max-width: 767px) {
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="number"],
-  input[type="search"],
-  input[type="tel"],
-  input[type="url"],
-  select,
-  textarea {
-    font-size: 16px;
-  }
-}
-
-/* Reduce tap delay */
-a, button, [role="button"], [role="tab"] {
-  touch-action: manipulation;
-}
-
-/* Table horizontal scroll fade hint on mobile */
-.table-scroll-wrap {
-  position: relative;
-}
-.table-scroll-wrap::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 32px;
-  background: linear-gradient(to right, transparent, var(--card));
-  pointer-events: none;
-  border-radius: 0 0.75rem 0.75rem 0;
-  transition: opacity 0.2s;
-}
-@media (min-width: 768px) {
-  .table-scroll-wrap::after { display: none; }
-}
-
-/* Bottom sheet — slides up from bottom on mobile */
-.mobile-bottom-sheet {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  border-radius: 1.25rem 1.25rem 0 0;
-  max-height: 92dvh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* --------------------------------------------------------------------------

@@ -5,7 +5,7 @@ import { useEffect } from "react";
 function applyTickerClass() {
   if (typeof window === "undefined") return;
   const v = localStorage.getItem("gcm_ticker_tape");
-  const hidden = v === "false";
+  const hidden = v !== "true";
   document.documentElement.classList.toggle("gcm-hide-ticker", hidden);
 }
 

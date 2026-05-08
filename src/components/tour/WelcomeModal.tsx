@@ -45,7 +45,7 @@ export default function WelcomeModal({ onStart, onSkip }: Props) {
           <div className="mb-6 flex items-center gap-2 text-accent">
             <Globe2 className="h-6 w-6 shrink-0" />
             <span className="font-serif text-base font-bold tracking-tight">
-              Global Capital Markets HQ
+              Capital Markets Hub
             </span>
           </div>
 

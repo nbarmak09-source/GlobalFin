@@ -1,17 +1,16 @@
 "use client";
 
 import { useState, Fragment, useMemo, useEffect } from "react";
-import Link from "next/link";
-import {
-  Trash2,
-  TrendingUp,
-  TrendingDown,
-  GripVertical,
-  ChevronDown,
-} from "lucide-react";
+import { Trash2, GripVertical } from "lucide-react";
 import PositionDetailPanel from "./PositionDetailPanel";
-import ExtendedHoursInline from "./ExtendedHoursInline";
 import type { EnrichedWatchlistItem } from "@/lib/types";
+import MetricColumnPicker from "@/components/MetricColumnPicker";
+import { useColumnPreferences } from "@/hooks/useColumnPreferences";
+import { tableMetricLabel } from "@/lib/metrics";
+import {
+  metricCellThClass,
+  renderPortfolioWatchlistMetricCell,
+} from "@/components/PortfolioWatchlistMetricCells";
 import {
   DndContext,
   closestCenter,
@@ -45,32 +44,22 @@ interface WatchlistTableProps {
   loading?: boolean;
 }
 
-function formatCurrency(value: number): string {
-  return value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
-function formatMarketCap(value: number): string {
-  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
-  if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-  return `$${formatCurrency(value)}`;
-}
-
 function SortableRow({
   item,
   onRemove,
   isExpanded,
   onToggleExpand,
   dragDisabled,
+  visibleKeys,
+  chevronAnchorKey,
 }: {
   item: EnrichedWatchlistItem;
   onRemove: (id: string) => void;
   isExpanded: boolean;
   onToggleExpand: () => void;
   dragDisabled: boolean;
+  visibleKeys: string[];
+  chevronAnchorKey: string | undefined;
 }) {
   const {
     attributes,
@@ -123,68 +112,16 @@ function SortableRow({
           </button>
         )}
       </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="min-w-0">
-            <Link
-              href={stocksHref}
-              onClick={(e) => e.stopPropagation()}
-              className="font-semibold text-accent hover:underline block truncate"
-            >
-              {item.symbol}
-            </Link>
-            <Link
-              href={stocksHref}
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs text-muted hover:text-accent hover:underline block truncate"
-            >
-              {item.name}
-            </Link>
-          </div>
-          <ChevronDown
-            className={`h-4 w-4 text-muted transition-transform flex-shrink-0 ${isExpanded ? "rotate-180" : ""}`}
-            aria-hidden
-          />
-        </div>
-      </td>
-      <td className="px-4 py-3 text-sm text-muted max-w-[10rem] truncate" title={item.sector || undefined}>
-        {item.sector?.trim() ? item.sector : "—"}
-      </td>
-      <td className="px-4 py-3 text-right font-mono align-top">
-        <div>${formatCurrency(item.currentPrice)}</div>
-        {item.extendedHours && (
-          <ExtendedHoursInline line={item.extendedHours} compact className="mt-0.5 justify-end" />
-        )}
-      </td>
-      <td className="px-4 py-3 text-right">
-        <div className="flex items-center justify-end gap-1">
-          {item.dayChange >= 0 ? (
-            <TrendingUp className="h-3.5 w-3.5 text-green" />
-          ) : (
-            <TrendingDown className="h-3.5 w-3.5 text-red" />
-          )}
-          <span
-            className={`font-mono ${
-              item.dayChange >= 0 ? "text-green" : "text-red"
-            }`}
-          >
-            {item.dayChange >= 0 ? "+" : ""}
-            {item.dayChange.toFixed(2)} ({item.dayChangePercent >= 0 ? "+" : ""}
-            {item.dayChangePercent.toFixed(2)}%)
-          </span>
-        </div>
-      </td>
-      <td className="px-4 py-3 text-right font-mono">
-        ${formatCurrency(item.fiftyTwoWeekHigh)}
-      </td>
-      <td className="px-4 py-3 text-right font-mono">
-        ${formatCurrency(item.fiftyTwoWeekLow)}
-      </td>
-      <td className="px-4 py-3 text-right font-mono text-muted">
-        {formatMarketCap(item.marketCap)}
-      </td>
+      {visibleKeys.map((metricKey) =>
+        renderPortfolioWatchlistMetricCell(
+          metricKey,
+          { mode: "watchlist", row: item },
+          { stocksHref, attachChevron: metricKey === chevronAnchorKey, isExpanded }
+        )
+      )}
       <td className="px-4 py-3">
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onRemove(item.id);
@@ -203,10 +140,17 @@ export default function WatchlistTable({
   items,
   onRemove,
   onReorder,
+  valuesVisible: _valuesVisible = true,
   loading = false,
 }: WatchlistTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<HoldingsTableSortMode>("manual");
+  const [visibleKeys, toggleKey, resetToDefault] = useColumnPreferences();
+
+  const chevronAnchorKey =
+    visibleKeys.find((k) => k === "ticker" || k === "name") ?? visibleKeys[0];
+
+  const colCount = 1 + visibleKeys.length + 1;
 
   useEffect(() => {
     try {
@@ -261,20 +205,21 @@ export default function WatchlistTable({
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
                 <th className="px-2 py-3 w-8"></th>
-                <th className="px-4 py-3">Symbol</th>
-                <th className="px-4 py-3">Sector</th>
-                <th className="px-4 py-3 text-right">Price</th>
-                <th className="px-4 py-3 text-right">Day Change</th>
-                <th className="px-4 py-3 text-right">52W High</th>
-                <th className="px-4 py-3 text-right">52W Low</th>
-                <th className="px-4 py-3 text-right">Mkt Cap</th>
+                {visibleKeys.map((key) => (
+                  <th
+                    key={key}
+                    className={`${metricCellThClass(key)} text-xs uppercase tracking-wider`}
+                  >
+                    {tableMetricLabel(key)}
+                  </th>
+                ))}
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
               {[1, 2, 3].map((i) => (
                 <tr key={i} className="border-b border-border/50">
-                  <td colSpan={9} className="px-4 py-3">
+                  <td colSpan={colCount} className="px-4 py-3">
                     <div className="h-12 w-full rounded-lg bg-card animate-pulse" />
                   </td>
                 </tr>
@@ -300,20 +245,27 @@ export default function WatchlistTable({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <label className="text-sm text-muted flex items-center gap-2">
-          Order
-          <select
-            value={sortMode}
-            onChange={(e) =>
-              setSortModePersist(e.target.value as HoldingsTableSortMode)
-            }
-            className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm text-foreground"
-          >
-            <option value="manual">Manual (drag)</option>
-            <option value="sector">Sector A–Z</option>
-            <option value="symbol">Symbol A–Z</option>
-          </select>
-        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-sm text-muted flex items-center gap-2">
+            Order
+            <select
+              value={sortMode}
+              onChange={(e) =>
+                setSortModePersist(e.target.value as HoldingsTableSortMode)
+              }
+              className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm text-foreground"
+            >
+              <option value="manual">Manual (drag)</option>
+              <option value="sector">Sector A–Z</option>
+              <option value="symbol">Symbol A–Z</option>
+            </select>
+          </label>
+          <MetricColumnPicker
+            visibleKeys={visibleKeys}
+            toggleKey={toggleKey}
+            resetToDefault={resetToDefault}
+          />
+        </div>
         {sortMode !== "manual" && (
           <p className="text-xs text-muted">
             Drag reorder is available when Order is Manual.
@@ -333,13 +285,14 @@ export default function WatchlistTable({
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
                   <th className="px-2 py-3 w-8"></th>
-                  <th className="px-4 py-3">Symbol</th>
-                  <th className="px-4 py-3">Sector</th>
-                  <th className="px-4 py-3 text-right">Price</th>
-                  <th className="px-4 py-3 text-right">Day Change</th>
-                  <th className="px-4 py-3 text-right">52W High</th>
-                  <th className="px-4 py-3 text-right">52W Low</th>
-                  <th className="px-4 py-3 text-right">Mkt Cap</th>
+                  {visibleKeys.map((key) => (
+                    <th
+                      key={key}
+                      className={`${metricCellThClass(key)} text-xs uppercase tracking-wider`}
+                    >
+                      {tableMetricLabel(key)}
+                    </th>
+                  ))}
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -358,18 +311,20 @@ export default function WatchlistTable({
                           setExpandedId((id) => (id === item.id ? null : item.id))
                         }
                         dragDisabled={dragDisabled}
+                        visibleKeys={visibleKeys}
+                        chevronAnchorKey={chevronAnchorKey}
                       />
                       {expandedId === item.id && (
                         <tr>
-                          <td colSpan={9} className="p-0 align-top">
-                          <PositionDetailPanel
-                            symbol={item.symbol}
-                            onClose={() => setExpandedId(null)}
-                          />
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
+                          <td colSpan={colCount} className="p-0 align-top">
+                            <PositionDetailPanel
+                              symbol={item.symbol}
+                              onClose={() => setExpandedId(null)}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </SortableContext>
               </tbody>

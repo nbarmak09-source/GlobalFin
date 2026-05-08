@@ -1,12 +1,12 @@
 /**
- * GCM HQ brand logo — logomark + optional wordmark.
+ * Capital Markets Hub brand logo — logomark + optional wordmark.
  *
  * Logomark: wireframe globe (global markets) + ascending chart bars (finance).
  * Export the standalone <LogoMark> if you only need the icon,
  * or <Logo> for the full lockup (icon + wordmark).
  */
 
-/** Globe + growth bars — global capital markets. */
+/** Globe + growth bars — Capital Markets Hub. */
 export function LogoMark({
   size = 22,
   className = "",
@@ -74,8 +74,8 @@ export function LogoMark({
 }
 
 /**
- * Full logo lockup:  [mark]  GCM HQ
- *                           GLOBAL CAPITAL MARKETS  ← desktop only
+ * Full logo lockup:  [mark]  Capital Markets Hub
+ *                           CAPITAL MARKETS HUB  ← desktop only (uppercase via CSS)
  *
  * The `compact` prop hides the subtitle (for use in tight spaces / mobile).
  */
@@ -88,15 +88,15 @@ export function Logo({ compact = false }: { compact?: boolean }) {
           className="text-[15px] font-bold tracking-tight text-accent"
           style={{ fontFamily: "var(--font-serif-display), var(--font-sans-pro), sans-serif" }}
         >
-          GCM{" "}
-          <span className="font-extrabold">HQ</span>
+          Capital Markets{" "}
+          <span className="font-extrabold">Hub</span>
         </span>
         {!compact && (
           <span
             className="hidden md:block text-[8.5px] font-semibold uppercase tracking-[0.18em] text-muted/70"
             style={{ fontFamily: "var(--font-sans-pro), sans-serif" }}
           >
-            Global Capital Markets
+            Capital Markets Hub
           </span>
         )}
       </span>

@@ -56,6 +56,10 @@ export async function GET() {
         fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh ?? 0,
         fiftyTwoWeekLow: quote?.fiftyTwoWeekLow ?? 0,
         marketCap: quote?.marketCap ?? 0,
+        volume: quote?.regularMarketVolume ?? 0,
+        pe: quote?.trailingPE ?? 0,
+        ytdReturn:
+          quote?.ytdReturn != null && Number.isFinite(quote.ytdReturn) ? quote.ytdReturn : null,
         extendedHours: quote ? getExtendedHoursLine(quote) : null,
         sector,
       };

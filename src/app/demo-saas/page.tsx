@@ -479,7 +479,7 @@ export default function DemoSaasPage() {
               href="/"
               className="cursor-pointer text-sky-800 underline-offset-4 transition-colors duration-200 hover:underline"
             >
-              Back to GCM HQ
+              Back to Capital Markets Hub
             </Link>
           </div>
         </div>

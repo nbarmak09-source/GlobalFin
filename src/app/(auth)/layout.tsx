@@ -19,19 +19,12 @@ export default function AuthLayout({
             className="flex flex-col items-center gap-3 transition-opacity duration-200 hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-lg p-1"
           >
             <LogoMark size={40} />
-            <span className="flex flex-col items-center gap-1">
-              <span
-                className="text-xl font-extrabold tracking-tight text-accent leading-none"
-                style={{ fontFamily: "var(--font-serif-display), sans-serif" }}
-              >
-                GCM HQ
-              </span>
-              <span
-                className="text-[9px] font-semibold uppercase tracking-[0.2em] text-muted/70 leading-none"
-                style={{ fontFamily: "var(--font-sans-pro), sans-serif" }}
-              >
-                Global Capital Markets
-              </span>
+            <span
+              className="text-xl font-bold tracking-tight text-accent leading-none text-center"
+              style={{ fontFamily: "var(--font-serif-display), sans-serif" }}
+            >
+              Capital Markets{" "}
+              <span className="font-extrabold">Hub</span>
             </span>
           </Link>
           <p className="text-sm text-muted text-center">

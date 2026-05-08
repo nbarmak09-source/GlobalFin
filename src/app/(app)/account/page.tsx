@@ -149,7 +149,7 @@ export default function AccountPage() {
   const [defaultModel, setDefaultModel] = useState("DCF");
   const [defaultPitchType, setDefaultPitchType] = useState("Growth");
   const [privacyMask, setPrivacyMask] = useState(false);
-  const [tickerTape, setTickerTape] = useState(true);
+  const [tickerTape, setTickerTape] = useState(false);
   const [tickerTapeMode, setTickerTapeMode] = useState<TickerTapeMode>("default");
   const [tickerTapeCustomDraft, setTickerTapeCustomDraft] = useState("");
   const [tickerTapeSaving, setTickerTapeSaving] = useState(false);
@@ -175,7 +175,7 @@ export default function AccountPage() {
     setDefaultModel(localStorage.getItem("gcm_default_model") ?? "DCF");
     setDefaultPitchType(localStorage.getItem("gcm_default_pitch_type") ?? "Growth");
     setPrivacyMask(localStorage.getItem("gcm_privacy_mask") === "true");
-    setTickerTape(localStorage.getItem("gcm_ticker_tape") !== "false");
+    setTickerTape(localStorage.getItem("gcm_ticker_tape") === "true");
   }, []);
 
   useEffect(() => {
@@ -354,7 +354,7 @@ export default function AccountPage() {
       const res = await fetch("/api/account/export");
       if (!res.ok) return;
       const cd = res.headers.get("Content-Disposition");
-      let filename = `gcm-hq-export-${new Date().toISOString().split("T")[0]}.json`;
+      let filename = `capital-markets-hub-export-${new Date().toISOString().split("T")[0]}.json`;
       if (cd) {
         const m = cd.match(/filename="([^"]+)"/);
         if (m) filename = m[1];

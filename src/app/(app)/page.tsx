@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import DashboardView from "@/components/dashboard/DashboardView";
 
 export const metadata: Metadata = {
-  title: "Dashboard | Global Capital Markets HQ",
+  title: "Dashboard | Capital Markets Hub",
   description:
     "Major indices, macro data, market performance, and sector-level markets view.",
 };

@@ -6,7 +6,7 @@
 
 ---
 
-**Project:** GCM HQ
+**Project:** Capital Markets Hub
 **Generated:** 2026-04-11 21:51:47
 **Category:** Fintech/Crypto
 

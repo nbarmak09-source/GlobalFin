@@ -66,7 +66,22 @@ const CHART_CONFIGS: {
   },
 ];
 
-export default function MacroCharts() {
+export type MacroChartSeriesKey = (typeof CHART_CONFIGS)[number]["key"];
+
+export default function MacroCharts({
+  seriesKeys,
+  sectionLabel = "Historical Trends",
+}: {
+  seriesKeys?: readonly MacroChartSeriesKey[];
+  sectionLabel?: string;
+} = {}) {
+  const chartConfigs =
+    seriesKeys && seriesKeys.length > 0
+      ? CHART_CONFIGS.filter((c) =>
+          (seriesKeys as readonly string[]).includes(c.key)
+        )
+      : CHART_CONFIGS;
+
   const [seriesMap, setSeriesMap] = useState<Record<string, SeriesData>>({});
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("5Y");
@@ -114,7 +129,7 @@ export default function MacroCharts() {
           style={{ borderLeft: "2px solid var(--accent)", paddingLeft: "10px" }}
         >
           <span className="text-[13px] font-[500] uppercase tracking-[0.05em] text-muted">
-            Historical Trends
+            {sectionLabel}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -136,7 +151,7 @@ export default function MacroCharts() {
 
       {loading ? (
         <div className="grid gap-3 md:grid-cols-2">
-          {CHART_CONFIGS.map((c) => (
+          {chartConfigs.map((c) => (
             <div
               key={c.key}
               className="h-48 rounded-xl bg-card border border-border animate-pulse"
@@ -145,7 +160,7 @@ export default function MacroCharts() {
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {CHART_CONFIGS.map((cfg) => {
+          {chartConfigs.map((cfg) => {
             const series = seriesMap[cfg.key];
             if (!series || series.data.length === 0) return null;
             return (
