@@ -3,11 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useRef } from 'react'
+import { GlobalFinBrand } from '@/components/Logo'
 
 const SIDEBAR_W = 88
 
-// ── Nav structure with sub-items ───────────────────────────────────────────
-// Add, remove, or rename sub-items to match your actual routes.
 const NAV_ITEMS = [
   {
     label: 'Dashboard',
@@ -20,7 +19,6 @@ const NAV_ITEMS = [
         <rect x="11" y="11" width="7" height="7" rx="1.5"/>
       </svg>
     ),
-    // No sub-items — clicking navigates directly
     children: [],
   },
   {
@@ -63,12 +61,12 @@ const NAV_ITEMS = [
       </svg>
     ),
     children: [
-      { label: 'Market Overview',   href: '/equities',               icon: '◎' },
-      { label: 'Indices',           href: '/equities/indices',       icon: '▦' },
-      { label: 'Sector Performance',href: '/equities/sectors',       icon: '⊞' },
-      { label: 'Deal Flow',         href: '/equities/deal-flow',     icon: '⤢' },
-      { label: 'Earnings',          href: '/equities/earnings',      icon: '◈' },
-      { label: 'News',              href: '/equities/news',          icon: '≋' },
+      { label: 'Market Overview',    href: '/equities',               icon: '◎' },
+      { label: 'Indices',            href: '/equities/indices',       icon: '▦' },
+      { label: 'Sector Performance', href: '/equities/sectors',       icon: '⊞' },
+      { label: 'Deal Flow',          href: '/equities/deal-flow',     icon: '⤢' },
+      { label: 'Earnings',           href: '/equities/earnings',      icon: '◈' },
+      { label: 'News',               href: '/equities/news',          icon: '≋' },
     ],
   },
   {
@@ -81,11 +79,11 @@ const NAV_ITEMS = [
       </svg>
     ),
     children: [
-      { label: 'Overview',          href: '/fixed-income',           icon: '◎' },
+      { label: 'Overview',          href: '/fixed-income',             icon: '◎' },
       { label: 'Yield Curve',       href: '/fixed-income/yield-curve', icon: '≋' },
-      { label: 'Government Bonds',  href: '/fixed-income/government', icon: '▦' },
-      { label: 'Corporate Bonds',   href: '/fixed-income/corporate', icon: '△' },
-      { label: 'Credit Spreads',    href: '/fixed-income/spreads',   icon: '◈' },
+      { label: 'Government Bonds',  href: '/fixed-income/government',  icon: '▦' },
+      { label: 'Corporate Bonds',   href: '/fixed-income/corporate',   icon: '△' },
+      { label: 'Credit Spreads',    href: '/fixed-income/spreads',     icon: '◈' },
     ],
   },
   {
@@ -99,11 +97,11 @@ const NAV_ITEMS = [
       </svg>
     ),
     children: [
-      { label: 'Overview',          href: '/alternatives',           icon: '◎' },
-      { label: 'Private Equity',    href: '/alternatives/private-equity', icon: '▦' },
-      { label: 'Real Estate',       href: '/alternatives/real-estate', icon: '⊞' },
-      { label: 'Crypto',            href: '/alternatives/crypto',    icon: '◈' },
-      { label: 'Commodities',       href: '/alternatives/commodities', icon: '⬡' },
+      { label: 'Overview',          href: '/alternatives',                  icon: '◎' },
+      { label: 'Private Equity',    href: '/alternatives/private-equity',   icon: '▦' },
+      { label: 'Real Estate',       href: '/alternatives/real-estate',      icon: '⊞' },
+      { label: 'Crypto',            href: '/alternatives/crypto',           icon: '◈' },
+      { label: 'Commodities',       href: '/alternatives/commodities',      icon: '⬡' },
     ],
   },
   {
@@ -117,10 +115,10 @@ const NAV_ITEMS = [
       </svg>
     ),
     children: [
-      { label: 'Holdings',          href: '/portfolio',              icon: '◎' },
-      { label: 'Performance',       href: '/portfolio/performance',  icon: '△' },
-      { label: 'Allocation',        href: '/portfolio/allocation',   icon: '◈' },
-      { label: 'Risk',              href: '/portfolio/risk',         icon: '≋' },
+      { label: 'Holdings',     href: '/portfolio',             icon: '◎' },
+      { label: 'Performance',  href: '/portfolio/performance', icon: '△' },
+      { label: 'Allocation',   href: '/portfolio/allocation',  icon: '◈' },
+      { label: 'Risk',         href: '/portfolio/risk',        icon: '≋' },
     ],
   },
   {
@@ -135,10 +133,10 @@ const NAV_ITEMS = [
       </svg>
     ),
     children: [
-      { label: 'Overview',          href: '/supply-chain',           icon: '◎' },
-      { label: 'Suppliers',         href: '/supply-chain/suppliers', icon: '⤢' },
-      { label: 'Disruptions',       href: '/supply-chain/disruptions', icon: '△' },
-      { label: 'Trade Flows',       href: '/supply-chain/trade',     icon: '≋' },
+      { label: 'Overview',     href: '/supply-chain',               icon: '◎' },
+      { label: 'Suppliers',    href: '/supply-chain/suppliers',     icon: '⤢' },
+      { label: 'Disruptions',  href: '/supply-chain/disruptions',   icon: '△' },
+      { label: 'Trade Flows',  href: '/supply-chain/trade',         icon: '≋' },
     ],
   },
 ]
@@ -157,14 +155,12 @@ const NAV_BOTTOM = [
   },
 ]
 
-// ── Component ──────────────────────────────────────────────────────────────
 export function Sidebar() {
   const pathname = usePathname()
   const [activeHover, setActiveHover] = useState<string | null>(null)
   const [flyoutTop, setFlyoutTop] = useState<number>(0)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Delay closing so cursor can move from nav item to flyout without it closing
   const handleMouseEnter = (label: string) => {
     if (closeTimer.current) clearTimeout(closeTimer.current)
     setActiveHover(label)
@@ -194,45 +190,37 @@ export function Sidebar() {
         onMouseEnter={onEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Nav item button / link */}
         <Link
           href={item.href}
-          className="flex flex-col items-center justify-center gap-1 rounded-md mx-2 transition-colors duration-100"
+          className="flex flex-col items-center justify-center gap-1 rounded-md mx-2 transition-all duration-150"
           style={{
             padding: '8px 6px',
-            color: active || isHovered ? 'var(--text-primary)' : '#8b949e',
-            background: active ? 'var(--bg-active)' : isHovered ? 'var(--bg-hover)' : 'transparent',
+            color: active ? 'var(--color-primary)' : isHovered ? 'var(--color-text)' : 'var(--color-muted)',
+            background: active
+              ? 'rgba(201,162,39,0.08)'
+              : isHovered
+              ? 'rgba(255,255,255,0.04)'
+              : 'transparent',
             position: 'relative',
+            borderLeft: active ? '2px solid var(--color-primary)' : '2px solid transparent',
+            borderRadius: active ? '0 6px 6px 0' : undefined,
+            marginLeft: 0,
+            paddingLeft: active ? 10 : 6,
           }}
         >
-          {/* Yellow active bar */}
-          <span
-            style={{
-              position: 'absolute',
-              left: -8,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: 3,
-              height: 24,
-              borderRadius: '0 2px 2px 0',
-              background: active ? 'var(--accent)' : 'transparent',
-              transition: 'background 120ms',
-            }}
-            aria-hidden="true"
-          />
-          <span style={{ opacity: active ? 1 : 0.7 }}>{item.icon}</span>
+          <span style={{ opacity: active ? 1 : isHovered ? 0.9 : 0.6 }}>{item.icon}</span>
           <span style={{
             fontSize: '0.6rem',
             fontWeight: active ? 600 : 400,
             letterSpacing: '0.03em',
             lineHeight: 1,
             userSelect: 'none',
+            fontFamily: 'var(--font-body)',
           }}>
             {item.label}
           </span>
         </Link>
 
-        {/* Flyout panel — only renders if item has children and is hovered */}
         {hasChildren && isHovered && (
           <div
             onMouseEnter={() => handleMouseEnter(item.label)}
@@ -245,29 +233,28 @@ export function Sidebar() {
               minWidth: 220,
               maxHeight: `calc(100dvh - ${flyoutTop}px - 16px)`,
               overflowY: 'auto',
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--border-strong)',
+              background: 'var(--color-surface-alt)',
+              border: '1px solid var(--color-border-gold)',
               borderRadius: 'var(--radius-md)',
-              boxShadow: 'var(--shadow-lg)',
+              boxShadow: 'var(--shadow-gold)',
               padding: '6px 0',
               animation: 'flyout-in 120ms ease-out forwards',
             }}
           >
-            {/* Section label at top of flyout */}
             <div style={{
               padding: '6px 14px 8px',
               fontSize: '0.65rem',
               fontWeight: 700,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              color: 'var(--text-muted)',
-              borderBottom: '1px solid var(--border)',
+              color: 'var(--color-muted)',
+              borderBottom: '1px solid var(--color-border)',
               marginBottom: 4,
+              fontFamily: 'var(--font-heading)',
             }}>
               {item.label}
             </div>
 
-            {/* Sub-items */}
             {item.children.map((child) => {
               const childActive = pathname === child.href
               return (
@@ -279,20 +266,20 @@ export function Sidebar() {
                     padding: '7px 14px',
                     fontSize: '0.8125rem',
                     fontWeight: childActive ? 600 : 400,
-                    color: childActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    background: childActive ? 'var(--bg-active)' : 'transparent',
-                    borderLeft: childActive ? '2px solid var(--accent)' : '2px solid transparent',
+                    color: childActive ? 'var(--color-primary)' : 'var(--color-muted)',
+                    background: childActive ? 'rgba(201,162,39,0.08)' : 'transparent',
+                    borderLeft: childActive ? '2px solid var(--color-primary)' : '2px solid transparent',
                   }}
                   onMouseEnter={(e) => {
                     if (!childActive) {
-                      (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'
-                      ;(e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'
+                      ;(e.currentTarget as HTMLElement).style.color = 'var(--color-text)'
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!childActive) {
                       (e.currentTarget as HTMLElement).style.background = 'transparent'
-                      ;(e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'
+                      ;(e.currentTarget as HTMLElement).style.color = 'var(--color-muted)'
                     }
                   }}
                   onClick={() => setActiveHover(null)}
@@ -312,7 +299,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Flyout entrance animation */}
       <style>{`
         @keyframes flyout-in {
           from { opacity: 0; transform: translateX(-6px); }
@@ -324,29 +310,25 @@ export function Sidebar() {
         className="hidden md:flex flex-col fixed inset-y-0 left-0 z-30"
         style={{
           width: SIDEBAR_W,
-          background: 'var(--bg-surface)',
-          borderRight: '1px solid var(--border)',
+          background: 'var(--color-bg)',
+          borderRight: '1px solid var(--color-border)',
         }}
         aria-label="Main navigation"
       >
-        {/* Logo */}
+        {/* Logo — vector mark + wordmark (no raster lockup) */}
         <div
-          className="flex items-center justify-center shrink-0"
-          style={{ height: 72, borderBottom: '1px solid var(--border)' }}
+          className="flex flex-col items-center justify-center shrink-0 px-1 py-2.5"
+          style={{
+            borderBottom: '1px solid rgba(201,162,39,0.2)',
+          }}
         >
-          <div
-            className="flex items-center justify-center rounded-lg font-bold"
-            style={{
-              width: 36, height: 36,
-              background: 'var(--accent)',
-              color: '#000',
-              fontSize: '0.7rem',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-            }}
+          <Link
+            href="/"
+            className="flex flex-col items-center justify-center rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+            aria-label="GLOBALFIN Capital Markets — Home"
           >
-            CM
-          </div>
+            <GlobalFinBrand variant="sidebar" />
+          </Link>
         </div>
 
         {/* Main nav */}
@@ -356,11 +338,25 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {/* Bottom nav */}
-        <div style={{ borderTop: '1px solid var(--border)', paddingBottom: 8 }}>
+        {/* Bottom: settings + version badge */}
+        <div style={{ borderTop: '1px solid var(--color-border)', paddingBottom: 8 }}>
           {NAV_BOTTOM.map((item) => (
             <NavItem key={item.href} item={item} />
           ))}
+          <div className="flex justify-center pb-1 pt-0.5">
+            <span style={{
+              fontSize: '10px',
+              fontWeight: 500,
+              letterSpacing: '0.04em',
+              color: 'var(--color-primary)',
+              background: 'rgba(201,162,39,0.1)',
+              borderRadius: '4px',
+              padding: '2px 7px',
+              fontFamily: 'var(--font-heading)',
+            }}>
+              v2.0
+            </span>
+          </div>
         </div>
       </aside>
     </>

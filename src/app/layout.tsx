@@ -1,22 +1,83 @@
+// GLOBALFIN Capital Markets — Root Layout
+// Uses next/font for Space Grotesk + Inter (NOT Google Fonts <link> tags —
+// those cause FOUT and don't work with Next.js font optimization)
+
 import type { Metadata, Viewport } from "next";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 
+/* ----------------------------------------------------------------
+   FONT SETUP
+   next/font automatically:
+   - Self-hosts fonts (no external requests)
+   - Adds font-display: swap
+   - Generates CSS variables referenced in globals.css (@theme / :root)
+   ---------------------------------------------------------------- */
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+  weight: ["500", "600", "700"],
+});
+
+/* ----------------------------------------------------------------
+   METADATA
+   ---------------------------------------------------------------- */
+
 export const metadata: Metadata = {
-  title: "Capital Markets Hub",
+  title: {
+    default: "GLOBALFIN Capital Markets",
+    template: "%s | GLOBALFIN Capital Markets",
+  },
   description:
-    "Capital Markets Hub - Personal stock market dashboard with live data, research, and portfolio tracking",
+    "Institutional-grade market intelligence, execution systems, and analytics designed for modern finance.",
+  keywords: [
+    "capital markets",
+    "market intelligence",
+    "institutional finance",
+    "portfolio analytics",
+    "fixed income",
+    "equities",
+    "alternatives",
+  ],
+  authors: [{ name: "GLOBALFIN Capital Markets" }],
+  creator: "GLOBALFIN Capital Markets",
   icons: {
+    // repo ships logo.svg; add /favicon.ico when available
     icon: "/logo.svg",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "GLOBALFIN Capital Markets",
+    title: "GLOBALFIN Capital Markets",
+    description:
+      "Precision Infrastructure for Global Capital Markets. Smarter Markets. Better Outcomes.",
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
+  themeColor: "#0B0B0F",
+  colorScheme: "dark",
 };
+
+/* ----------------------------------------------------------------
+   LAYOUT
+   ---------------------------------------------------------------- */
 
 export default function RootLayout({
   children,
@@ -27,11 +88,11 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="dark"
-      className="bg-[#0d1117] gcm-hide-ticker"
+      className={`${inter.variable} ${spaceGrotesk.variable} gcm-hide-ticker`}
       suppressHydrationWarning
     >
       <body
-        className="bg-[--bg-base] text-[--text-primary] font-sans antialiased min-h-dvh"
+        className="bg-background text-foreground font-sans antialiased min-h-dvh overflow-x-hidden"
         suppressHydrationWarning
       >
         <SessionProvider>{children}</SessionProvider>

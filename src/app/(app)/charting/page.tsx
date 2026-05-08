@@ -21,8 +21,7 @@ interface MetricChartOptions {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const SCALE_DIV  = { K: 1_000, M: 1_000_000, B: 1_000_000_000 }
-const ACCENT     = 'var(--accent)'
-const LINE_COLOR = '#4ade80'
+const ACCENT = 'var(--accent)'
 const PCT_COLOR  = '#f97316'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -181,7 +180,7 @@ function CompanySearch({ value, onChange }: { value: Company | null; onChange: (
   )
 }
 
-function MetricSearch({ selected, onChange }: { selected: string[]; onChange: (keys: string[]) => void }) {
+function SingleMetricPicker({ selected, onChange }: { selected: string | null; onChange: (key: string | null) => void }) {
   const [q,    setQ]    = useState('')
   const [open, setOpen] = useState(false)
 
@@ -201,12 +200,11 @@ function MetricSearch({ selected, onChange }: { selected: string[]; onChange: (k
     cashflow: 'Cash Flow', metrics: 'Key Metrics & Ratios',
   }
 
-  const toggle = (key: string) => {
-    onChange(selected.includes(key)
-      ? selected.filter(k => k !== key)
-      : selected.length < 2 ? [...selected, key] : [selected[1], key]
-    )
+  const pick = (key: string) => {
+    onChange(selected === key ? null : key)
   }
+
+  const sel = selected ? METRICS.find(x => x.key === selected) : null
 
   return (
     <div style={{ flex: 1, position: 'relative' }}>
@@ -221,23 +219,24 @@ function MetricSearch({ selected, onChange }: { selected: string[]; onChange: (k
         <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="var(--text-muted)" strokeWidth="2" style={{ flexShrink: 0 }}>
           <circle cx="9" cy="9" r="6"/><line x1="14" y1="14" x2="18" y2="18"/>
         </svg>
-        {selected.map((key, i) => {
-          const m = METRICS.find(x => x.key === key)
-          return m ? (
-            <span key={key} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: i === 0 ? ACCENT : LINE_COLOR,
-              color: '#000', borderRadius: 3, padding: '2px 7px',
-              fontSize: '0.7rem', fontWeight: 600,
-            }}>
-              {m.label}
-              <button onClick={e => { e.stopPropagation(); toggle(key) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(0,0,0,0.55)', lineHeight: 1, padding: 0, fontSize: '0.9rem' }}>×</button>
-            </span>
-          ) : null
-        })}
-        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-          {selected.length === 0 ? 'Select & search metrics…' : '+ add metric'}
-        </span>
+        {sel ? (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            background: ACCENT, color: '#000', borderRadius: 3, padding: '2px 7px',
+            fontSize: '0.7rem', fontWeight: 600,
+          }}>
+            {sel.label}
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); onChange(null) }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(0,0,0,0.55)', lineHeight: 1, padding: 0, fontSize: '0.9rem' }}
+            >
+              ×
+            </button>
+          </span>
+        ) : (
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Select one metric…</span>
+        )}
       </div>
 
       {open && (
@@ -274,15 +273,14 @@ function MetricSearch({ selected, onChange }: { selected: string[]; onChange: (k
                 {SOURCE_LABELS[src] ?? src}
               </div>
               {items.map(m => {
-                const isSel = selected.includes(m.key)
-                const idx   = selected.indexOf(m.key)
+                const isSel = selected === m.key
                 return (
-                  <div key={m.key} onClick={() => toggle(m.key)}
+                  <div key={m.key} onClick={() => pick(m.key)}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '7px 12px', cursor: 'pointer',
                       background: isSel ? 'var(--bg-active)' : 'transparent',
-                      borderLeft: isSel ? `2px solid ${idx === 0 ? ACCENT : LINE_COLOR}` : '2px solid transparent',
+                      borderLeft: isSel ? `2px solid ${ACCENT}` : '2px solid transparent',
                     }}
                     onMouseEnter={e => { if (!isSel) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isSel ? 'var(--bg-active)' : 'transparent' }}
@@ -292,7 +290,7 @@ function MetricSearch({ selected, onChange }: { selected: string[]; onChange: (k
                       <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 1 }}>{m.description}</div>
                     </div>
                     {isSel && (
-                      <span style={{ fontSize: '0.65rem', color: idx === 0 ? ACCENT : LINE_COLOR, fontWeight: 700, marginLeft: 10 }}>✓</span>
+                      <span style={{ fontSize: '0.65rem', color: ACCENT, fontWeight: 700, marginLeft: 10 }}>✓</span>
                     )}
                   </div>
                 )
@@ -428,6 +426,7 @@ function MetricSeriesToolbar({
   onSetType,
   onToggleVisible,
   onRemove,
+  showRemove = true,
 }: {
   chartType: ChartType
   visible: boolean
@@ -435,6 +434,7 @@ function MetricSeriesToolbar({
   onSetType: (t: ChartType) => void
   onToggleVisible: () => void
   onRemove: () => void
+  showRemove?: boolean
 }) {
   const IconBtn = ({ type, title }: { type: ChartType; title: string }) => (
     <button
@@ -496,25 +496,27 @@ function MetricSeriesToolbar({
           )}
         </svg>
       </button>
-      <button
-        type="button"
-        title="Remove metric"
-        onClick={onRemove}
-        style={{
-          width: 28,
-          height: 28,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--bg-elevated)',
-          border: '1px solid var(--border-strong)',
-          borderRadius: 'var(--radius-sm)',
-          cursor: 'pointer',
-          color: 'var(--text-muted)',
-        }}
-      >
-        <span style={{ fontSize: '1.1rem', lineHeight: 1 }} aria-hidden>×</span>
-      </button>
+      {showRemove && (
+        <button
+          type="button"
+          title="Remove"
+          onClick={onRemove}
+          style={{
+            width: 28,
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius-sm)',
+            cursor: 'pointer',
+            color: 'var(--text-muted)',
+          }}
+        >
+          <span style={{ fontSize: '1.1rem', lineHeight: 1 }} aria-hidden>×</span>
+        </button>
+      )}
     </div>
   )
 }
@@ -556,11 +558,11 @@ function ChartTooltip({ active, payload, label, scale, metricKeys }: {
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function ChartingPage() {
   const [company,   setCompany]   = useState<Company | null>(null)
-  const [metrics,   setMetrics]   = useState<string[]>(['revenue', 'netIncomeRatio'])
+  const [metricKey, setMetricKey]  = useState<string | null>('operatingIncome')
   const [period,    setPeriod]    = useState<Period>('annual')
   const [scale,     setScale]     = useState<Scale>('B')
-  const [metricChartOptions, setMetricChartOptions] = useState<Record<string, MetricChartOptions>>({})
-  const [showPct,   setShowPct]   = useState(false)
+  const [valueSeries, setValueSeries] = useState<MetricChartOptions>({ chartType: 'bar', visible: true })
+  const [pctSeries, setPctSeries]   = useState<MetricChartOptions>({ chartType: 'line', visible: true })
   const [indexZero, setIndexZero] = useState(false)
   const [rows,      setRows]      = useState<Record<string, unknown>[]>([])
   const [mRows,     setMRows]     = useState<Record<string, unknown>[]>([])
@@ -607,22 +609,6 @@ export default function ChartingPage() {
       .finally(() => setLoading(false))
   }, [company, period])
 
-  useEffect(() => {
-    setMetricChartOptions(prev => {
-      const next: Record<string, MetricChartOptions> = {}
-      for (let i = 0; i < metrics.length; i++) {
-        const key = metrics[i]!
-        const existing = prev[key]
-        if (existing) {
-          next[key] = { ...existing }
-        } else {
-          next[key] = { chartType: i === 0 ? 'bar' : 'line', visible: true }
-        }
-      }
-      return next
-    })
-  }, [metrics])
-
   const allData = useMemo(() => {
     const byDate: Record<string, Record<string, unknown>> = {}
     for (const r of rows)  { byDate[r.date as string] = { ...byDate[r.date as string], ...r } }
@@ -635,61 +621,66 @@ export default function ChartingPage() {
   const sliced = useMemo(() => allData.slice(range[0], range[1] + 1), [allData, range])
 
   const chartData = useMemo(() => {
-    const def0 = METRICS.find(m => m.key === metrics[0])
-    const def1 = METRICS.find(m => m.key === metrics[1])
+    const def = metricKey ? METRICS.find(m => m.key === metricKey) : null
 
     return sliced.map((row, i) => {
       const point: Record<string, unknown> = { date: fmtDate(row.date as string, period) }
 
-      for (const [idx, key] of metrics.entries()) {
-        const def = idx === 0 ? def0 : def1
-        if (!def) continue
-        let raw = typeof row[key] === 'number' ? (row[key] as number) : null
-        if (raw === null) { point[key] = null; continue }
+      if (metricKey && def) {
+        let raw = typeof row[metricKey] === 'number' ? (row[metricKey] as number) : null
+        if (raw === null) {
+          point[metricKey] = null
+        } else {
+          if (def.format !== 'percent' && def.format !== 'ratio') {
+            raw = raw / SCALE_DIV[scale]
+          } else if (def.format === 'percent') {
+            raw = raw * 100
+          }
 
-        if (def.format !== 'percent' && def.format !== 'ratio') {
-          raw = raw / SCALE_DIV[scale]
-        } else if (def.format === 'percent') {
-          raw = raw * 100
+          if (indexZero && i > 0) {
+            const first = sliced[0][metricKey]
+            if (typeof first === 'number' && first !== 0) raw = ((raw - first) / Math.abs(first)) * 100
+          }
+
+          point[metricKey] = +raw.toFixed(2)
         }
-
-        if (indexZero && i > 0) {
-          const first = sliced[0][key]
-          if (typeof first === 'number' && first !== 0) raw = ((raw - first) / Math.abs(first)) * 100
-        }
-
-        point[key] = +raw.toFixed(2)
       }
 
-      if (showPct && metrics[0] && i > 0) {
-        const prev = sliced[i - 1][metrics[0]]
-        const curr = sliced[i][metrics[0]]
+      if (metricKey && i > 0) {
+        const prev = sliced[i - 1][metricKey]
+        const curr = sliced[i][metricKey]
         if (typeof prev === 'number' && typeof curr === 'number' && prev !== 0) {
-          point[`__pct_${metrics[0]}`] = +((curr - prev) / Math.abs(prev) * 100).toFixed(2)
+          point[`__pct_${metricKey}`] = +((curr - prev) / Math.abs(prev) * 100).toFixed(2)
         } else {
-          point[`__pct_${metrics[0]}`] = null
+          point[`__pct_${metricKey}`] = null
         }
+      } else if (metricKey) {
+        point[`__pct_${metricKey}`] = null
       }
 
       return point
     })
-  }, [sliced, metrics, scale, period, showPct, indexZero])
+  }, [sliced, metricKey, scale, period, indexZero])
 
   const timelineLabels = allData.map(r => fmtDate(r.date as string, period))
   const maxRange       = Math.max(0, allData.length - 1)
 
-  const visibleMetricKeys = useMemo(
-    () => metrics.filter(k => metricChartOptions[k]?.visible !== false),
-    [metrics, metricChartOptions],
-  )
+  const valueDef = metricKey ? METRICS.find(m => m.key === metricKey) : null
 
-  const leftDef  = METRICS.find(m => m.key === visibleMetricKeys[0])
-  const showPctOnChart =
-    showPct &&
-    Boolean(metrics[0]) &&
-    metricChartOptions[metrics[0]!]?.visible !== false
-  const needsRightAxis =
-    visibleMetricKeys.length > 1 || showPctOnChart
+  const valueVisible = Boolean(metricKey && valueSeries.visible)
+  const pctVisible   = Boolean(metricKey && pctSeries.visible)
+
+  const dualAxes       = valueVisible && pctVisible
+  const needsRightAxis = dualAxes
+  const valueYAxisId   = 'left'
+  const pctYAxisId     = dualAxes ? 'right' : 'left'
+
+  const emptyChart = !metricKey || (!valueVisible && !pctVisible)
+
+  const valueRowTitle =
+    valueDef
+      ? `${valueDef.label}${valueDef.format === 'currency' ? ' ($)' : ''}`
+      : ''
 
   const Toggle = ({ on, onToggle, color = ACCENT }: { on: boolean; onToggle: () => void; color?: string }) => (
     <div onClick={onToggle} style={{
@@ -710,7 +701,7 @@ export default function ChartingPage() {
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>Charting</h1>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-          Visualise financial metrics from 10-K and 10-Q filings
+          One metric at a time — level ($ scaled) alongside period-over-period % change.
         </p>
       </div>
 
@@ -722,31 +713,26 @@ export default function ChartingPage() {
         borderRadius: 'var(--radius-md)',
       }}>
         <CompanySearch value={company} onChange={setCompany} />
-        <MetricSearch  selected={metrics} onChange={setMetrics} />
+        <SingleMetricPicker selected={metricKey} onChange={setMetricKey} />
       </div>
 
-      {/* Per-metric series options + global toolbar */}
+      {/* Same metric: value ($) + % chg — chart type per series */}
       <div style={{
         background: 'var(--bg-surface)',
         border: '1px solid var(--border)',
         borderBottom: 'none',
         borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
       }}>
-        {metrics.length > 0 && metrics.map((key, rowIdx) => {
-          const def = METRICS.find(m => m.key === key)
-          if (!def) return null
-          const opt = metricChartOptions[key] ?? { chartType: rowIdx === 0 ? 'bar' : 'line', visible: true }
-          const colorActive = rowIdx === 0 ? ACCENT : LINE_COLOR
-          return (
+        {metricKey && valueDef && (
+          <>
             <div
-              key={key}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 12,
                 padding: '10px 12px',
-                borderBottom: rowIdx < metrics.length - 1 ? '1px solid var(--border)' : 'none',
+                borderBottom: '1px solid var(--border)',
               }}
             >
               <div style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -756,17 +742,17 @@ export default function ChartingPage() {
                     height: 8,
                     borderRadius: 2,
                     flexShrink: 0,
-                    background: colorActive,
-                    opacity: opt.visible ? 1 : 0.35,
+                    background: ACCENT,
+                    opacity: valueSeries.visible ? 1 : 0.35,
                   }}
                 />
                 <div style={{ minWidth: 0 }}>
                   <div style={{
                     fontSize: '0.82rem',
                     fontWeight: 600,
-                    color: opt.visible ? 'var(--text-primary)' : 'var(--text-muted)',
+                    color: valueSeries.visible ? 'var(--text-primary)' : 'var(--text-muted)',
                   }}>
-                    {def.label}
+                    {valueRowTitle}
                   </div>
                   <div style={{
                     fontSize: '0.68rem',
@@ -776,42 +762,75 @@ export default function ChartingPage() {
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                   }}>
-                    {def.description}
+                    {valueDef.description}
                   </div>
                 </div>
               </div>
               <MetricSeriesToolbar
-                chartType={opt.chartType}
-                visible={opt.visible}
-                colorActive={colorActive}
-                onSetType={t => {
-                  setMetricChartOptions(o => ({
-                    ...o,
-                    [key]: { ...opt, chartType: t },
-                  }))
-                }}
-                onToggleVisible={() => {
-                  setMetricChartOptions(o => ({
-                    ...o,
-                    [key]: { ...opt, visible: !opt.visible },
-                  }))
-                }}
-                onRemove={() => setMetrics(m => m.filter(k => k !== key))}
+                chartType={valueSeries.chartType}
+                visible={valueSeries.visible}
+                colorActive={ACCENT}
+                showRemove={false}
+                onSetType={t => setValueSeries(s => ({ ...s, chartType: t }))}
+                onToggleVisible={() => setValueSeries(s => ({ ...s, visible: !s.visible }))}
+                onRemove={() => {}}
               />
             </div>
-          )
-        })}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                padding: '10px 12px',
+              }}
+            >
+              <div style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 2,
+                    flexShrink: 0,
+                    background: PCT_COLOR,
+                    opacity: pctSeries.visible ? 1 : 0.35,
+                  }}
+                />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    color: pctSeries.visible ? 'var(--text-primary)' : 'var(--text-muted)',
+                  }}>
+                    {valueDef.label} % Chg.
+                  </div>
+                  <div style={{
+                    fontSize: '0.68rem',
+                    color: 'var(--text-muted)',
+                    marginTop: 1,
+                  }}>
+                    Period-over-period % change ({period === 'annual' ? 'year over year' : 'quarter over quarter'})
+                  </div>
+                </div>
+              </div>
+              <MetricSeriesToolbar
+                chartType={pctSeries.chartType}
+                visible={pctSeries.visible}
+                colorActive={PCT_COLOR}
+                showRemove={false}
+                onSetType={t => setPctSeries(s => ({ ...s, chartType: t }))}
+                onToggleVisible={() => setPctSeries(s => ({ ...s, visible: !s.visible }))}
+                onRemove={() => {}}
+              />
+            </div>
+          </>
+        )}
 
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center',
           padding: '8px 12px',
-          borderTop: metrics.length > 0 ? '1px solid var(--border)' : 'none',
+          borderTop: metricKey ? '1px solid var(--border)' : 'none',
         }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.75rem', color: showPct ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-            <Toggle on={showPct} onToggle={() => setShowPct(o => !o)} color={PCT_COLOR} />
-            % Chg.
-          </label>
-
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.75rem', color: indexZero ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
             <Toggle on={indexZero} onToggle={() => setIndexZero(o => !o)} />
             Index to 0
@@ -883,6 +902,14 @@ export default function ChartingPage() {
             </svg>
             Search for a company above to get started
           </div>
+        ) : !metricKey ? (
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            height: 320, gap: 10, color: 'var(--text-muted)', fontSize: '0.82rem',
+            border: '1px dashed var(--border)', borderRadius: 'var(--radius-md)',
+          }}>
+            Pick one metric above — the chart compares its level ($ / value) with period-over-period % change.
+          </div>
         ) : chartData.length === 0 ? (
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -901,13 +928,13 @@ export default function ChartingPage() {
               'No data available for this company and period'
             )}
           </div>
-        ) : visibleMetricKeys.length === 0 && !showPctOnChart ? (
+        ) : emptyChart ? (
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             height: 320, gap: 10, color: 'var(--text-muted)', fontSize: '0.82rem',
             border: '1px dashed var(--border)', borderRadius: 'var(--radius-md)',
           }}>
-            All metrics are hidden — use the eye control to show a series, or remove a row to add different metrics.
+            Both series are hidden — use the eye control on the value or % row to show one or both.
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={340}>
@@ -921,137 +948,109 @@ export default function ChartingPage() {
                 tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'var(--font-mono)' }}
                 axisLine={false} tickLine={false}
               />
-              {visibleMetricKeys.length > 0 && (
+              {(valueVisible || (pctVisible && !dualAxes)) && (
                 <YAxis
                   yAxisId="left"
-                  tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'var(--font-mono)' }}
-                  axisLine={false} tickLine={false} width={48}
-                  tickFormatter={v =>
-                    leftDef?.format === 'percent' || leftDef?.format === 'ratio'
+                  tick={{
+                    fill: dualAxes ? 'var(--text-muted)' : pctVisible ? PCT_COLOR : 'var(--text-muted)',
+                    fontSize: 10,
+                    fontFamily: 'var(--font-mono)',
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={48}
+                  tickFormatter={v => {
+                    if (pctVisible && !valueVisible)
+                      return `${+v.toFixed(1)}`
+                    return valueDef?.format === 'percent' || valueDef?.format === 'ratio'
                       ? String(+v.toFixed(1))
                       : `${+v.toFixed(0)}`
-                  }
+                  }}
                 />
               )}
               {needsRightAxis && (
                 <YAxis
                   yAxisId="right"
                   orientation="right"
-                  tick={{
-                    fill:
-                      visibleMetricKeys.length > 1
-                        ? LINE_COLOR
-                        : showPctOnChart
-                          ? PCT_COLOR
-                          : LINE_COLOR,
-                    fontSize: 10,
-                    fontFamily: 'var(--font-mono)',
-                  }}
+                  tick={{ fill: PCT_COLOR, fontSize: 10, fontFamily: 'var(--font-mono)' }}
                   axisLine={false}
                   tickLine={false}
                   width={44}
                   tickFormatter={v => `${+v.toFixed(1)}`}
                 />
               )}
-              <Tooltip content={<ChartTooltip scale={scale} metricKeys={metrics} />} cursor={{ fill: 'rgba(255,255,255,0.025)' }} />
-              {showPctOnChart && <ReferenceLine yAxisId="right" y={0} stroke="var(--border-strong)" strokeDasharray="3 3" />}
+              <Tooltip
+                content={<ChartTooltip scale={scale} metricKeys={metricKey ? [metricKey] : []} />}
+                cursor={{ fill: 'rgba(255,255,255,0.025)' }}
+              />
+              {pctVisible && (
+                <ReferenceLine yAxisId={pctYAxisId} y={0} stroke="var(--border-strong)" strokeDasharray="3 3" />
+              )}
 
-              {metrics.flatMap((key, slotIdx) => {
-                const opt = metricChartOptions[key] ?? { chartType: slotIdx === 0 ? 'bar' : 'line', visible: true }
-                if (!opt.visible) return []
-                const vIdx = visibleMetricKeys.indexOf(key)
-                if (vIdx < 0) return []
-                const yAxisId = vIdx === 0 ? 'left' : 'right'
-                const color = slotIdx === 0 ? ACCENT : LINE_COLOR
-                const ct = opt.chartType
-                if (ct === 'bar') {
-                  return [
-                    <Bar
-                      key={key}
-                      yAxisId={yAxisId}
-                      dataKey={key}
-                      fill={color}
-                      fillOpacity={0.85}
-                      radius={[2, 2, 0, 0]}
-                      maxBarSize={52}
-                    />,
-                  ]
-                }
-                if (ct === 'line') {
-                  return [
-                    <Line
-                      key={key}
-                      yAxisId={yAxisId}
-                      dataKey={key}
-                      stroke={color}
-                      strokeWidth={slotIdx === 0 ? 2.5 : 2}
-                      dot={{ r: 3, fill: color, strokeWidth: 0 }}
-                      activeDot={{ r: 5 }}
-                    />,
-                  ]
-                }
-                return [
-                  <Area
-                    key={key}
-                    yAxisId={yAxisId}
-                    dataKey={key}
-                    stroke={color}
-                    fill={color}
-                    fillOpacity={0.15}
-                    strokeWidth={2}
-                    dot={false}
-                  />,
-                ]
-              })}
+              {metricKey && valueVisible && valueSeries.chartType === 'bar' && (
+                <Bar yAxisId={valueYAxisId} dataKey={metricKey} fill={ACCENT} fillOpacity={0.85} radius={[2, 2, 0, 0]} maxBarSize={52} />
+              )}
+              {metricKey && valueVisible && valueSeries.chartType === 'line' && (
+                <Line yAxisId={valueYAxisId} dataKey={metricKey} stroke={ACCENT} strokeWidth={2.5} dot={{ r: 3, fill: ACCENT, strokeWidth: 0 }} activeDot={{ r: 5 }} />
+              )}
+              {metricKey && valueVisible && valueSeries.chartType === 'area' && (
+                <Area yAxisId={valueYAxisId} dataKey={metricKey} stroke={ACCENT} fill={ACCENT} fillOpacity={0.15} strokeWidth={2} dot={false} />
+              )}
 
-              {showPctOnChart && metrics[0] && (
+              {metricKey && pctVisible && pctSeries.chartType === 'bar' && (
+                <Bar
+                  yAxisId={pctYAxisId}
+                  dataKey={`__pct_${metricKey}`}
+                  fill={PCT_COLOR}
+                  fillOpacity={0.85}
+                  radius={[2, 2, 0, 0]}
+                  maxBarSize={52}
+                />
+              )}
+              {metricKey && pctVisible && pctSeries.chartType === 'line' && (
                 <Line
-                  yAxisId="right"
-                  dataKey={`__pct_${metrics[0]}`}
+                  yAxisId={pctYAxisId}
+                  dataKey={`__pct_${metricKey}`}
                   stroke={PCT_COLOR}
                   strokeWidth={2}
-                  strokeDasharray="4 2"
                   dot={{ r: 3, fill: PCT_COLOR, strokeWidth: 0 }}
                   activeDot={{ r: 5 }}
+                />
+              )}
+              {metricKey && pctVisible && pctSeries.chartType === 'area' && (
+                <Area
+                  yAxisId={pctYAxisId}
+                  dataKey={`__pct_${metricKey}`}
+                  stroke={PCT_COLOR}
+                  fill={PCT_COLOR}
+                  fillOpacity={0.15}
+                  strokeWidth={2}
+                  dot={false}
                 />
               )}
             </ComposedChart>
           </ResponsiveContainer>
         )}
 
-        {metrics.length > 0 && company && (
+        {company && metricKey && valueDef && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-            {metrics.map((key, i) => {
-              const def = METRICS.find(m => m.key === key)
-              const vis = metricChartOptions[key]?.visible !== false
-              return def ? (
-                <div
-                  key={key}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    opacity: vis ? 1 : 0.45,
-                  }}
-                >
-                  <span style={{ width: 10, height: 10, borderRadius: 2, background: i === 0 ? ACCENT : LINE_COLOR, flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    <strong style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{def.label}</strong>
-                    {!vis ? ' (hidden)' : ''}
-                    {' — '}{def.description}
-                  </span>
-                </div>
-              ) : null
-            })}
-            {showPctOnChart && metrics[0] && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 10, height: 3, background: PCT_COLOR, flexShrink: 0, borderRadius: 1 }} />
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  <strong style={{ color: PCT_COLOR, fontWeight: 600 }}>% Chg.</strong>
-                  {' — '}Year-over-year change in {METRICS.find(m => m.key === metrics[0])?.label}
-                </span>
-              </div>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: valueSeries.visible ? 1 : 0.45 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: ACCENT, flexShrink: 0 }} />
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                <strong style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{valueRowTitle}</strong>
+                {!valueSeries.visible ? ' (hidden)' : ''}
+                {' — '}{valueDef.description}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: pctSeries.visible ? 1 : 0.45 }}>
+              <span style={{ width: 10, height: 3, background: PCT_COLOR, flexShrink: 0, borderRadius: 1 }} />
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                <strong style={{ color: PCT_COLOR, fontWeight: 600 }}>{valueDef.label} % Chg.</strong>
+                {!pctSeries.visible ? ' (hidden)' : ''}
+                {' — '}
+                {period === 'annual' ? 'Year-over-year' : 'Quarter-over-quarter'} vs prior period
+              </span>
+            </div>
           </div>
         )}
       </div>

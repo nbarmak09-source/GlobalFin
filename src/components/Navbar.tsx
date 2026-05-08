@@ -317,10 +317,10 @@ export default function Navbar() {
           href="/"
           className="flex items-center min-h-[44px] min-w-0 shrink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent rounded-lg"
         >
-          <span className="md:hidden">
+          <span className="block min-w-0 md:hidden">
             <Logo compact />
           </span>
-          <span className="hidden md:block">
+          <span className="hidden md:block min-w-0">
             <Logo />
           </span>
         </Link>

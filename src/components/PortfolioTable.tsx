@@ -107,8 +107,18 @@ function SortableRow({
   return (
     <tr
       ref={setNodeRef}
-      style={style}
-      className={`border-b border-border/50 transition-colors bg-card ${!isExpanded ? "hover:bg-card-hover cursor-pointer" : ""}`}
+      className={`transition-colors ${!isExpanded ? "cursor-pointer" : ""}`}
+      style={{
+        ...style,
+        borderBottom: "1px solid var(--color-border)",
+        background: isExpanded ? "rgba(201,162,39,0.03)" : undefined,
+      }}
+      onMouseEnter={(e) => {
+        if (!isExpanded) (e.currentTarget as HTMLElement).style.background = "rgba(201,162,39,0.04)";
+      }}
+      onMouseLeave={(e) => {
+        if (!isExpanded) (e.currentTarget as HTMLElement).style.background = isExpanded ? "rgba(201,162,39,0.03)" : "";
+      }}
       onClick={(e) => {
         const target = e.target as HTMLElement;
         if (target.closest("button") || target.closest("a")) return;
@@ -236,33 +246,31 @@ export default function PortfolioTable({
 
   if (loading && positions.length === 0) {
     return (
-      <div className="rounded-xl bg-card border border-border overflow-hidden">
+      <div className="card overflow-hidden" style={{ padding: 0 }}>
+        <div className="divider-gold" />
         <div className="table-fade-right">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
-                <th className="px-2 py-3 w-8"></th>
-                {visibleKeys.map((key) => (
-                  <th
-                    key={key}
-                    className={`${metricCellThClass(key)} text-xs uppercase tracking-wider`}
-                  >
-                    {tableMetricLabel(key)}
-                  </th>
-                ))}
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {[1, 2, 3].map((i) => (
-                <tr key={i} className="border-b border-border/50">
-                  <td colSpan={colCount} className="px-4 py-3">
-                    <div className="h-12 w-full rounded-lg bg-card animate-pulse" />
-                  </td>
+              <thead>
+                <tr style={{ background: "rgba(255,255,255,0.02)", borderBottom: "1px solid var(--color-border)" }}>
+                  <th className="px-2 py-3 w-8"></th>
+                  {visibleKeys.map((key) => (
+                    <th key={key} className={`${metricCellThClass(key)} text-label`}>
+                      {tableMetricLabel(key)}
+                    </th>
+                  ))}
+                  <th className="px-4 py-3"></th>
                 </tr>
-              ))}
-            </tbody>
+              </thead>
+              <tbody>
+                {[1, 2, 3].map((i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                    <td colSpan={colCount} className="px-4 py-3">
+                      <div className="skeleton h-10 w-full" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
         </div>
@@ -293,33 +301,33 @@ export default function PortfolioTable({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div className="rounded-xl bg-card border border-border p-4">
-          <div className="text-xs text-muted mb-1">Total Value</div>
-          <div className="text-lg font-bold font-mono">
+        <div className="card-solid hover-lift p-4">
+          <div className="text-label mb-1">Total Value</div>
+          <div className="stat-value text-lg text-mono">
             {valuesVisible ? formatLargeCurrency(totalValue) : MASK}
           </div>
         </div>
-        <div className="rounded-xl bg-card border border-border p-4">
-          <div className="text-xs text-muted mb-1">Cost Basis</div>
-          <div className="text-lg font-bold font-mono">
+        <div className="card-solid hover-lift p-4">
+          <div className="text-label mb-1">Cost Basis</div>
+          <div className="stat-value text-lg text-mono">
             {valuesVisible ? formatLargeCurrency(totalCost) : MASK}
           </div>
         </div>
-        <div className="rounded-xl bg-card border border-border p-4">
-          <div className="text-xs text-muted mb-1">Total P&L</div>
+        <div className="card-solid hover-lift p-4">
+          <div className="text-label mb-1">Total P&L</div>
           <div
-            className={`text-lg font-bold font-mono ${
-              valuesVisible && totalPL >= 0 ? "text-green" : valuesVisible ? "text-red" : "text-muted"
+            className={`stat-value text-lg text-mono ${
+              valuesVisible && totalPL >= 0 ? "stat-positive" : valuesVisible ? "stat-negative" : ""
             }`}
           >
             {valuesVisible ? `${totalPL >= 0 ? "+" : ""}$${formatCurrency(totalPL)}` : MASK}
           </div>
         </div>
-        <div className="rounded-xl bg-card border border-border p-4">
-          <div className="text-xs text-muted mb-1">Return %</div>
+        <div className="card-solid hover-lift p-4">
+          <div className="text-label mb-1">Return %</div>
           <div
-            className={`text-lg font-bold font-mono flex items-center gap-1 ${
-              totalPLPercent >= 0 ? "text-green" : "text-red"
+            className={`stat-value text-lg text-mono flex items-center gap-1 ${
+              totalPLPercent >= 0 ? "stat-positive" : "stat-negative"
             }`}
           >
             {totalPLPercent >= 0 ? (
@@ -334,8 +342,8 @@ export default function PortfolioTable({
         <div className="rounded-xl bg-card border border-border p-4">
           <div className="text-xs text-muted mb-1">1D %</div>
           <div
-            className={`text-lg font-bold font-mono flex items-center gap-1 ${
-              totalDayChangePercent >= 0 ? "text-green" : "text-red"
+            className={`stat-value text-lg text-mono flex items-center gap-1 ${
+              totalDayChangePercent >= 0 ? "stat-positive" : "stat-negative"
             }`}
           >
             {totalDayChangePercent >= 0 ? (
@@ -351,14 +359,15 @@ export default function PortfolioTable({
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <label className="text-sm text-muted flex items-center gap-2">
+          <label className="text-sm flex items-center gap-2" style={{ color: "var(--color-muted)" }}>
             Order
             <select
               value={sortMode}
               onChange={(e) =>
                 setSortModePersist(e.target.value as HoldingsTableSortMode)
               }
-              className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm text-foreground"
+              className="input"
+              style={{ minHeight: "unset", height: 36, padding: "0 12px", fontSize: 13 }}
             >
               <option value="manual">Manual (drag)</option>
               <option value="sector">Sector A–Z</option>
@@ -378,24 +387,28 @@ export default function PortfolioTable({
         )}
       </div>
 
-      <div className="rounded-xl bg-card border border-border overflow-hidden">
+      <div className="card overflow-hidden" style={{ padding: 0 }}>
+        {/* Gold accent line */}
+        <div className="divider-gold" />
         <div className="table-fade-right">
           <div className="overflow-x-auto">
             <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            modifiers={[restrictToVerticalAxis]}
-          >
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+              modifiers={[restrictToVerticalAxis]}
+            >
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
+                <tr
+                  style={{
+                    background: "rgba(255,255,255,0.02)",
+                    borderBottom: "1px solid var(--color-border)",
+                  }}
+                >
                   <th className="px-2 py-3 w-8"></th>
                   {visibleKeys.map((key) => (
-                    <th
-                      key={key}
-                      className={`${metricCellThClass(key)} text-xs uppercase tracking-wider`}
-                    >
+                    <th key={key} className={`${metricCellThClass(key)} text-label`}>
                       {tableMetricLabel(key)}
                     </th>
                   ))}

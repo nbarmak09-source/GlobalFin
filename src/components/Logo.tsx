@@ -1,14 +1,19 @@
 /**
- * Capital Markets Hub brand logo — logomark + optional wordmark.
- *
- * Logomark: wireframe globe (global markets) + ascending chart bars (finance).
- * Export the standalone <LogoMark> if you only need the icon,
- * or <Logo> for the full lockup (icon + wordmark).
+ * GLOBALFIN Capital Markets — vector identity only (no PNG lockups).
+ * Crisp on retina, matches `--color-bg` (#0B0B0F), scales across sidebar / navbar / auth.
  */
 
-/** Globe + growth bars — Capital Markets Hub. */
+export type GlobalFinBrandVariant =
+  | "sidebar"
+  | "navbar"
+  | "navbarCompact"
+  | "topbar"
+  | "auth"
+  | "welcome";
+
+/** Globe + growth arc + bars — scales cleanly at any size. */
 export function LogoMark({
-  size = 22,
+  size = 24,
   className = "",
 }: {
   size?: number;
@@ -18,88 +23,191 @@ export function LogoMark({
     <svg
       width={size}
       height={size}
-      viewBox="0 0 22 22"
+      viewBox="0 0 24 24"
       fill="none"
       aria-hidden="true"
-      className={`text-accent ${className}`}
+      className={`shrink-0 text-[var(--color-primary)] ${className}`}
     >
-      {/* Globe: sphere + meridian + equator */}
+      {/* Ascending trajectory (behind globe) */}
+      <path
+        d="M2 18c4.5-6 9.5-8.5 20.25-10"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        opacity={0.4}
+      />
+      {/* Globe */}
       <circle
         cx="11"
-        cy="11"
-        r="7.5"
+        cy="13"
+        r="6.75"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="1.35"
       />
       <ellipse
         cx="11"
-        cy="11"
-        rx="3.2"
-        ry="7.5"
+        cy="13"
+        rx="3.15"
+        ry="6.75"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="1.35"
       />
-      <path
-        d="M 3.5 11 H 18.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      {/* Finance: ascending bars (lower-right inside globe) */}
-      <rect
-        x="12"
-        y="15.5"
-        width="2.25"
-        height="3"
-        rx="0.45"
-        fill="currentColor"
-      />
-      <rect
-        x="14.75"
-        y="13.5"
-        width="2.25"
-        height="5"
-        rx="0.45"
-        fill="currentColor"
-      />
-      <rect
-        x="17.5"
-        y="11"
-        width="2.25"
-        height="7.5"
-        rx="0.45"
-        fill="currentColor"
-      />
+      <path d="M4.25 13h13.5" stroke="currentColor" strokeWidth="1.35" />
+      {/* Bars */}
+      <rect x="13.25" y="15.75" width="2.05" height="3.25" rx="0.45" fill="currentColor" />
+      <rect x="15.85" y="13.85" width="2.05" height="5.15" rx="0.45" fill="currentColor" />
+      <rect x="18.45" y="11.5" width="2.05" height="7.5" rx="0.45" fill="currentColor" />
     </svg>
   );
 }
 
-/**
- * Full logo lockup:  [mark]  Capital Markets Hub
- *                           CAPITAL MARKETS HUB  ← desktop only (uppercase via CSS)
- *
- * The `compact` prop hides the subtitle (for use in tight spaces / mobile).
- */
-export function Logo({ compact = false }: { compact?: boolean }) {
+function WordGLOBALFIN({
+  sizePx,
+}: {
+  sizePx: number;
+}) {
   return (
-    <span className="flex items-center gap-2.5 select-none">
-      <LogoMark size={22} className="shrink-0" />
-      <span className="flex flex-col justify-center leading-none gap-[3px]">
-        <span
-          className="text-[15px] font-bold tracking-tight text-accent"
-          style={{ fontFamily: "var(--font-serif-display), var(--font-sans-pro), sans-serif" }}
-        >
-          Capital Markets{" "}
-          <span className="font-extrabold">Hub</span>
-        </span>
-        {!compact && (
-          <span
-            className="hidden md:block text-[8.5px] font-semibold uppercase tracking-[0.18em] text-muted/70"
-            style={{ fontFamily: "var(--font-sans-pro), sans-serif" }}
-          >
-            Capital Markets Hub
-          </span>
-        )}
-      </span>
+    <span
+      className="leading-none whitespace-nowrap"
+      style={{
+        fontFamily: "var(--font-heading)",
+        fontWeight: 700,
+        letterSpacing: "-0.03em",
+        fontSize: sizePx,
+      }}
+    >
+      <span style={{ color: "var(--color-text)" }}>GLOBAL</span>
+      <span style={{ color: "var(--color-primary)" }}>FIN</span>
     </span>
   );
+}
+
+/** Stack CAPITAL / MARKETS for narrow sidebar rail */
+function SubtitleRail() {
+  return (
+    <span
+      className="flex flex-col items-center gap-px uppercase leading-none font-medium text-center"
+      style={{
+        fontFamily: "var(--font-body)",
+        fontSize: 8,
+        letterSpacing: "0.12em",
+        color: "var(--color-primary)",
+        opacity: 0.92,
+      }}
+    >
+      <span>CAPITAL</span>
+      <span>MARKETS</span>
+    </span>
+  );
+}
+
+/** Thin gold accent — mirrors printed lockup */
+function BrandDivider({ wide }: { wide?: boolean }) {
+  return (
+    <div
+      className={wide ? "w-48 max-w-[90%]" : "w-14"}
+      style={{
+        height: 1,
+        marginLeft: "auto",
+        marginRight: "auto",
+        background:
+          "linear-gradient(90deg, transparent 0%, var(--color-primary) 35%, var(--color-primary-light) 50%, var(--color-primary) 65%, transparent 100%)",
+        opacity: 0.55,
+      }}
+      aria-hidden
+    />
+  );
+}
+
+export function GlobalFinBrand({
+  variant = "navbar",
+  className = "",
+}: {
+  variant?: GlobalFinBrandVariant;
+  className?: string;
+}) {
+  if (variant === "sidebar") {
+    return (
+      <span className={`flex flex-col items-center justify-center ${className}`}>
+        <LogoMark size={26} />
+        <WordGLOBALFIN sizePx={11} />
+        <div className="mt-1">
+          <SubtitleRail />
+        </div>
+      </span>
+    );
+  }
+
+  if (variant === "navbarCompact") {
+    return (
+      <span className={`flex items-center gap-2 min-w-0 ${className}`}>
+        <LogoMark size={22} />
+        <WordGLOBALFIN sizePx={14} />
+      </span>
+    );
+  }
+
+  if (variant === "navbar") {
+    return (
+      <span className={`flex items-center gap-2.5 min-w-0 ${className}`}>
+        <LogoMark size={26} />
+        <WordGLOBALFIN sizePx={16} />
+      </span>
+    );
+  }
+
+  if (variant === "topbar") {
+    return (
+      <span className={`flex items-center gap-2.5 shrink-0 ${className}`}>
+        <LogoMark size={28} />
+        <WordGLOBALFIN sizePx={17} />
+      </span>
+    );
+  }
+
+  if (variant === "welcome") {
+    return (
+      <span className={`flex flex-col items-center gap-2 ${className}`}>
+        <LogoMark size={40} />
+        <WordGLOBALFIN sizePx={22} />
+        <span
+          className="uppercase tracking-[0.12em]"
+          style={{
+            fontFamily: "var(--font-body)",
+            fontSize: 9,
+            color: "var(--color-primary)",
+          }}
+        >
+          Capital Markets
+        </span>
+        <BrandDivider wide />
+      </span>
+    );
+  }
+
+  /* auth */
+  return (
+    <span className={`flex flex-col items-center gap-2 ${className}`}>
+      <LogoMark size={48} />
+      <WordGLOBALFIN sizePx={28} />
+      <span
+        className="uppercase tracking-[0.14em]"
+        style={{
+          fontFamily: "var(--font-body)",
+          fontSize: 10,
+          color: "var(--color-primary)",
+        }}
+      >
+        Capital Markets
+      </span>
+      <BrandDivider wide />
+    </span>
+  );
+}
+
+/**
+ * Navbar: desktop vs compact widths handled by parent breakpoints.
+ */
+export function Logo({ compact = false }: { compact?: boolean }) {
+  return <GlobalFinBrand variant={compact ? "navbarCompact" : "navbar"} />;
 }

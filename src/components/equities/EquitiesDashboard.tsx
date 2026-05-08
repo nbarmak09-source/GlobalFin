@@ -162,10 +162,10 @@ export default function EquitiesDashboard({
         title={meta.title}
         subtitle={meta.subtitle}
         action={
-          <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent shrink-0">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Capital markets overview</span>
-          </div>
+          <span className="badge badge-gold">
+            <Sparkles className="h-3 w-3" />
+            <span className="hidden sm:inline">Capital markets</span>
+          </span>
         }
       />
 
@@ -182,29 +182,29 @@ export default function EquitiesDashboard({
         </>
       )}
 
-      {showSectors && (
+          {showSectors && (
         <section aria-label="Sector performance" className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-accent" />
+          <h2
+            className="text-heading flex items-center gap-2"
+            style={{ fontSize: "1.1rem", color: "var(--color-text)" }}
+          >
+            <BarChart3 className="h-5 w-5" style={{ color: "var(--color-primary)" }} />
             S&amp;P 500 Sector Performance
           </h2>
 
           {sectorsLoading ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 11 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-20 rounded-xl bg-card border border-border animate-pulse"
-                />
+                <div key={i} className="skeleton h-20 rounded-xl" />
               ))}
             </div>
           ) : sectors.length === 0 ? (
-            <p className="text-sm text-muted">
+            <p className="text-sm" style={{ color: "var(--color-muted)" }}>
               Sector data unavailable right now.
             </p>
           ) : (
             <>
-              <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <div className="card p-5 space-y-4">
                 <div className="flex gap-6 text-xs text-muted font-medium">
                   <span>Daily Change</span>
                 </div>
@@ -256,27 +256,26 @@ export default function EquitiesDashboard({
                   const isPositive = s.dayChangePct >= 0;
                   const ytdPositive = (s.ytdChangePct ?? 0) >= 0;
                   return (
-                    <div
-                      key={s.symbol}
-                      className="rounded-xl border border-border bg-card p-4 space-y-2"
-                    >
+                    <div key={s.symbol} className="card-solid hover-lift p-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span
                             className="inline-block h-2.5 w-2.5 rounded-full"
                             style={{ backgroundColor: s.color }}
                           />
-                          <span className="text-sm font-semibold">{s.name}</span>
+                          <span className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
+                            {s.name}
+                          </span>
                         </div>
-                        <span className="text-[10px] text-muted font-mono">
+                        <span className="text-mono" style={{ fontSize: 10, color: "var(--color-muted)" }}>
                           {s.symbol}
                         </span>
                       </div>
                       <div className="flex items-end justify-between">
                         <div>
-                          <p className="text-xs text-muted">Today</p>
+                          <p className="text-label" style={{ marginBottom: 2 }}>Today</p>
                           <p
-                            className={`text-sm font-medium tabular-nums flex items-center gap-0.5 ${isPositive ? "text-green-500" : "text-red-500"}`}
+                            className={`text-sm font-medium tabular-nums flex items-center gap-0.5 ${isPositive ? "stat-positive" : "stat-negative"}`}
                           >
                             {isPositive ? (
                               <ArrowUpRight className="h-3 w-3" />
@@ -287,13 +286,9 @@ export default function EquitiesDashboard({
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs text-muted">YTD</p>
-                          <p
-                            className={`text-sm font-medium tabular-nums ${ytdPositive ? "text-green-500" : "text-red-500"}`}
-                          >
-                            {s.ytdChangePct !== null
-                              ? fmtPct(s.ytdChangePct)
-                              : "—"}
+                          <p className="text-label" style={{ marginBottom: 2 }}>YTD</p>
+                          <p className={`text-sm font-medium tabular-nums ${ytdPositive ? "stat-positive" : "stat-negative"}`}>
+                            {s.ytdChangePct !== null ? fmtPct(s.ytdChangePct) : "—"}
                           </p>
                         </div>
                       </div>
@@ -308,21 +303,21 @@ export default function EquitiesDashboard({
 
       {showDeals && (
         <section aria-label="IPO and M&A pipeline" className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Landmark className="h-5 w-5 text-accent" />
+          <h2
+            className="text-heading flex items-center gap-2"
+            style={{ fontSize: "1.1rem", color: "var(--color-text)" }}
+          >
+            <Landmark className="h-5 w-5" style={{ color: "var(--color-primary)" }} />
             IPO &amp; M&amp;A Pipeline
           </h2>
-          <p className="text-xs text-muted -mt-2">
+          <p className="-mt-2" style={{ fontSize: 12, color: "var(--color-muted)" }}>
             Recent listings, SPAC activity, and announced mega-deals.
           </p>
 
           {dealsLoading ? (
             <div className="grid gap-3 md:grid-cols-2">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-24 rounded-xl bg-card border border-border animate-pulse"
-                />
+                <div key={i} className="skeleton h-24 rounded-xl" />
               ))}
             </div>
           ) : deals.length === 0 ? (

@@ -1,6 +1,7 @@
 "use client";
 
-import { Globe2, Calculator, Wand2, Boxes, BarChart3, Briefcase, FileText } from "lucide-react";
+import { Calculator, Wand2, Boxes, BarChart3, Briefcase, FileText } from "lucide-react";
+import { GlobalFinBrand } from "@/components/Logo";
 
 type Props = {
   onStart: () => void;
@@ -42,16 +43,14 @@ export default function WelcomeModal({ onStart, onSkip }: Props) {
         className="relative w-full max-w-[520px] rounded-2xl border border-border bg-card shadow-2xl"
       >
         <div className="p-8">
-          <div className="mb-6 flex items-center gap-2 text-accent">
-            <Globe2 className="h-6 w-6 shrink-0" />
-            <span className="font-serif text-base font-bold tracking-tight">
-              Capital Markets Hub
-            </span>
+          <div className="mb-6 flex flex-col items-center gap-2">
+            <GlobalFinBrand variant="welcome" />
           </div>
 
           <h1
             id="gcm-welcome-title"
-            className="font-serif text-2xl font-semibold leading-tight text-foreground sm:text-[1.65rem]"
+            className="text-heading text-2xl font-semibold leading-tight sm:text-[1.65rem]"
+            style={{ color: "var(--color-text)" }}
           >
             Welcome to your analyst workstation.
           </h1>

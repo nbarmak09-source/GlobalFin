@@ -184,9 +184,8 @@ export default function MacroIndicators() {
 
   if (error || !data) {
     return (
-      <div className="rounded-xl bg-card border border-border p-4 text-center text-sm text-muted">
-        Macro indicator data unavailable. Make sure FRED_API_KEY is set in your
-        .env file.
+      <div className="card p-4 text-center text-sm" style={{ color: "var(--color-muted)" }}>
+        Macro indicator data unavailable. Make sure FRED_API_KEY is set in your .env file.
       </div>
     );
   }
@@ -204,54 +203,48 @@ export default function MacroIndicators() {
 
   return (
     <>
+      {/* Last updated row */}
+      {data.asOf && (
+        <div className="flex items-center gap-2 mb-2">
+          <span className="pulse-gold" style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--color-primary)", flexShrink: 0 }} aria-hidden="true" />
+          <span className="text-label">Last updated: {new Date(data.asOf).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+        </div>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {/* Industrial Production */}
         <button
           type="button"
           onClick={() => setSelectedMacro("ip")}
-          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
+          className="card hover-lift p-4 text-left w-full cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
-              <Activity className="h-3.5 w-3.5 text-accent" />
+            <span className="text-label flex items-center gap-1.5">
+              <Activity className="h-3.5 w-3.5" style={{ color: "var(--color-primary)" }} />
               Industrial Production
             </span>
             <span className="flex items-center gap-1">
               <FredSourceLink href={ip.sourceUrl} />
-              <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+              <ChevronRight className="h-4 w-4 group-hover:text-accent shrink-0" style={{ color: "var(--color-muted)" }} />
             </span>
           </div>
-          <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
+          <div className="stat-value text-mono leading-none" style={{ fontSize: 28 }}>
             {ip.value != null ? ip.value.toFixed(1) : "—"}
           </div>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {ip.yoyChange != null && (
-              <span
-                className={`inline-flex items-center gap-1 text-[13px] font-[400] font-mono ${
-                  ip.yoyChange >= 0 ? "text-green" : "text-red"
-                }`}
-              >
-                {ip.yoyChange >= 0 ? (
-                  <TrendingUp className="h-3 w-3" />
-                ) : (
-                  <TrendingDown className="h-3 w-3" />
-                )}
-                {ip.yoyChange >= 0 ? "+" : ""}
-                {ip.yoyChange.toFixed(1)}% YoY
+              <span className={`inline-flex items-center gap-1 text-mono text-sm ${ip.yoyChange >= 0 ? "stat-positive" : "stat-negative"}`}>
+                {ip.yoyChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                {ip.yoyChange >= 0 ? "+" : ""}{ip.yoyChange.toFixed(1)}% YoY
               </span>
             )}
             {ip.change != null && (
-              <span
-                className={`text-[13px] font-[400] font-mono ${
-                  ip.change >= 0 ? "text-green" : "text-red"
-                }`}
-              >
-                {ip.change >= 0 ? "+" : ""}
-                {ip.change.toFixed(2)} MoM
+              <span className={`text-mono text-sm ${ip.change >= 0 ? "stat-positive" : "stat-negative"}`}>
+                {ip.change >= 0 ? "+" : ""}{ip.change.toFixed(2)} MoM
               </span>
             )}
           </div>
-          <div className="text-[11px] font-[400] text-muted mt-2" style={{ color: "var(--muted)", opacity: 0.7 }}>
+          <div className="text-label mt-2" style={{ opacity: 0.7 }}>
             Fed index (2017 = 100)
             {ip.date &&
               ` · ${new Date(ip.date).toLocaleDateString(undefined, {
@@ -265,33 +258,30 @@ export default function MacroIndicators() {
         <button
           type="button"
           onClick={() => setSelectedMacro("cpi")}
-          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
+          className="card hover-lift p-4 text-left w-full cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
-              <TrendingUp className="h-3.5 w-3.5 text-accent" />
+            <span className="text-label flex items-center gap-1.5">
+              <TrendingUp className="h-3.5 w-3.5" style={{ color: "var(--color-primary)" }} />
               CPI (Inflation)
             </span>
             <span className="flex items-center gap-1">
               <FredSourceLink href={cpi.sourceUrl} />
-              <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+              <ChevronRight className="h-4 w-4 shrink-0" style={{ color: "var(--color-muted)" }} />
             </span>
           </div>
-          <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
+          <div className="stat-value text-mono leading-none" style={{ fontSize: 28 }}>
             {cpi.yoyChange != null ? `${cpi.yoyChange.toFixed(1)}%` : "—"}
           </div>
-          <div className="text-[13px] font-[400] text-muted mt-2">Year-over-year change</div>
+          <div className="text-label mt-2">Year-over-year change</div>
           {cpi.value != null && (
-            <div className="text-[11px] font-[400] text-muted mt-1" style={{ opacity: 0.7 }}>
+            <div className="text-label mt-1" style={{ opacity: 0.7 }}>
               Index: {cpi.value.toFixed(1)}
             </div>
           )}
           {cpi.date && (
-            <div className="text-[11px] font-[400] text-muted mt-1" style={{ opacity: 0.7 }}>
-              {new Date(cpi.date).toLocaleDateString(undefined, {
-                month: "short",
-                year: "numeric",
-              })}
+            <div className="text-label mt-1" style={{ opacity: 0.7 }}>
+              {new Date(cpi.date).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
             </div>
           )}
         </button>
@@ -300,46 +290,30 @@ export default function MacroIndicators() {
         <button
           type="button"
           onClick={() => setSelectedMacro("m2")}
-          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
+          className="card hover-lift p-4 text-left w-full cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
-              <DollarSign className="h-3.5 w-3.5 text-accent" />
+            <span className="text-label flex items-center gap-1.5">
+              <DollarSign className="h-3.5 w-3.5" style={{ color: "var(--color-primary)" }} />
               M2 Money Supply
             </span>
             <span className="flex items-center gap-1">
               <FredSourceLink href={m2.sourceUrl} />
-              <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+              <ChevronRight className="h-4 w-4 shrink-0" style={{ color: "var(--color-muted)" }} />
             </span>
           </div>
-          <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
-            {m2.value != null
-              ? `$${(m2.value / 1000).toFixed(1)}T`
-              : "—"}
+          <div className="stat-value text-mono leading-none" style={{ fontSize: 28 }}>
+            {m2.value != null ? `$${(m2.value / 1000).toFixed(1)}T` : "—"}
           </div>
           {m2.yoyChange != null && (
-            <div className="flex items-center gap-1 mt-2">
-              {m2.yoyChange >= 0 ? (
-                <TrendingUp className="h-3 w-3 text-green" />
-              ) : (
-                <TrendingDown className="h-3 w-3 text-red" />
-              )}
-              <span
-                className={`text-[13px] font-[400] font-mono ${
-                  m2.yoyChange >= 0 ? "text-green" : "text-red"
-                }`}
-              >
-                {m2.yoyChange >= 0 ? "+" : ""}
-                {m2.yoyChange.toFixed(1)}% YoY
-              </span>
+            <div className={`flex items-center gap-1 mt-2 text-mono text-sm ${m2.yoyChange >= 0 ? "stat-positive" : "stat-negative"}`}>
+              {m2.yoyChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              <span>{m2.yoyChange >= 0 ? "+" : ""}{m2.yoyChange.toFixed(1)}% YoY</span>
             </div>
           )}
           {m2.date && (
-            <div className="text-[11px] font-[400] text-muted mt-2" style={{ opacity: 0.7 }}>
-              {new Date(m2.date).toLocaleDateString(undefined, {
-                month: "short",
-                year: "numeric",
-              })}
+            <div className="text-label mt-2" style={{ opacity: 0.7 }}>
+              {new Date(m2.date).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
             </div>
           )}
         </button>
@@ -348,60 +322,50 @@ export default function MacroIndicators() {
         <button
           type="button"
           onClick={() => setSelectedMacro("businessCycle")}
-          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
+          className="card hover-lift p-4 text-left w-full cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
-              <BarChart3 className="h-3.5 w-3.5 text-accent" />
+            <span className="text-label flex items-center gap-1.5">
+              <BarChart3 className="h-3.5 w-3.5" style={{ color: "var(--color-primary)" }} />
               Business Cycle
             </span>
             <span className="flex items-center gap-1">
               <FredSourceLink href={businessCycle.sourceUrl} />
-              <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+              <ChevronRight className="h-4 w-4 shrink-0" style={{ color: "var(--color-muted)" }} />
             </span>
           </div>
           <div className="flex items-center gap-2 mb-2">
-            <span
-              className={`text-[26px] sm:text-[30px] font-[500] leading-none ${
-                businessCycle.inRecession ? "text-red" : "text-green"
-              }`}
-            >
+            <span className={`stat-value leading-none ${businessCycle.inRecession ? "stat-negative" : "stat-positive"}`} style={{ fontSize: 28 }}>
               {businessCycle.inRecession ? "Recession" : "Expansion"}
             </span>
           </div>
           {businessCycle.recessionProbability != null && (
             <>
-              <div className="flex items-center justify-between text-[13px] font-[400] mb-1">
-                <span className="text-muted flex items-center gap-1">
+              <div className="flex items-center justify-between text-sm mb-1">
+                <span className="flex items-center gap-1" style={{ color: "var(--color-muted)" }}>
                   <AlertTriangle className="h-3 w-3" />
                   Recession probability
                 </span>
-                <span className="font-mono">
-                  {businessCycle.recessionProbability.toFixed(1)}%
-                </span>
+                <span className="text-mono">{businessCycle.recessionProbability.toFixed(1)}%</span>
               </div>
-              <div className="h-2 rounded-full bg-card-hover overflow-hidden">
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
                 <div
-                  className={`h-full rounded-full transition-all ${
-                    businessCycle.recessionProbability > 50
-                      ? "bg-red"
-                      : businessCycle.recessionProbability > 20
-                        ? "bg-accent"
-                        : "bg-green"
-                  }`}
+                  className="h-full rounded-full transition-all"
                   style={{
                     width: `${Math.min(businessCycle.recessionProbability, 100)}%`,
+                    background: businessCycle.recessionProbability > 50
+                      ? "#f85149"
+                      : businessCycle.recessionProbability > 20
+                        ? "var(--color-primary)"
+                        : "#3fb950",
                   }}
                 />
               </div>
             </>
           )}
           {businessCycle.date && (
-            <div className="text-[11px] font-[400] text-muted mt-2" style={{ opacity: 0.7 }}>
-              {new Date(businessCycle.date).toLocaleDateString(undefined, {
-                month: "short",
-                year: "numeric",
-              })}
+            <div className="text-label mt-2" style={{ opacity: 0.7 }}>
+              {new Date(businessCycle.date).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
             </div>
           )}
         </button>
@@ -410,54 +374,37 @@ export default function MacroIndicators() {
         <button
           type="button"
           onClick={() => setSelectedMacro("ism")}
-          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
+          className="card hover-lift p-4 text-left w-full cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
-              <Factory className="h-3.5 w-3.5 text-accent" />
+            <span className="text-label flex items-center gap-1.5">
+              <Factory className="h-3.5 w-3.5" style={{ color: "var(--color-primary)" }} />
               Mfg. Confidence (PMI)
             </span>
             <span className="flex items-center gap-1">
               <FredSourceLink href={ismMfg.sourceUrl} />
-              <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+              <ChevronRight className="h-4 w-4 shrink-0" style={{ color: "var(--color-muted)" }} />
             </span>
           </div>
-          <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
+          <div className="stat-value text-mono leading-none" style={{ fontSize: 28 }}>
             {ismMfg.value != null ? ismMfg.value.toFixed(1) : "—"}
           </div>
           {ismMfg.value != null && (
             <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span
-                className={`text-[13px] font-[400] font-mono ${
-                  ismMfg.value >= 0 ? "text-green" : "text-red"
-                }`}
-              >
+              <span className={`text-sm text-mono ${ismMfg.value >= 0 ? "stat-positive" : "stat-negative"}`}>
                 {ismMfg.value >= 0 ? "Expanding" : "Contracting"}
               </span>
               {ismMfg.change != null && (
-                <span
-                  className={`inline-flex items-center gap-1 text-[13px] font-[400] font-mono ${
-                    ismMfg.change >= 0 ? "text-green" : "text-red"
-                  }`}
-                >
-                  {ismMfg.change >= 0 ? (
-                    <TrendingUp className="h-3 w-3" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3" />
-                  )}
-                  {ismMfg.change >= 0 ? "+" : ""}
-                  {ismMfg.change.toFixed(1)} pts
+                <span className={`inline-flex items-center gap-1 text-sm text-mono ${ismMfg.change >= 0 ? "stat-positive" : "stat-negative"}`}>
+                  {ismMfg.change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {ismMfg.change >= 0 ? "+" : ""}{ismMfg.change.toFixed(1)} pts
                 </span>
               )}
             </div>
           )}
-          <div className="text-[11px] font-[400] text-muted mt-2" style={{ opacity: 0.7 }}>
+          <div className="text-label mt-2" style={{ opacity: 0.7 }}>
             OECD · 0 = neutral · &gt;0 expansion
-            {ismMfg.date &&
-              ` · ${new Date(ismMfg.date).toLocaleDateString(undefined, {
-                month: "short",
-                year: "numeric",
-              })}`}
+            {ismMfg.date && ` · ${new Date(ismMfg.date).toLocaleDateString(undefined, { month: "short", year: "numeric" })}`}
           </div>
         </button>
 
@@ -465,45 +412,30 @@ export default function MacroIndicators() {
         <button
           type="button"
           onClick={() => setSelectedMacro("sentiment")}
-          className="rounded-xl bg-card border border-border p-4 text-left w-full hover:bg-card-hover transition-all duration-200 cursor-pointer group shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/25"
+          className="card hover-lift p-4 text-left w-full cursor-pointer group"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[13px] font-[400] text-muted flex items-center gap-1.5">
-              <Handshake className="h-3.5 w-3.5 text-accent" />
+            <span className="text-label flex items-center gap-1.5">
+              <Handshake className="h-3.5 w-3.5" style={{ color: "var(--color-primary)" }} />
               Consumer Sentiment
             </span>
             <span className="flex items-center gap-1">
               <FredSourceLink href={sentiment.sourceUrl} />
-              <ChevronRight className="h-4 w-4 text-muted group-hover:text-accent shrink-0" />
+              <ChevronRight className="h-4 w-4 shrink-0" style={{ color: "var(--color-muted)" }} />
             </span>
           </div>
-          <div className="text-[26px] sm:text-[30px] font-[500] font-mono leading-none">
+          <div className="stat-value text-mono leading-none" style={{ fontSize: 28 }}>
             {sentiment.value != null ? sentiment.value.toFixed(1) : "—"}
           </div>
           {sentiment.value != null && sentiment.change != null && (
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span
-                className={`inline-flex items-center gap-1 text-[13px] font-[400] font-mono ${
-                  sentiment.change >= 0 ? "text-green" : "text-red"
-                }`}
-              >
-                {sentiment.change >= 0 ? (
-                  <TrendingUp className="h-3 w-3" />
-                ) : (
-                  <TrendingDown className="h-3 w-3" />
-                )}
-                {sentiment.change >= 0 ? "+" : ""}
-                {sentiment.change.toFixed(1)} pts
-              </span>
+            <div className={`flex items-center gap-2 mt-2 flex-wrap text-sm text-mono ${sentiment.change >= 0 ? "stat-positive" : "stat-negative"}`}>
+              {sentiment.change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              <span>{sentiment.change >= 0 ? "+" : ""}{sentiment.change.toFixed(1)} pts</span>
             </div>
           )}
-          <div className="text-[11px] font-[400] text-muted mt-2" style={{ opacity: 0.7 }}>
+          <div className="text-label mt-2" style={{ opacity: 0.7 }}>
             UMich index · avg ≈ 85
-            {sentiment.date &&
-              ` · ${new Date(sentiment.date).toLocaleDateString(undefined, {
-                month: "short",
-                year: "numeric",
-              })}`}
+            {sentiment.date && ` · ${new Date(sentiment.date).toLocaleDateString(undefined, { month: "short", year: "numeric" })}`}
           </div>
         </button>
       </div>
@@ -511,24 +443,31 @@ export default function MacroIndicators() {
       {/* Modal: macro description */}
       {selectedContent && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
           onClick={() => setSelectedMacro(null)}
           role="dialog"
           aria-modal="true"
           aria-labelledby="macro-modal-title"
         >
           <div
-            className="bg-card border border-border rounded-xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col"
+            className="card max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col"
+            style={{ boxShadow: "var(--shadow-gold-lg)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
-              <h2 id="macro-modal-title" className="text-lg font-semibold text-foreground">
+            <div className="divider-gold" />
+            <div className="flex items-center justify-between p-4 shrink-0" style={{ borderBottom: "1px solid var(--color-border)" }}>
+              <h2
+                id="macro-modal-title"
+                className="text-heading"
+                style={{ fontSize: "1rem", color: "var(--color-text)" }}
+              >
                 {selectedContent.title}
               </h2>
               <button
                 type="button"
                 onClick={() => setSelectedMacro(null)}
-                className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-card-hover transition-colors"
+                className="btn-icon"
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />
@@ -536,16 +475,16 @@ export default function MacroIndicators() {
             </div>
             <div className="p-4 overflow-y-auto space-y-4 text-sm">
               <div>
-                <h3 className="text-xs font-semibold text-accent uppercase tracking-wider mb-1.5">What it is</h3>
-                <p className="text-foreground/90 leading-relaxed">{selectedContent.whatItIs}</p>
+                <h3 className="text-label mb-1.5" style={{ color: "var(--color-primary)" }}>What it is</h3>
+                <p style={{ color: "var(--color-text)", lineHeight: 1.6 }}>{selectedContent.whatItIs}</p>
               </div>
               <div>
-                <h3 className="text-xs font-semibold text-accent uppercase tracking-wider mb-1.5">How it works</h3>
-                <p className="text-foreground/90 leading-relaxed">{selectedContent.howItWorks}</p>
+                <h3 className="text-label mb-1.5" style={{ color: "var(--color-primary)" }}>How it works</h3>
+                <p style={{ color: "var(--color-text)", lineHeight: 1.6 }}>{selectedContent.howItWorks}</p>
               </div>
               <div>
-                <h3 className="text-xs font-semibold text-accent uppercase tracking-wider mb-1.5">Investing impact</h3>
-                <p className="text-foreground/90 leading-relaxed">{selectedContent.investingImpact}</p>
+                <h3 className="text-label mb-1.5" style={{ color: "var(--color-primary)" }}>Investing impact</h3>
+                <p style={{ color: "var(--color-text)", lineHeight: 1.6 }}>{selectedContent.investingImpact}</p>
               </div>
             </div>
           </div>

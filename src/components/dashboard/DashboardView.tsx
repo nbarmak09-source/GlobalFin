@@ -56,7 +56,7 @@ const TAB_META: Record<DashboardTab, { title: string; subtitle: string }> = {
 function SectionHeader({
   icon: Icon,
   label,
-  accentColor = "var(--accent)",
+  accentColor = "var(--color-primary)",
 }: {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   label: string;
@@ -68,11 +68,7 @@ function SectionHeader({
       style={{ borderLeft: `2px solid ${accentColor}`, paddingLeft: "10px" }}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
-      <span
-        className="text-[13px] font-[500] uppercase tracking-[0.05em] text-muted"
-      >
-        {label}
-      </span>
+      <span className="text-label">{label}</span>
     </div>
   );
 }
@@ -114,15 +110,25 @@ function DashboardInner() {
       <div className="flex flex-col gap-3 mb-4">
         <div>
           {firstName && (
-            <p className="text-xs text-muted mb-1">
+            <p className="text-xs mb-1" style={{ color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
               {getGreeting()}, {firstName}
             </p>
           )}
-          <h1 className="text-xl sm:text-2xl font-bold font-serif mb-1">{meta.title}</h1>
-          <p className="text-sm text-muted">{meta.subtitle}</p>
+          <h1
+            className="text-xl sm:text-2xl mb-1 text-heading"
+            style={{ color: "var(--color-text)" }}
+          >
+            {meta.title}
+          </h1>
+          <p className="text-sm" style={{ color: "var(--color-muted)" }}>{meta.subtitle}</p>
         </div>
         <div
-          className="flex w-full max-w-full gap-1 rounded-xl bg-card border border-border p-1 overflow-x-auto sm:flex-wrap sm:overflow-visible sm:w-fit sm:rounded-lg sm:p-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex w-full max-w-full gap-1 p-1 overflow-x-auto sm:flex-wrap sm:overflow-visible sm:w-fit [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-sm)",
+          }}
           role="tablist"
           aria-label="Dashboard view"
         >
@@ -133,11 +139,13 @@ function DashboardInner() {
               role="tab"
               aria-selected={tab === id}
               onClick={() => setTab(id)}
-              className={`flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-[500] transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent sm:rounded-md sm:px-4 sm:py-2 ${
-                tab === id
-                  ? "bg-accent text-white shadow-[0_0_12px_rgba(201,162,39,0.3)]"
-                  : "text-muted hover:text-foreground"
-              }`}
+              className="flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:px-4"
+              style={{
+                background: tab === id ? "var(--color-primary)" : "transparent",
+                color: tab === id ? "#0B0B0F" : "var(--color-muted)",
+                boxShadow: tab === id ? "var(--shadow-gold)" : "none",
+                fontFamily: "var(--font-heading)",
+              }}
             >
               <Icon className="h-4 w-4 shrink-0" />
               <span className="whitespace-nowrap">{label}</span>

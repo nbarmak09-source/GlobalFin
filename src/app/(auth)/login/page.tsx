@@ -6,14 +6,12 @@ import { useSearchParams } from "next/navigation";
 import { signIn, type SignInResponse } from "next-auth/react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
-const INPUT_CLS =
-  "w-full rounded-xl border border-border bg-background/60 px-4 py-3 text-[16px] text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all duration-200";
+const INPUT_CLS = "input";
 
-const BTN_PRIMARY =
-  "w-full rounded-xl bg-accent px-4 py-3.5 text-sm font-semibold text-white hover:bg-accent-hover transition-all duration-200 disabled:opacity-50 min-h-[52px] cursor-pointer hover:shadow-[0_0_24px_rgba(201,162,39,0.3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98]";
+const BTN_PRIMARY = "btn-primary w-full";
 
 const BTN_SECONDARY =
-  "flex items-center justify-center gap-2.5 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground hover:bg-card-hover hover:border-border/80 transition-all duration-200 min-h-[52px] cursor-pointer active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent";
+  "flex items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200 min-h-[52px] cursor-pointer active:scale-[0.98] focus-visible:outline focus-visible:outline-2";
 
 function GoogleIcon() {
   return (
@@ -139,8 +137,10 @@ function LoginForm() {
       {deleted && <ErrorBanner message="Your account has been deleted." />}
       {verified && <SuccessBanner message="Email verified — you can sign in now." />}
 
-      {/* Card */}
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4 shadow-2xl shadow-black/40">
+        {/* Card */}
+      <div className="card p-5 sm:p-6 space-y-4 shadow-2xl shadow-black/60 overflow-hidden relative">
+          {/* Gold top accent bar */}
+          <div className="gradient-gold absolute top-0 left-0 right-0" style={{ height: 4 }} aria-hidden="true" />
         {errorMessage && <ErrorBanner message={errorMessage as string} />}
 
         {showResend && (
@@ -237,20 +237,38 @@ function LoginForm() {
 
         {/* OAuth */}
         <div className="grid grid-cols-2 gap-2.5">
-          <button type="button" onClick={() => handleOAuth("google")} disabled={!!oauthLoading} className={BTN_SECONDARY}>
+          <button
+            type="button"
+            onClick={() => handleOAuth("google")}
+            disabled={!!oauthLoading}
+            className={BTN_SECONDARY}
+            style={{ borderColor: "var(--color-border)", color: "var(--color-text)", background: "rgba(255,255,255,0.03)" }}
+          >
             {oauthLoading === "google" ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
             Google
           </button>
-          <button type="button" onClick={() => handleOAuth("github")} disabled={!!oauthLoading} className={BTN_SECONDARY}>
+          <button
+            type="button"
+            onClick={() => handleOAuth("github")}
+            disabled={!!oauthLoading}
+            className={BTN_SECONDARY}
+            style={{ borderColor: "var(--color-border)", color: "var(--color-text)", background: "rgba(255,255,255,0.03)" }}
+          >
             {oauthLoading === "github" ? <Loader2 className="h-4 w-4 animate-spin" /> : <GitHubIcon />}
             GitHub
           </button>
         </div>
       </div>
 
-      <p className="text-center text-sm text-muted">
+      <p className="text-center text-sm" style={{ color: "var(--color-muted)" }}>
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-accent font-medium hover:underline">
+        <Link
+          href="/register"
+          className="font-medium hover:underline"
+          style={{ color: "var(--color-primary)" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--color-primary-light)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--color-primary)"; }}
+        >
           Sign up
         </Link>
       </p>

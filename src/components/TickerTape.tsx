@@ -8,12 +8,9 @@ import { getSupplyChainByTicker } from "@/lib/supplyChainLookup";
 
 function isSupplyChainTapePath(pathname: string | null): boolean {
   if (!pathname) return false;
-  return (
-    pathname === "/supply-chain" || pathname.startsWith("/supply-chain/")
-  );
+  return pathname === "/supply-chain" || pathname.startsWith("/supply-chain/");
 }
 
-/** Auto-scroll speed (px/s). Lower = slower. */
 const SCROLL_PX_PER_SEC = 45;
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -30,6 +27,24 @@ function fmtCurrency(value: number, currency: string): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+/** 1px vertical separator between ticker items */
+function Sep() {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: "inline-block",
+        width: 1,
+        height: 12,
+        background: "rgba(255,255,255,0.12)",
+        margin: "0 4px",
+        verticalAlign: "middle",
+        flexShrink: 0,
+      }}
+    />
+  );
 }
 
 export default function TickerTape() {
@@ -62,8 +77,6 @@ export default function TickerTape() {
     return () => clearInterval(interval);
   }, []);
 
-  // Compute animation duration so the strip scrolls at exactly SCROLL_PX_PER_SEC.
-  // The inner row is duplicated (2× items); translateX(-50%) covers half the width.
   useLayoutEffect(() => {
     if (!rowRef.current || items.length === 0) return;
     const distance = rowRef.current.scrollWidth / 2;
@@ -73,13 +86,21 @@ export default function TickerTape() {
     }
   }, [items]);
 
+  const containerStyle: React.CSSProperties = {
+    background: "var(--color-surface)",
+    borderBottom: "1px solid var(--color-border)",
+  };
+
   if (loading) {
     return (
       <div
         data-gcm-ticker
-        className="h-10 overflow-x-hidden bg-card border-b border-border flex items-center justify-center"
+        className="h-9 md:h-10 overflow-x-hidden flex items-center justify-center"
+        style={containerStyle}
       >
-        <div className="text-muted text-xs">Loading market data...</div>
+        <div style={{ color: "var(--color-muted)", fontSize: 11 }}>
+          Loading market data…
+        </div>
       </div>
     );
   }
@@ -88,14 +109,19 @@ export default function TickerTape() {
     return (
       <div
         data-gcm-ticker
-        className="h-10 overflow-x-hidden bg-card border-b border-border flex items-center justify-center px-3 gap-2"
+        className="h-9 md:h-10 overflow-x-hidden flex items-center justify-center px-3 gap-2"
+        style={containerStyle}
       >
-        <span className="text-muted text-[11px] sm:text-xs text-center leading-snug">
-          Ticker tape: no live quotes yet (retrying every 15s). Check your connection, or{" "}
-          <Link href="/account" className="text-accent hover:underline shrink-0">
+        <span style={{ color: "var(--color-muted)", fontSize: 11, textAlign: "center" }}>
+          No live quotes yet (retrying every 15 s). Check{" "}
+          <Link
+            href="/account"
+            style={{ color: "var(--color-primary)" }}
+            className="hover:underline"
+          >
             Account
           </Link>{" "}
-          for tape visibility and the default symbol list.
+          for tape settings.
         </span>
       </div>
     );
@@ -106,12 +132,28 @@ export default function TickerTape() {
   return (
     <div
       data-gcm-ticker
-      className="h-10 overflow-x-hidden overflow-y-hidden bg-card border-b border-border select-none"
+      className="h-9 md:h-10 overflow-x-hidden overflow-y-hidden select-none scrollbar-hide"
+      style={containerStyle}
     >
       <div
         ref={rowRef}
         className="ticker-animate flex h-full touch-pan-x items-center whitespace-nowrap w-max"
       >
+        {/* Live dot — shown once before the first item */}
+        <span
+          className="pulse-gold shrink-0"
+          style={{
+            display: "inline-block",
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: "var(--color-primary)",
+            marginLeft: 12,
+            marginRight: 10,
+          }}
+          aria-label="Live"
+        />
+
         {duplicated.map((item, idx) => {
           const sc = supplyChainMode
             ? getSupplyChainByTicker(item.symbol)
@@ -121,54 +163,63 @@ export default function TickerTape() {
             supplyChainMode && sc
               ? `Layer ${sc.layerId} — ${sc.layerName}`
               : undefined;
+          const isPositive = item.changePercent >= 0;
+
           return (
-            <Link
-              key={`${item.symbol}-${idx}`}
-              href={href}
-              prefetch={false}
-              draggable={false}
-              title={title}
-              aria-label={`Open ${item.name} (${item.symbol})`}
-              className="inline-flex items-center gap-2 px-4 border-r border-border/50 shrink-0 text-inherit no-underline transition-colors hover:bg-muted/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-            >
-              {supplyChainMode ? (
-                <>
-                  {sc && (
-                    <span
-                      className="h-2 w-2 rounded-full shrink-0"
-                      style={{ backgroundColor: sc.dotColor }}
-                      aria-hidden
-                    />
-                  )}
-                  <span className="text-xs font-mono font-semibold text-foreground/90">
-                    {item.symbol}
-                  </span>
-                  <span className="text-xs font-[500] text-foreground">
+            <span key={`${item.symbol}-${idx}`} className="inline-flex items-center">
+              <Link
+                href={href}
+                prefetch={false}
+                draggable={false}
+                title={title}
+                aria-label={`Open ${item.name} (${item.symbol})`}
+                className="inline-flex items-center gap-1.5 px-3 shrink-0 no-underline transition-opacity hover:opacity-80 focus-visible:outline-none"
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: 12,
+                }}
+              >
+                {supplyChainMode ? (
+                  <>
+                    {sc && (
+                      <span
+                        className="h-2 w-2 rounded-full shrink-0"
+                        style={{ backgroundColor: sc.dotColor }}
+                        aria-hidden
+                      />
+                    )}
+                    <span style={{ fontWeight: 600, color: "var(--color-text)" }}>
+                      {item.symbol}
+                    </span>
+                    <span style={{ color: "var(--color-muted)" }}>{item.name}</span>
+                  </>
+                ) : (
+                  <span style={{ fontWeight: 600, color: "var(--color-text)" }}>
                     {item.name}
                   </span>
-                </>
-              ) : (
-                <span className="text-xs font-[500] text-foreground">
-                  {item.name}
+                )}
+
+                <span style={{ color: "var(--color-muted)", fontVariantNumeric: "tabular-nums" }}>
+                  {fmtCurrency(item.priceUSD, "USD")}
                 </span>
-              )}
-              <span className="text-xs font-mono text-foreground/60">
-                {fmtCurrency(item.priceUSD, "USD")}
-              </span>
-              {item.currency !== "USD" && (
-                <span className="text-[10px] font-mono text-muted">
-                  {fmtCurrency(item.price, item.currency)}
+
+                {item.currency !== "USD" && (
+                  <span style={{ color: "var(--color-muted)", fontSize: 10, fontVariantNumeric: "tabular-nums" }}>
+                    {fmtCurrency(item.price, item.currency)}
+                  </span>
+                )}
+
+                <span
+                  style={{
+                    color: isPositive ? "#4ade80" : "#f87171",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {isPositive ? "▲" : "▼"}{Math.abs(item.changePercent).toFixed(2)}%
                 </span>
-              )}
-              <span
-                className={`text-xs font-mono font-medium ${
-                  item.change >= 0 ? "text-green" : "text-red"
-                }`}
-              >
-                {item.changePercent >= 0 ? "+" : ""}
-                {item.changePercent.toFixed(2)}%
-              </span>
-            </Link>
+              </Link>
+              <Sep />
+            </span>
           );
         })}
       </div>
