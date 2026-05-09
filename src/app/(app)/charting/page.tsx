@@ -34,12 +34,12 @@ function fmtDate(date: string, period: Period) {
   return String(d.getFullYear())
 }
 
-function fmtVal(v: number | null, format: string, scale: Scale): string {
+/** Format `v` for the chart tooltip: values match `chartData` (currency/number already divided by SCALE_DIV). */
+function fmtChartTooltipValue(v: number | null | undefined, format: string, scale: Scale): string {
   if (v === null || v === undefined || isNaN(v)) return '—'
   if (format === 'percent') return `${v.toFixed(1)}%`
-  if (format === 'ratio')   return v.toFixed(2)
-  const d = SCALE_DIV[scale]
-  const s = v / d
+  if (format === 'ratio') return v.toFixed(2)
+  const s = v
   return `$${s >= 1000 ? s.toLocaleString(undefined, { maximumFractionDigits: 0 }) : s.toFixed(1)}${scale}`
 }
 
@@ -585,7 +585,7 @@ function ChartTooltip({ active, payload, label, scale }: {
               {isPct ? `${def?.label ?? baseKey} % Chg.` : (def?.label ?? p.dataKey)}
             </span>
             <span style={{ color: p.color, fontWeight: 600 }}>
-              {isPct ? `${p.value?.toFixed(1)}%` : (def ? fmtVal(p.value, def.format, scale) : p.value)}
+              {isPct ? `${p.value?.toFixed(1)}%` : (def ? fmtChartTooltipValue(p.value, def.format, scale) : p.value)}
             </span>
           </p>
         )
