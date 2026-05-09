@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -11,37 +11,12 @@ import type {
   WatchlistGroup,
 } from "@/lib/types";
 import { fmtBn } from "@/lib/formatBn";
-import TradingViewChart from "@/components/TradingViewChart";
+import StockChart from "@/components/StockChart";
+import MobileBottomSheet from "@/components/MobileBottomSheet";
 
 const MASK = "••••";
 
 const ACTIVE_WATCHLIST_GROUP_KEY = "active-watchlist-group-id";
-
-const HOLDINGS_COL_COUNT_MOBILE = 6;
-const HOLDINGS_COL_COUNT_MD = 7;
-
-function subscribeMdBreakpoint(cb: () => void): () => void {
-  const mq = window.matchMedia("(min-width: 768px)");
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-}
-
-function holdingsExpandedColSpanMdUp(): boolean {
-  return window.matchMedia("(min-width: 768px)").matches;
-}
-
-/**
- * Holdings table hides “Mkt Value” below md (`hidden md:table-cell`), so the live
- * column count is 6 on small viewports vs 7 on md+. An expanded chart row must
- * use that colspan or the table grid/column anchors break — including sticky ticker cells.
- */
-function useHoldingsExpandedColSpan(): number {
-  return useSyncExternalStore(
-    subscribeMdBreakpoint,
-    () => (holdingsExpandedColSpanMdUp() ? HOLDINGS_COL_COUNT_MD : HOLDINGS_COL_COUNT_MOBILE),
-    () => HOLDINGS_COL_COUNT_MOBILE
-  );
-}
 
 function loadValuesVisible(): boolean {
   try {
@@ -183,11 +158,11 @@ export default function DashboardPortfolioPanel() {
   const [error, setError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<"holdings" | "watchlist">("holdings");
   const [valuesVisible, setValuesVisible] = useState(loadValuesVisible);
-  const [expandedChartKey, setExpandedChartKey] = useState<string | null>(null);
-  const holdingsExpandedChartColSpan = useHoldingsExpandedColSpan();
+  const [sheetSymbol, setSheetSymbol] = useState<string | null>(null);
+  const [sheetPeriod, setSheetPeriod] = useState("1y");
 
   function setActiveViewAndCollapseChart(next: "holdings" | "watchlist") {
-    setExpandedChartKey(null);
+    setSheetSymbol(null);
     setActiveView(next);
   }
 
@@ -430,7 +405,7 @@ export default function DashboardPortfolioPanel() {
                 key={g.id}
                 type="button"
                 onClick={() => {
-                  setExpandedChartKey(null);
+                  setSheetSymbol(null);
                   setActiveWlGroupId(g.id);
                 }}
                 className={`cursor-pointer rounded-full px-3 py-1 text-[12px] font-medium transition-colors duration-150 ${
@@ -520,75 +495,54 @@ export default function DashboardPortfolioPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {displayPositions.map((pos) => {
-                    const chartKey = `h:${pos.id}`;
-                    const chartOpen = expandedChartKey === chartKey;
-                    return (
-                      <Fragment key={pos.id}>
-                        <tr
-                          className="border-b border-border/50 last:border-0 group hover:bg-card/40 cursor-pointer transition-colors duration-150"
-                          onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(pos.symbol)}`)}
+                  {displayPositions.map((pos) => (
+                    <tr
+                      key={pos.id}
+                      className="border-b border-border/50 last:border-0 group hover:bg-card/40 cursor-pointer transition-colors duration-150"
+                      onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(pos.symbol)}`)}
+                    >
+                      <td className="sticky left-0 z-10 bg-background group-hover:bg-card/40 min-w-[100px] py-2.5 pr-4 align-top transition-colors duration-150">
+                        <div className="font-semibold text-[12px] text-foreground">{pos.symbol}</div>
+                        <div className="text-[10px] text-muted truncate max-w-[160px]">
+                          {pos.name.length > 18 ? pos.name.slice(0, 18) + "…" : pos.name}
+                        </div>
+                      </td>
+                      <td className="w-[7.25rem] text-center align-middle py-2.5 px-0">
+                        <DayRangeIndicator
+                          low={pos.regularMarketDayLow}
+                          high={pos.regularMarketDayHigh}
+                          price={pos.currentPrice}
+                          dayChangePercent={pos.dayChangePercent}
+                        />
+                      </td>
+                      <td className="w-20 px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top tabular-nums">
+                        ${formatPrice(pos.currentPrice)}
+                      </td>
+                      <td className="w-20 px-2 py-2.5 text-right align-top">
+                        <ChangePill value={pos.dayChangePercent} />
+                      </td>
+                      <td className="w-20 px-2 py-2.5 text-right align-top">
+                        <ChangePill value={pos.totalPLPercent} />
+                      </td>
+                      <td className="hidden md:table-cell w-24 pl-2 py-2.5 text-right font-mono text-[12px] text-muted align-top tabular-nums">
+                        {valuesVisible ? `$${formatPrice(pos.marketValue)}` : MASK}
+                      </td>
+                      <td className="w-9 py-2.5 text-center align-top">
+                        <button
+                          type="button"
+                          className="cursor-pointer rounded-md p-1 text-muted transition-colors hover:bg-card-hover hover:text-accent"
+                          aria-label="Show chart"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSheetSymbol(pos.symbol);
+                            setSheetPeriod("1y");
+                          }}
                         >
-                          <td className="sticky left-0 z-10 bg-background group-hover:bg-card/40 min-w-[100px] py-2.5 pr-4 align-top transition-colors duration-150">
-                            <div className="font-semibold text-[12px] text-foreground">{pos.symbol}</div>
-                            <div className="text-[10px] text-muted truncate max-w-[160px]">
-                              {pos.name.length > 18 ? pos.name.slice(0, 18) + "…" : pos.name}
-                            </div>
-                          </td>
-                          <td className="w-[7.25rem] text-center align-middle py-2.5 px-0">
-                            <DayRangeIndicator
-                              low={pos.regularMarketDayLow}
-                              high={pos.regularMarketDayHigh}
-                              price={pos.currentPrice}
-                              dayChangePercent={pos.dayChangePercent}
-                            />
-                          </td>
-                          <td className="w-20 px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top tabular-nums">
-                            ${formatPrice(pos.currentPrice)}
-                          </td>
-                          <td className="w-20 px-2 py-2.5 text-right align-top">
-                            <ChangePill value={pos.dayChangePercent} />
-                          </td>
-                          <td className="w-20 px-2 py-2.5 text-right align-top">
-                            <ChangePill value={pos.totalPLPercent} />
-                          </td>
-                          <td className="hidden md:table-cell w-24 pl-2 py-2.5 text-right font-mono text-[12px] text-muted align-top tabular-nums">
-                            {valuesVisible ? `$${formatPrice(pos.marketValue)}` : MASK}
-                          </td>
-                          <td className="w-9 py-2.5 text-center align-top">
-                            <button
-                              type="button"
-                              className="cursor-pointer rounded-md p-1 text-muted transition-colors hover:bg-card-hover hover:text-accent"
-                              aria-expanded={chartOpen}
-                              aria-label={chartOpen ? "Hide TradingView chart" : "Show TradingView chart"}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedChartKey((k) => (k === chartKey ? null : chartKey));
-                              }}
-                            >
-                              <ChevronDown
-                                className={`h-4 w-4 transition-transform duration-200 ${chartOpen ? "rotate-180" : ""}`}
-                              />
-                            </button>
-                          </td>
-                        </tr>
-                        {chartOpen && (
-                          <tr className="border-b border-border/50 bg-card/20">
-                            <td colSpan={holdingsExpandedChartColSpan} className="p-0 px-1 py-3">
-                              <div onClick={(e) => e.stopPropagation()} className="min-w-0">
-                                <TradingViewChart
-                                  symbol={pos.symbol}
-                                  height={260}
-                                  yahooExchange={pos.exchange}
-                                  yahooExchangeName={pos.exchangeName}
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
+                          <ChevronDown className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
               {positions.length > 10 && (
@@ -633,68 +587,47 @@ export default function DashboardPortfolioPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {displayWatchlist.map((item) => {
-                    const chartKey = `w:${item.id}`;
-                    const chartOpen = expandedChartKey === chartKey;
-                    return (
-                      <Fragment key={item.id}>
-                        <tr
-                          className="border-b border-border/50 last:border-0 group hover:bg-card/40 cursor-pointer transition-colors duration-150"
-                          onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(item.symbol)}`)}
+                  {displayWatchlist.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="border-b border-border/50 last:border-0 group hover:bg-card/40 cursor-pointer transition-colors duration-150"
+                      onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(item.symbol)}`)}
+                    >
+                      <td className="sticky left-0 z-10 bg-background group-hover:bg-card/40 min-w-[100px] py-2.5 pr-4 transition-colors duration-150">
+                        <div className="font-semibold text-[12px] text-foreground">{item.symbol}</div>
+                        <div className="text-[10px] text-muted truncate max-w-[160px]">{item.name}</div>
+                      </td>
+                      <td className="px-2 py-2.5 text-right align-top">
+                        <RangeCell low={item.regularMarketDayLow} high={item.regularMarketDayHigh} />
+                      </td>
+                      <td className="px-2 py-2.5 text-right align-top">
+                        <RangeCell low={item.fiftyTwoWeekLow} high={item.fiftyTwoWeekHigh} />
+                      </td>
+                      <td className="px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top">
+                        ${formatPrice(item.currentPrice)}
+                      </td>
+                      <td className="px-2 py-2.5 text-right align-top">
+                        <ChangePill value={item.dayChangePercent} />
+                      </td>
+                      <td className="pl-2 py-2.5 text-right text-[11px] text-muted align-top">
+                        {fmtBn(item.marketCap / 1e9)}
+                      </td>
+                      <td className="w-9 py-2.5 text-center align-top">
+                        <button
+                          type="button"
+                          className="cursor-pointer rounded-md p-1 text-muted transition-colors hover:bg-card-hover hover:text-accent"
+                          aria-label="Show chart"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSheetSymbol(item.symbol);
+                            setSheetPeriod("1y");
+                          }}
                         >
-                          <td className="sticky left-0 z-10 bg-background group-hover:bg-card/40 min-w-[100px] py-2.5 pr-4 transition-colors duration-150">
-                            <div className="font-semibold text-[12px] text-foreground">{item.symbol}</div>
-                            <div className="text-[10px] text-muted truncate max-w-[160px]">{item.name}</div>
-                          </td>
-                          <td className="px-2 py-2.5 text-right align-top">
-                            <RangeCell low={item.regularMarketDayLow} high={item.regularMarketDayHigh} />
-                          </td>
-                          <td className="px-2 py-2.5 text-right align-top">
-                            <RangeCell low={item.fiftyTwoWeekLow} high={item.fiftyTwoWeekHigh} />
-                          </td>
-                          <td className="px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top">
-                            ${formatPrice(item.currentPrice)}
-                          </td>
-                          <td className="px-2 py-2.5 text-right align-top">
-                            <ChangePill value={item.dayChangePercent} />
-                          </td>
-                          <td className="pl-2 py-2.5 text-right text-[11px] text-muted align-top">
-                            {fmtBn(item.marketCap / 1e9)}
-                          </td>
-                          <td className="w-9 py-2.5 text-center align-top">
-                            <button
-                              type="button"
-                              className="cursor-pointer rounded-md p-1 text-muted transition-colors hover:bg-card-hover hover:text-accent"
-                              aria-expanded={chartOpen}
-                              aria-label={chartOpen ? "Hide TradingView chart" : "Show TradingView chart"}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedChartKey((k) => (k === chartKey ? null : chartKey));
-                              }}
-                            >
-                              <ChevronDown
-                                className={`h-4 w-4 transition-transform duration-200 ${chartOpen ? "rotate-180" : ""}`}
-                              />
-                            </button>
-                          </td>
-                        </tr>
-                        {chartOpen && (
-                          <tr className="border-b border-border/50 bg-card/20">
-                            <td colSpan={7} className="p-0 px-1 py-3">
-                              <div onClick={(e) => e.stopPropagation()} className="min-w-0">
-                                <TradingViewChart
-                                  symbol={item.symbol}
-                                  height={260}
-                                  yahooExchange={item.exchange}
-                                  yahooExchangeName={item.exchangeName}
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
+                          <ChevronDown className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
               {watchlist.length > 10 && (
@@ -708,6 +641,37 @@ export default function DashboardPortfolioPanel() {
           )}
         </>
       )}
+
+      <MobileBottomSheet
+        open={sheetSymbol !== null}
+        onClose={() => setSheetSymbol(null)}
+        title={sheetSymbol ?? ""}
+        showHandle
+      >
+        <div className="flex gap-1.5 mb-3 flex-wrap">
+          {["1d","5d","1mo","6mo","1y","5y"].map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setSheetPeriod(p)}
+              className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
+                sheetPeriod === p
+                  ? "bg-accent text-background"
+                  : "text-muted hover:text-foreground hover:bg-card-hover border border-border"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+        {sheetSymbol && (
+          <StockChart
+            symbol={sheetSymbol}
+            period={sheetPeriod}
+            compact={false}
+          />
+        )}
+      </MobileBottomSheet>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useSession } from "next-auth/react";
@@ -30,6 +31,7 @@ function useTourState(autoStart: boolean) {
   const [isRunning, setIsRunning] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isDone, setIsDone] = useState(false);
+  const hasCheckedRef = useRef(false);
 
   const startTour = useCallback(() => {
     setCurrentStep(0);
@@ -48,7 +50,11 @@ function useTourState(autoStart: boolean) {
     setIsWelcomeOpen(false);
     setIsRunning(false);
     setIsDone(false);
-    localStorage.setItem("gcm_tour_seen", "true");
+    try {
+      localStorage.setItem("gcm_tour_seen", "true");
+    } catch {
+      // Private browsing — silently ignore
+    }
   }, []);
 
   const nextStep = useCallback((totalSteps: number) => {
@@ -68,7 +74,18 @@ function useTourState(autoStart: boolean) {
 
   useEffect(() => {
     if (!autoStart || !session) return;
-    const seen = localStorage.getItem("gcm_tour_seen");
+    if (hasCheckedRef.current) return;
+    hasCheckedRef.current = true;
+
+    let seen = false;
+    try {
+      seen = !!localStorage.getItem("gcm_tour_seen");
+    } catch {
+      // Private browsing or storage unavailable — treat as seen
+      // to avoid the modal re-appearing on every revalidation.
+      seen = true;
+    }
+
     if (!seen) {
       const t = setTimeout(() => setIsWelcomeOpen(true), 1000);
       return () => clearTimeout(t);

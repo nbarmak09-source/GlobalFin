@@ -140,6 +140,12 @@ export default function HistoricalPriceTab({ symbol, summaryData, initialQuote }
             interval={period.interval}
             yahooExchange={quote?.exchange}
             yahooExchangeName={quote?.exchangeName}
+            studies={["MASimple@tv-basicstudies"]}
+            studiesOverrides={{
+              "moving average.length": 200,
+              "moving average.plot.color": "#c9a227",
+              "moving average.linewidth": 1.5,
+            }}
           />
         </div>
 

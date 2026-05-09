@@ -16,7 +16,12 @@ interface TradingViewChartProps {
   /** From Yahoo quote / summary — fixes wrong exchange (e.g. NASDAQ vs NYSE) for TradingView */
   yahooExchange?: string;
   yahooExchangeName?: string;
+  studies?: string[];
+  studiesOverrides?: Record<string, unknown>;
 }
+
+const DEFAULT_STUDIES: string[] = [];
+const DEFAULT_STUDIES_OVERRIDES: Record<string, unknown> = {};
 
 export default function TradingViewChart({
   symbol,
@@ -25,6 +30,8 @@ export default function TradingViewChart({
   interval = "D",
   yahooExchange,
   yahooExchangeName,
+  studies = DEFAULT_STUDIES,
+  studiesOverrides = DEFAULT_STUDIES_OVERRIDES,
 }: TradingViewChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -83,6 +90,8 @@ export default function TradingViewChart({
       allow_symbol_change: true,
       calendar: false,
       support_host: "https://www.tradingview.com",
+      studies,
+      studies_overrides: studiesOverrides,
     });
 
     containerRef.current.innerHTML = "";
@@ -100,7 +109,7 @@ export default function TradingViewChart({
         container.innerHTML = "";
       }
     };
-  }, [symbol, resolvedHeight, interval, tvOpts, fill, fillDims.w]);
+  }, [symbol, resolvedHeight, interval, tvOpts, fill, fillDims.w, studies, studiesOverrides]);
 
   const openHref = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(
     getTradingViewSymbol(symbol, tvOpts)
