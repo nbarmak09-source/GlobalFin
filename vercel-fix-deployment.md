@@ -15,7 +15,7 @@ git commit -m "Trigger Vercel redeploy"
 git push origin main
 ```
 
-4. Go to **Vercel** → your project **global_capital_markets** → **Deployments**.
+4. Go to **Vercel** → your project **globalfin** → **Deployments**.
 5. Wait until a **new** deployment appears and shows **Ready** (and gets the **Current** badge). This may take 1–2 minutes.
 
 ---
@@ -25,8 +25,8 @@ git push origin main
 1. In the same Vercel project, click **Settings** (top or left).
 2. In the left sidebar, click **Domains**.
 3. Under **Domains** you’ll see at least one row. The **Production** domain might look like:
-   - `global-capital-markets.vercel.app`
-   - or `global-capital-markets-XXXX.vercel.app` (with a team slug)
+   - `globalfin.vercel.app`
+   - or `globalfin-XXXX.vercel.app` (with a team slug)
 4. **Copy that domain exactly** (no `https://` yet).
 
 ---
@@ -35,7 +35,7 @@ git push origin main
 
 1. Open a **new incognito/private** browser window.
 2. In the address bar type: `https://` then paste the domain you copied.  
-   Example: `https://global-capital-markets.vercel.app`
+   Example: `https://globalfin.vercel.app`
 3. Press Enter.  
    Use **only** this URL. Do not add `/something` or any path, and do not use a link from an email or from the deployment detail page.
 
@@ -45,15 +45,15 @@ git push origin main
 
 1. **Settings** → **Domains**.
 2. Click **Add**.
-3. Enter: `global-capital-markets.vercel.app` (or whatever name Vercel suggests).
+3. Enter: `globalfin.vercel.app` (or whatever name Vercel suggests).
 4. Click **Add** and wait until it shows **Valid**.
-5. Try again in incognito: `https://global-capital-markets.vercel.app`.
+5. Try again in incognito: `https://globalfin.vercel.app`.
 
 ---
 
 ## Step 5: If you're in a Vercel Team
 
 Your production URL might include the team name, e.g.  
-`https://global-capital-markets-nbarmak09-7864.vercel.app`
+`https://globalfin-nbarmak09-7864.vercel.app`
 
 Use **exactly** what is listed under **Settings** → **Domains** for Production.

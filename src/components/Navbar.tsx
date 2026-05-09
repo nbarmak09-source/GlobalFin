@@ -226,7 +226,7 @@ export default function Navbar() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const loginHref = `/login?callbackUrl=${encodeURIComponent(pathname || "/")}`;
-  const { openWelcome } = useTour();
+  const { openWelcome, tourAvailable } = useTour();
   const { menuOpen: mobileOpen, closeMenu } = useMobileNav();
   const [portalReady, setPortalReady] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -402,18 +402,20 @@ export default function Navbar() {
             </button>
             {accountOpen && (
               <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-border bg-card shadow-2xl shadow-black/30 z-50">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAccountOpen(false);
-                    localStorage.removeItem("gcm_tour_seen");
-                    openWelcome();
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-foreground w-full text-left transition-colors duration-200 hover:bg-card-hover cursor-pointer"
-                >
-                  <Wand2 className="h-4 w-4" />
-                  <span>Take a tour</span>
-                </button>
+                {tourAvailable && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAccountOpen(false);
+                      localStorage.removeItem("gcm_tour_seen");
+                      openWelcome();
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-foreground w-full text-left transition-colors duration-200 hover:bg-card-hover cursor-pointer"
+                  >
+                    <Wand2 className="h-4 w-4" />
+                    <span>Take a tour</span>
+                  </button>
+                )}
                 <Link
                   href="/account"
                   className="flex items-center gap-2 px-3 py-2 text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors duration-200 cursor-pointer"
@@ -675,18 +677,6 @@ export default function Navbar() {
                     <User className="h-4 w-4 shrink-0" />
                     {session?.user?.email ?? "Signed in"}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      closeMenu();
-                      localStorage.removeItem("gcm_tour_seen");
-                      openWelcome();
-                    }}
-                    className="flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer"
-                  >
-                    <Wand2 className="h-4 w-4 shrink-0" />
-                    Take a tour
-                  </button>
                   <Link
                     href="/account"
                     className="flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer"

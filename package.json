@@ -1,6 +1,6 @@
 {
   "name": "gcm-hq",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "dev": "ulimit -n 10240 2>/dev/null; next dev -p 3000 -H 127.0.0.1",

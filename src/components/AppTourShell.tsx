@@ -1,11 +1,12 @@
 "use client";
 
-import { TourProvider } from "@/lib/useTour";
+import { TourProvider, useTourDesktopViewport } from "@/lib/useTour";
 import TourController from "@/components/tour/TourController";
 
 export default function AppTourShell({ children }: { children: React.ReactNode }) {
+  const tourDesktop = useTourDesktopViewport();
   return (
-    <TourProvider autoStart>
+    <TourProvider enabled={tourDesktop} autoStart={tourDesktop}>
       <TourController />
       {children}
     </TourProvider>

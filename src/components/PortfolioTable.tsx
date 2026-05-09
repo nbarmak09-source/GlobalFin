@@ -193,7 +193,7 @@ function SortableRow({
         onToggleExpand();
       }}
     >
-      <td className="sticky left-0 z-10 bg-card w-8 px-2 py-3">
+      <td className="sticky left-0 z-20 w-8 border-r border-border/80 bg-card px-2 py-2">
         {dragDisabled ? (
           <span
             className="inline-flex cursor-not-allowed rounded p-1 text-muted/40 opacity-50 touch-none"
@@ -247,21 +247,23 @@ function SortableRow({
                 isExpanded,
                 numberScale,
                 totalPortfolioValue,
-                tdClassName: i === 0 ? "sticky left-8 z-10 bg-card min-w-[120px] hover:bg-card-hover" : undefined,
+                tdClassName: i === 0
+                  ? "sticky left-8 z-20 min-w-[120px] border-r border-border/80 bg-card hover:bg-card-hover"
+                  : undefined,
               }
             )}
           </Fragment>
         );
       })}
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-1">
+      <td className="px-3 py-2">
+        <div className="flex items-center gap-0.5">
           {onEdit && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit(pos);
               }}
-              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-muted transition-colors hover:bg-accent/10 hover:text-accent"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-accent/10 hover:text-accent"
               title="Edit position"
             >
               <Pencil className="h-4 w-4" />
@@ -272,7 +274,7 @@ function SortableRow({
               e.stopPropagation();
               onDelete(pos.id);
             }}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-muted transition-colors hover:bg-red/10 hover:text-red"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-red/10 hover:text-red"
             title="Delete position"
           >
             <Trash2 className="h-4 w-4" />
@@ -368,22 +370,24 @@ export default function PortfolioTable({
   }
 
   const headerTh =
-    "border-b border-border bg-transparent px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted";
-  /** drag column: opaque bg so sticky cells cover scrolling body */
-  const headerThStickyFirst =
-    "sticky left-0 z-10 bg-card border-b border-border w-8 px-2 py-3 text-[10px] font-medium uppercase tracking-wider text-muted";
+    "relative z-0 border-b border-border bg-card px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted";
+  /** Drag + first sticky columns: higher z-index + edge so horizontal scroll labels sit cleanly underneath */
+  const headerThStickyHandle =
+    "sticky left-0 z-30 border-b border-border border-r border-border/80 bg-card w-8 px-2 py-2 text-[10px] font-medium uppercase tracking-wider text-muted";
+  const stickyFirstColHeader =
+    "sticky left-8 z-30 border-r border-border/80 bg-card min-w-[120px]";
 
   if (loading && positions.length === 0) {
     return (
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="table-fade-right">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full border-separate border-spacing-0 text-sm">
               <thead>
                 <tr>
-                  <th className={headerThStickyFirst} />
+                  <th className={headerThStickyHandle} />
                   {visibleKeys.map((key, i) => (
-                    <th key={key} className={`${metricCellThClass(key)} ${headerTh}${i === 0 ? " sticky left-8 z-10 bg-card min-w-[120px]" : ""}`}>
+                    <th key={key} className={`${metricCellThClass(key)} ${headerTh}${i === 0 ? ` ${stickyFirstColHeader}` : ""}`}>
                       {tableMetricLabel(key)}
                     </th>
                   ))}
@@ -393,8 +397,8 @@ export default function PortfolioTable({
               <tbody>
                 {[1, 2, 3].map((i) => (
                   <tr key={i} className="border-b border-border">
-                    <td colSpan={colCount} className="px-4 py-3">
-                      <div className="skeleton h-10 w-full rounded-lg" />
+                    <td colSpan={colCount} className="px-4 py-2">
+                      <div className="skeleton h-8 w-full rounded-lg" />
                     </td>
                   </tr>
                 ))}
@@ -448,7 +452,9 @@ export default function PortfolioTable({
   );
 
   function totalCell(metricKey: string, isFirst = false): ReactNode {
-    const firstColClass = isFirst ? " sticky left-8 z-10 bg-card min-w-[120px]" : "";
+    const firstColClass = isFirst
+      ? " sticky left-8 z-20 min-w-[120px] border-r border-border/80 bg-card"
+      : "";
     switch (metricKey) {
       case "ticker":
         return (
@@ -469,25 +475,25 @@ export default function PortfolioTable({
         );
       case "shares":
         return (
-          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+          <td className="px-4 py-2 text-right font-mono font-medium text-[13px] text-foreground">
             {totalShares.toLocaleString()}
           </td>
         );
       case "avgCost":
         return (
-          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+          <td className="px-4 py-2 text-right font-mono font-medium text-[13px] text-foreground">
             {totalShares > 0 ? `$${formatCurrency(totalCost / totalShares)}` : "—"}
           </td>
         );
       case "marketValue":
         return (
-          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+          <td className="px-4 py-2 text-right font-mono font-medium text-[13px] text-foreground">
             {valuesVisible ? formatUsdFull(totalValue) : MASK}
           </td>
         );
       case "totalPL":
         return (
-          <td className="px-4 py-3 text-right font-medium text-[13px]">
+          <td className="px-4 py-2 text-right font-medium text-[13px]">
             <div
               className={`font-mono ${
                 totalPL >= 0 ? "text-green" : "text-red"
@@ -506,14 +512,14 @@ export default function PortfolioTable({
         );
       case "change":
         return (
-          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+          <td className="px-4 py-2 text-right font-mono font-medium text-[13px] text-foreground">
             {`${totalDayChange >= 0 ? "+" : ""}${totalDayChange.toFixed(2)}`}
           </td>
         );
       case "changePercent":
         return (
           <td
-            className={`px-4 py-3 text-right font-mono font-medium text-[13px] ${
+            className={`px-4 py-2 text-right font-mono font-medium text-[13px] ${
               totalDayChangePercent >= 0 ? "text-green" : "text-red"
             }`}
           >
@@ -523,7 +529,7 @@ export default function PortfolioTable({
       case "totalPLPercent":
         return (
           <td
-            className={`px-4 py-3 text-right font-mono font-medium text-[13px] ${
+            className={`px-4 py-2 text-right font-mono font-medium text-[13px] ${
               totalPLPercent >= 0 ? "text-green" : "text-red"
             }`}
           >
@@ -532,25 +538,25 @@ export default function PortfolioTable({
         );
       case "percentPortfolio":
         return (
-          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+          <td className="px-4 py-2 text-right font-mono font-medium text-[13px] text-foreground">
             {totalValue > 0 ? "100.00%" : "—"}
           </td>
         );
       case "marketCap":
         return (
-          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+          <td className="px-4 py-2 text-right font-mono font-medium text-[13px] text-foreground">
             {wMarketCap != null ? formatUsdScaled(wMarketCap, numberScale) : "—"}
           </td>
         );
       case "pe":
         return (
-          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+          <td className="px-4 py-2 text-right font-mono font-medium text-[13px] text-foreground">
             {wPe != null ? wPe.toFixed(2) : "—"}
           </td>
         );
       case "ytdReturn":
         return (
-          <td className="px-4 py-3 text-right font-mono font-medium text-[13px]">
+          <td className="px-4 py-2 text-right font-mono font-medium text-[13px]">
             {wYtd != null ? (
               <span className={wYtd >= 0 ? "text-green" : "text-red"}>
                 {`${wYtd >= 0 ? "+" : ""}${wYtd.toFixed(2)}%`}
@@ -625,14 +631,14 @@ export default function PortfolioTable({
               onDragEnd={handleDragEnd}
               modifiers={[restrictToVerticalAxis]}
             >
-              <table className="w-full text-sm">
+              <table className="w-full border-separate border-spacing-0 text-sm">
                 <thead>
                   <tr>
-                    <th className={headerThStickyFirst} />
+                    <th className={headerThStickyHandle} />
                     {visibleKeys.map((key, i) => (
                       <th
                         key={key}
-                        className={`${metricCellThClass(key)} ${headerTh}${i === 0 ? " sticky left-8 z-10 bg-card min-w-[120px]" : ""}`}
+                        className={`${metricCellThClass(key)} ${headerTh}${i === 0 ? ` ${stickyFirstColHeader}` : ""}`}
                       >
                         {tableMetricLabel(key)}
                       </th>
@@ -679,11 +685,11 @@ export default function PortfolioTable({
                     ))}
                   </SortableContext>
                   <tr className="border-t border-border bg-card/60">
-                    <td className="sticky left-0 z-10 bg-card w-8 px-2 py-3" />
+                    <td className="sticky left-0 z-20 w-8 border-r border-border/80 bg-card px-2 py-2" />
                     {visibleKeys.map((key, i) => (
                       <Fragment key={`total-${key}`}>{totalCell(key, i === 0)}</Fragment>
                     ))}
-                    <td className="px-4 py-3" />
+                    <td className="px-4 py-2" />
                   </tr>
                 </tbody>
               </table>

@@ -124,7 +124,7 @@ export function formatFundamentalDisplay(
 }
 
 export function metricCellThClass(metricKey: string): string {
-  const base = "px-4 py-3";
+  const base = "px-4 py-2";
   if (RIGHT_KEYS.has(metricKey) || getMetric(metricKey))
     return `${base} text-right`;
   return base;
@@ -206,7 +206,7 @@ export function renderPortfolioWatchlistMetricCell(
           <td className={`${metricCellThClass(metricKey)} min-w-0${tdClassName ? ` ${tdClassName}` : ""}`}>
             <div className="flex items-center gap-2 min-w-0">
               <ClearbitOrLetterAvatar symbol={hp.symbol} />
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 leading-tight">
                 <div className="flex items-center gap-1 min-w-0">
                   <Link
                     href={stocksHref}
@@ -286,20 +286,25 @@ export function renderPortfolioWatchlistMetricCell(
       );
     case "price":
       return (
-        <td className="px-4 py-3 text-right font-mono align-top">
-          <div>${fmtCurrency(row.currentPrice)}</div>
-          {row.extendedHours ? (
-            <ExtendedHoursInline
-              line={row.extendedHours}
-              compact
-              className="mt-0.5 justify-end"
-            />
-          ) : null}
+        <td className="px-4 py-2 text-right font-mono align-middle">
+          <div className="inline-flex flex-col items-end gap-0 leading-none">
+            <span className="text-[13px] tabular-nums leading-tight">
+              ${fmtCurrency(row.currentPrice)}
+            </span>
+            {row.extendedHours ? (
+              <ExtendedHoursInline
+                line={row.extendedHours}
+                compact
+                abbreviateLabel
+                className="mt-0.5 justify-end leading-tight"
+              />
+            ) : null}
+          </div>
         </td>
       );
     case "change":
       return (
-        <td className="px-4 py-3 text-right">
+        <td className="px-4 py-2 text-right">
           <div className="flex items-center justify-end gap-1">
             {row.dayChange >= 0 ? (
               <TrendingUp className="h-3.5 w-3.5 text-green" />
@@ -319,7 +324,7 @@ export function renderPortfolioWatchlistMetricCell(
       );
     case "changePercent":
       return (
-        <td className="px-4 py-3 text-right">
+        <td className="px-4 py-2 text-right">
           <span
             className={`font-mono ${
               row.dayChangePercent >= 0 ? "text-green" : "text-red"
@@ -332,7 +337,7 @@ export function renderPortfolioWatchlistMetricCell(
       );
     case "marketCap":
       return (
-        <td className="px-4 py-3 text-right font-mono">
+        <td className="px-4 py-2 text-right font-mono">
           {(row.marketCap ?? 0) > 0
             ? formatUsdScaled(row.marketCap!, numberScale)
             : "—"}
@@ -340,13 +345,13 @@ export function renderPortfolioWatchlistMetricCell(
       );
     case "pe":
       return (
-        <td className="px-4 py-3 text-right font-mono">
+        <td className="px-4 py-2 text-right font-mono">
           {row.pe != null && row.pe > 0 ? row.pe.toFixed(2) : "—"}
         </td>
       );
     case "volume":
       return (
-        <td className="px-4 py-3 text-right font-mono text-muted">
+        <td className="px-4 py-2 text-right font-mono text-muted">
           {(row.volume ?? 0) > 0
             ? formatVolumeScaled(row.volume!, numberScale)
             : "—"}
@@ -354,7 +359,7 @@ export function renderPortfolioWatchlistMetricCell(
       );
     case "ytdReturn":
       return (
-        <td className="px-4 py-3 text-right font-mono">
+        <td className="px-4 py-2 text-right font-mono">
           {row.ytdReturn != null && Number.isFinite(row.ytdReturn) ? (
             <span
               className={row.ytdReturn >= 0 ? "text-green" : "text-red"}
@@ -366,31 +371,31 @@ export function renderPortfolioWatchlistMetricCell(
       );
     case "week52High":
       return (
-        <td className="px-4 py-3 text-right font-mono">
+        <td className="px-4 py-2 text-right font-mono">
           ${fmtCurrency(row.fiftyTwoWeekHigh ?? 0)}
         </td>
       );
     case "week52Low":
       return (
-        <td className="px-4 py-3 text-right font-mono">
+        <td className="px-4 py-2 text-right font-mono">
           ${fmtCurrency(row.fiftyTwoWeekLow ?? 0)}
         </td>
       );
     case "shares":
       return (
-        <td className="px-4 py-3 text-right font-mono">
+        <td className="px-4 py-2 text-right font-mono">
           {isHoldings ? pack.row.shares : "—"}
         </td>
       );
     case "avgCost":
       return (
-        <td className="px-4 py-3 text-right font-mono">
+        <td className="px-4 py-2 text-right font-mono">
           {isHoldings ? `$${fmtCurrency(pack.row.avgCost)}` : "—"}
         </td>
       );
     case "marketValue":
       return (
-        <td className="px-4 py-3 text-right font-mono">
+        <td className="px-4 py-2 text-right font-mono">
           {isHoldings
             ? pack.valuesVisible
               ? formatUsdFull(pack.row.marketValue)
@@ -400,7 +405,7 @@ export function renderPortfolioWatchlistMetricCell(
       );
     case "totalPLPercent":
       return (
-        <td className="px-4 py-3 text-right font-mono">
+        <td className="px-4 py-2 text-right font-mono">
           {isHoldings ? (
             <span
               className={pack.row.totalPLPercent >= 0 ? "text-green" : "text-red"}
@@ -418,14 +423,14 @@ export function renderPortfolioWatchlistMetricCell(
           ? (pack.row.marketValue / totalPortfolioValue) * 100
           : null;
       return (
-        <td className="px-4 py-3 text-right font-mono">
+        <td className="px-4 py-2 text-right font-mono">
           {pct != null ? `${pct.toFixed(2)}%` : "—"}
         </td>
       );
     }
     case "totalPL":
       return (
-        <td className="px-4 py-3 text-right">
+        <td className="px-4 py-2 text-right">
           {isHoldings ? (
             <>
               <div

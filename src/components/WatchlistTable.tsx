@@ -45,6 +45,14 @@ import {
 const WATCHLIST_SORT_STORAGE_KEY = "portfolio-watchlist-sort";
 const ACTIVE_WATCHLIST_GROUP_KEY = "active-watchlist-group-id";
 
+/** Sticky header/body columns: z-30 headers above z-20 body so horizontal scroll never stacks labels on top of frozen columns */
+const WL_TH_STICKY_HANDLE =
+  "sticky left-0 z-30 border-b border-border border-r border-border/80 bg-card w-8 px-2 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-muted";
+const WL_TH_SCROLL =
+  "relative z-0 border-b border-border bg-card text-left text-[10px] font-medium uppercase tracking-wider text-muted";
+const WL_TH_STICKY_FIRST =
+  "sticky left-8 z-30 min-w-[120px] border-r border-border/80 bg-card";
+
 const apiFetch = (input: string, init?: RequestInit) =>
   fetch(input, { ...init, credentials: "include" });
 
@@ -103,7 +111,7 @@ function SortableRow({
         onToggleExpand();
       }}
     >
-      <td className="sticky left-0 z-10 bg-card px-2 py-3 w-8">
+      <td className="sticky left-0 z-20 w-8 border-r border-border/80 bg-card px-2 py-2">
         {dragDisabled ? (
           <span
             className="inline-flex rounded p-1 cursor-not-allowed text-muted/40 opacity-50 touch-none"
@@ -133,12 +141,14 @@ function SortableRow({
               stocksHref,
               attachChevron: metricKey === chevronAnchorKey,
               isExpanded,
-              tdClassName: i === 0 ? "sticky left-8 z-10 bg-card min-w-[120px] hover:bg-card-hover" : undefined,
+              tdClassName: i === 0
+                ? "sticky left-8 z-20 min-w-[120px] border-r border-border/80 bg-card hover:bg-card-hover"
+                : undefined,
             }
           )}
         </Fragment>
       ))}
-      <td className="px-4 py-3">
+      <td className="px-3 py-2">
         <button
           type="button"
           onClick={(e) => {
@@ -650,19 +660,19 @@ export default function WatchlistTable({
       {(loading || itemsLoading) && items.length === 0 ? (
       <div className="rounded-xl bg-card border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
-                <th className="sticky left-0 z-10 bg-card px-2 py-3 w-8"></th>
+              <tr>
+                <th className={WL_TH_STICKY_HANDLE} />
                 {visibleKeys.map((key, i) => (
                   <th
                     key={key}
-                    className={`${metricCellThClass(key)} text-xs uppercase tracking-wider${i === 0 ? " sticky left-8 z-10 bg-card min-w-[120px]" : ""}`}
+                    className={`${metricCellThClass(key)} ${WL_TH_SCROLL}${i === 0 ? ` ${WL_TH_STICKY_FIRST}` : ""}`}
                   >
                     {tableMetricLabel(key)}
                   </th>
                 ))}
-                <th className="px-4 py-3"></th>
+                <th className={`${WL_TH_SCROLL} px-4`} />
               </tr>
             </thead>
             <tbody>
@@ -697,19 +707,19 @@ export default function WatchlistTable({
             onDragEnd={handleDragEnd}
             modifiers={[restrictToVerticalAxis]}
           >
-            <table className="w-full text-sm">
+            <table className="w-full border-separate border-spacing-0 text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
-                  <th className="sticky left-0 z-10 bg-card px-2 py-3 w-8"></th>
+                <tr>
+                  <th className={WL_TH_STICKY_HANDLE} />
                   {visibleKeys.map((key, i) => (
                     <th
                       key={key}
-                      className={`${metricCellThClass(key)} text-xs uppercase tracking-wider${i === 0 ? " sticky left-8 z-10 bg-card min-w-[120px]" : ""}`}
+                      className={`${metricCellThClass(key)} ${WL_TH_SCROLL}${i === 0 ? ` ${WL_TH_STICKY_FIRST}` : ""}`}
                     >
                       {tableMetricLabel(key)}
                     </th>
                   ))}
-                  <th className="px-4 py-3"></th>
+                  <th className={`${WL_TH_SCROLL} px-4`} />
                 </tr>
               </thead>
               <tbody>

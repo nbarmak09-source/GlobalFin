@@ -8,6 +8,7 @@ import TourComplete from "./TourComplete";
 
 export default function TourController() {
   const {
+    tourAvailable,
     isWelcomeOpen,
     isRunning,
     isDone,
@@ -17,6 +18,8 @@ export default function TourController() {
     nextStep,
     prevStep,
   } = useTour();
+
+  if (!tourAvailable) return null;
 
   return (
     <>
