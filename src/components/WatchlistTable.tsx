@@ -103,7 +103,7 @@ function SortableRow({
         onToggleExpand();
       }}
     >
-      <td className="px-2 py-3 w-8">
+      <td className="sticky left-0 z-10 bg-card px-2 py-3 w-8">
         {dragDisabled ? (
           <span
             className="inline-flex rounded p-1 cursor-not-allowed text-muted/40 opacity-50 touch-none"
@@ -652,7 +652,7 @@ export default function WatchlistTable({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
-                <th className="px-2 py-3 w-8"></th>
+                <th className="sticky left-0 z-10 bg-card px-2 py-3 w-8"></th>
                 {visibleKeys.map((key) => (
                   <th
                     key={key}
@@ -699,7 +699,7 @@ export default function WatchlistTable({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
-                  <th className="px-2 py-3 w-8"></th>
+                  <th className="sticky left-0 z-10 bg-card px-2 py-3 w-8"></th>
                   {visibleKeys.map((key) => (
                     <th
                       key={key}

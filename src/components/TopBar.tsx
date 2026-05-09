@@ -229,7 +229,7 @@ export function TopBar() {
 
             {notifOpen && (
               <div
-                className="absolute right-0 top-full z-50 mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-border bg-card shadow-xl shadow-black/40"
+                className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-1.5rem))] max-h-[min(24rem,80dvh)] overflow-y-auto rounded-xl border border-border bg-card shadow-xl shadow-black/40"
                 role="dialog"
                 aria-label="Notifications"
               >

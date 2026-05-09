@@ -9,7 +9,7 @@ export interface PageHeaderProps {
 export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
   return (
     <div
-      className="flex items-start justify-between"
+      className="flex flex-wrap items-start justify-between gap-y-3"
       style={{
         padding: '24px 0 20px',
         borderBottom: '1px solid var(--color-border)',
@@ -63,7 +63,10 @@ export function PageTabs<T extends string>({
   onChange: (id: T) => void
 }) {
   return (
-    <div className="flex gap-0 overflow-x-auto scrollbar-hide" style={{ borderBottom: '1px solid var(--color-border)' }}>
+    <div
+      className="-mx-3 sm:mx-0 flex gap-0 overflow-x-auto scrollbar-hide"
+      style={{ borderBottom: '1px solid var(--color-border)' }}
+    >
       {tabs.map(({ id, label }) => (
         <button
           key={id}
@@ -72,6 +75,7 @@ export function PageTabs<T extends string>({
           className="transition-all duration-150 cursor-pointer focus-visible:outline-none whitespace-nowrap"
           style={{
             padding: '10px 18px',
+            minHeight: 44,
             fontSize: '0.875rem',
             fontWeight: active === id ? 600 : 400,
             fontFamily: 'var(--font-heading)',

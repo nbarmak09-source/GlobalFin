@@ -193,7 +193,7 @@ function SortableRow({
         onToggleExpand();
       }}
     >
-      <td className="w-8 px-2 py-3">
+      <td className="sticky left-0 z-10 bg-card w-8 px-2 py-3">
         {dragDisabled ? (
           <span
             className="inline-flex cursor-not-allowed rounded p-1 text-muted/40 opacity-50 touch-none"
@@ -368,6 +368,9 @@ export default function PortfolioTable({
 
   const headerTh =
     "border-b border-border bg-transparent px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-muted";
+  /** drag column: opaque bg so sticky cells cover scrolling body */
+  const headerThStickyFirst =
+    "sticky left-0 z-10 bg-card border-b border-border w-8 px-2 py-3 text-[10px] font-medium uppercase tracking-wider text-muted";
 
   if (loading && positions.length === 0) {
     return (
@@ -377,7 +380,7 @@ export default function PortfolioTable({
             <table className="w-full text-sm">
               <thead>
                 <tr>
-                  <th className={`${headerTh} w-8 px-2`} />
+                  <th className={headerThStickyFirst} />
                   {visibleKeys.map((key) => (
                     <th key={key} className={`${metricCellThClass(key)} ${headerTh}`}>
                       {tableMetricLabel(key)}
@@ -623,7 +626,7 @@ export default function PortfolioTable({
               <table className="w-full text-sm">
                 <thead>
                   <tr>
-                    <th className={`${headerTh} w-8 px-2`} />
+                    <th className={headerThStickyFirst} />
                     {visibleKeys.map((key) => (
                       <th
                         key={key}
@@ -674,7 +677,7 @@ export default function PortfolioTable({
                     ))}
                   </SortableContext>
                   <tr className="border-t border-border bg-card/60">
-                    <td className="w-8 px-2 py-3" />
+                    <td className="sticky left-0 z-10 bg-card w-8 px-2 py-3" />
                     {visibleKeys.map((key) => (
                       <Fragment key={`total-${key}`}>{totalCell(key)}</Fragment>
                     ))}
