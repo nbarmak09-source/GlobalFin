@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 import { execSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { newsThumbnailRemotePatterns } from "./src/lib/newsThumbnailHosts";
+
+/** Absolute repo root (next.config lives here). Turbopack can infer `src/app` incorrectly when the path contains spaces. */
+const turbopackRoot = path.dirname(fileURLToPath(import.meta.url));
 
 function git(args: string): string {
   try {
@@ -34,6 +39,9 @@ const nextConfig: NextConfig = {
   trailingSlash: false,
   images: {
     remotePatterns: newsThumbnailRemotePatterns,
+  },
+  turbopack: {
+    root: turbopackRoot,
   },
 };
 
