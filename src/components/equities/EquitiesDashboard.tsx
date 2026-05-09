@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Sparkles,
   Newspaper,
@@ -8,6 +8,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Landmark,
+  Building2,
+  RefreshCw,
 } from "lucide-react";
 import { PageHeader, SectionHeading } from "@/components/PageHeader";
 import MarketOverview from "@/components/MarketOverview";
@@ -90,6 +92,21 @@ export default function EquitiesDashboard({
   const loadSectors = view === "overview" || view === "sectors";
   const loadDeals = view === "overview" || view === "deal-flow";
 
+  const refetchDeals = useCallback(async () => {
+    setDealsLoading(true);
+    try {
+      const res = await fetch("/api/ecm/deals", {
+        credentials: "include",
+      });
+      if (res.ok) setDeals(await res.json());
+      else setDeals([]);
+    } catch {
+      setDeals([]);
+    } finally {
+      setDealsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     async function fetchNews() {
       try {
@@ -115,28 +132,15 @@ export default function EquitiesDashboard({
       }
     }
 
-    async function fetchDeals() {
-      try {
-        const res = await fetch("/api/ecm/deals", {
-          credentials: "include",
-        });
-        if (res.ok) setDeals(await res.json());
-      } catch {
-        /* ignore */
-      } finally {
-        setDealsLoading(false);
-      }
-    }
-
     if (loadNews) fetchNews();
     else setNewsLoading(false);
 
     if (loadSectors) fetchSectors();
     else setSectorsLoading(false);
 
-    if (loadDeals) fetchDeals();
+    if (loadDeals) void refetchDeals();
     else setDealsLoading(false);
-  }, [loadNews, loadSectors, loadDeals]);
+  }, [loadNews, loadSectors, loadDeals, refetchDeals]);
 
   const sortedByDay = [...sectors].sort(
     (a, b) => b.dayChangePct - a.dayChangePct
@@ -318,9 +322,28 @@ export default function EquitiesDashboard({
               ))}
             </div>
           ) : deals.length === 0 ? (
-            <p className="text-sm text-muted">
-              No deal headlines available right now.
-            </p>
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <div className="rounded-xl bg-card border border-border p-3">
+                <Building2 className="h-6 w-6 text-muted" aria-hidden />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  No deal headlines right now
+                </p>
+                <p className="text-xs text-muted mt-1 max-w-xs">
+                  IPO, M&A, and SPAC activity from the ECM feed. Check back
+                  during market hours.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void refetchDeals()}
+                className="text-xs text-accent flex items-center gap-1 hover:opacity-90 transition-opacity"
+              >
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+                Refresh
+              </button>
+            </div>
           ) : (
             <DealFeed deals={deals} />
           )}

@@ -256,8 +256,6 @@ export default function EarningsCalendar() {
     );
   }, [events, searchQuery]);
 
-  const { from, to } = dateRanges[activeFilter];
-
   return (
     <div className="space-y-4">
       {/* Search row */}
@@ -316,18 +314,20 @@ export default function EarningsCalendar() {
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-24">Ticker</th>
-              <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted hidden md:table-cell">Company</th>
-              <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-20">Date</th>
-              <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-16">Time</th>
-              <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-20 hidden md:table-cell">Qtr Ending</th>
-              <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-28">Revenue</th>
-              <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-24">EPS</th>
-              <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-24">Mkt Cap</th>
-            </tr>
-          </thead>
+          {(loading || filtered.length > 0) && (
+            <thead>
+              <tr className="border-b border-border">
+                <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-24">Ticker</th>
+                <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted hidden md:table-cell">Company</th>
+                <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-20">Date</th>
+                <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-16">Time</th>
+                <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-20 hidden md:table-cell">Qtr Ending</th>
+                <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-28">Revenue</th>
+                <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-24">EPS</th>
+                <th className="py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-muted w-24">Mkt Cap</th>
+              </tr>
+            </thead>
+          )}
           <tbody>
             {loading ? (
               <SkeletonRows />
@@ -337,9 +337,6 @@ export default function EarningsCalendar() {
                   <div className="flex flex-col items-center gap-3">
                     <CalendarDays className="h-10 w-10 opacity-20" />
                     <p className="text-[13px] font-medium text-foreground">No earnings scheduled</p>
-                    <p className="text-[12px] text-muted">
-                      {from === to ? from : `${from} – ${to}`}
-                    </p>
                   </div>
                 </td>
               </tr>

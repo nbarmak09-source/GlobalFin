@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import Link from "next/link";
 import type { Time } from "lightweight-charts";
 import { TickMarkType } from "lightweight-charts";
 
@@ -339,8 +340,18 @@ export default function PortfolioPerformanceChart({
 
   if (!portfolioId) {
     return (
-      <div className="h-[312px] rounded-xl bg-card border border-border flex items-center justify-center">
-        <div className="text-muted text-sm">Select a portfolio…</div>
+      <div className="h-48 md:h-64 rounded-xl bg-card border border-border flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2 text-center px-4">
+          <p className="text-sm text-muted">
+            Select a portfolio to view performance history
+          </p>
+          <Link
+            href="/portfolio"
+            className="text-xs text-accent"
+          >
+            Go to portfolio →
+          </Link>
+        </div>
       </div>
     );
   }

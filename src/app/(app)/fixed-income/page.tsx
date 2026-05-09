@@ -12,7 +12,7 @@ import {
 } from "@/components/fixed-income/FixedIncomePanels";
 
 export default function FixedIncomePage() {
-  const { sovereign, spreads, money, loading } = useFixedIncomeData();
+  const { sovereign, spreads, money, loading, refetch } = useFixedIncomeData();
 
   const loadingText = loading ? (
     <p className="text-xs text-muted">Live rates loading from Yahoo Finance…</p>
@@ -41,7 +41,7 @@ export default function FixedIncomePage() {
         <Treasury10y2yChart />
       </section>
 
-      <SovereignDebtTable sovereign={sovereign} />
+      <SovereignDebtTable sovereign={sovereign} onRetry={() => void refetch()} />
 
       <section className="grid gap-4 md:grid-cols-2">
         <CreditSpreadsCard spreads={spreads} />

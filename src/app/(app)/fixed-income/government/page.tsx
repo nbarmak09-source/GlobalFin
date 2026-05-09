@@ -6,7 +6,7 @@ import { useFixedIncomeData } from "@/hooks/useFixedIncomeData";
 import { SovereignDebtTable } from "@/components/fixed-income/FixedIncomePanels";
 
 export default function FixedIncomeGovernmentPage() {
-  const { sovereign, loading } = useFixedIncomeData();
+  const { sovereign, loading, refetch } = useFixedIncomeData();
 
   return (
     <div className="space-y-4 min-w-0">
@@ -14,8 +14,12 @@ export default function FixedIncomeGovernmentPage() {
         title="Government bonds"
         subtitle="G7 10-year benchmark yields (Yahoo ^TMBMK… / ^TNX); data source is shown per row."
         action={
-          <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent shrink-0">
-            <LineChart className="h-3.5 w-3.5" />
+          <div
+            className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent shrink-0"
+            title="Fixed income charts"
+            aria-label="Fixed income charts"
+          >
+            <LineChart className="h-3.5 w-3.5" aria-hidden />
             <span className="hidden sm:inline">Sovereign</span>
           </div>
         }
@@ -23,7 +27,7 @@ export default function FixedIncomeGovernmentPage() {
       {loading && (
         <p className="text-xs text-muted">Loading sovereign yield data…</p>
       )}
-      <SovereignDebtTable sovereign={sovereign} />
+      <SovereignDebtTable sovereign={sovereign} onRetry={() => void refetch()} />
     </div>
   );
 }

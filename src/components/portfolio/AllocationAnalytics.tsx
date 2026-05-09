@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { Plus, RefreshCw } from "lucide-react";
 import {
   Cell,
   Pie,
@@ -306,10 +307,19 @@ export default function AllocationAnalytics() {
           <h1 className="text-2xl font-bold font-serif mb-1">
             Asset Allocation
           </h1>
-          <p className="text-sm text-muted">
+        </header>
+        <div className="flex flex-col items-center gap-4 py-16 text-center">
+          <p className="text-muted text-sm max-w-xs">
             Add positions to your portfolio to see allocation breakdowns.
           </p>
-        </header>
+          <Link
+            href="/portfolio?tab=holdings"
+            className="flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 px-4 py-2 text-sm text-accent transition-colors hover:bg-accent/20"
+          >
+            <Plus className="h-4 w-4" />
+            Add your first position
+          </Link>
+        </div>
       </div>
     );
   }

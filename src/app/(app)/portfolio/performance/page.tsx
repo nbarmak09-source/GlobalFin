@@ -70,7 +70,9 @@ export default function PortfolioPerformancePage() {
         <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">
           Upcoming earnings
         </h2>
-        <PortfolioEarningsUpcoming />
+        <div className="pb-[calc(4rem+env(safe-area-inset-bottom))]">
+          <PortfolioEarningsUpcoming />
+        </div>
       </section>
     </div>
   );

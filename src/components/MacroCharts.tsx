@@ -16,27 +16,34 @@ type MacroHistoryResponse = {
 const PERIODS = ["1Y", "2Y", "5Y", "10Y", "20Y", "MAX"] as const;
 type Period = (typeof PERIODS)[number];
 
+/** How to label period-to-period change in the chart header (avoid %Δ when the baseline can be near zero). */
+type MacroChartDeltaMode = "rangePct" | "bps" | "pp" | "pts";
+
 // Consistent color palette: amber=inflation/rates, red=risk, teal=activity, purple=money
 const CHART_CONFIGS: {
   key: string;
   color: string;
   format: (v: number) => string;
   threshold?: number;
+  deltaMode?: MacroChartDeltaMode;
 }[] = [
   {
     key: "cpiYoY",
     color: "#f59e0b", // amber — price/inflation category
     format: (v) => `${v.toFixed(1)}%`,
+    deltaMode: "pp",
   },
   {
     key: "unemployment",
     color: "#ef4444", // red — risk/negative indicator
     format: (v) => `${v.toFixed(1)}%`,
+    deltaMode: "pp",
   },
   {
     key: "fedFunds",
     color: "#f59e0b", // amber — rate/policy (same category as inflation)
     format: (v) => `${v.toFixed(2)}%`,
+    deltaMode: "bps",
   },
   {
     key: "industrialProduction",
@@ -52,17 +59,20 @@ const CHART_CONFIGS: {
     key: "recessionProb",
     color: "#ef4444", // red — recession risk
     format: (v) => `${v.toFixed(1)}%`,
+    deltaMode: "pp",
   },
   {
     key: "ismManufacturing",
     color: "#14b8a6", // teal — activity/confidence
     format: (v) => v.toFixed(1),
     threshold: 0,
+    deltaMode: "pts",
   },
   {
     key: "consumerSentiment",
     color: "#14b8a6", // teal — activity/confidence
     format: (v) => v.toFixed(1),
+    deltaMode: "pts",
   },
 ];
 
@@ -172,6 +182,7 @@ export default function MacroCharts({
                 color={cfg.color}
                 format={cfg.format}
                 threshold={cfg.threshold}
+                deltaMode={cfg.deltaMode ?? "rangePct"}
               />
             );
           })}
@@ -181,12 +192,51 @@ export default function MacroCharts({
   );
 }
 
+function formatMacroChartDelta(
+  data: { value: number }[],
+  mode: MacroChartDeltaMode
+): { label: string; signed: number } | null {
+  if (data.length < 2) return null;
+  const latest = data[data.length - 1].value;
+  const prev = data[data.length - 2].value;
+
+  if (mode === "bps") {
+    const bpsChange = (latest - prev) * 100;
+    return {
+      label: `${bpsChange >= 0 ? "+" : ""}${bpsChange.toFixed(0)} bps`,
+      signed: bpsChange,
+    };
+  }
+  if (mode === "pp") {
+    const ptChange = latest - prev;
+    return {
+      label: `${ptChange >= 0 ? "+" : ""}${ptChange.toFixed(1)} pp`,
+      signed: ptChange,
+    };
+  }
+  if (mode === "pts") {
+    const ptChange = latest - prev;
+    return {
+      label: `${ptChange >= 0 ? "+" : ""}${ptChange.toFixed(1)} pts`,
+      signed: ptChange,
+    };
+  }
+  const first = data[0].value;
+  if (first === 0) return null;
+  const changePct = ((latest - first) / Math.abs(first)) * 100;
+  return {
+    label: `${changePct >= 0 ? "+" : ""}${changePct.toFixed(1)}%`,
+    signed: changePct,
+  };
+}
+
 function MiniChart({
   label,
   data,
   color,
   format,
   threshold,
+  deltaMode,
 }: {
   label: string;
   unit: string;
@@ -194,6 +244,7 @@ function MiniChart({
   color: string;
   format: (v: number) => string;
   threshold?: number;
+  deltaMode: MacroChartDeltaMode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ReturnType<
@@ -201,11 +252,7 @@ function MiniChart({
   > | null>(null);
 
   const latest = data[data.length - 1];
-  const first = data[0];
-  const changePct =
-    first.value !== 0
-      ? ((latest.value - first.value) / Math.abs(first.value)) * 100
-      : 0;
+  const delta = formatMacroChartDelta(data, deltaMode);
 
   const renderChart = useCallback(async () => {
     if (!containerRef.current || data.length === 0) return;
@@ -326,12 +373,13 @@ function MiniChart({
           <span className="text-[30px] font-[500] tabular-nums font-mono leading-none">
             {format(latest.value)}
           </span>
-          <span
-            className={`text-[13px] font-[400] tabular-nums ${changePct >= 0 ? "text-green" : "text-red"}`}
-          >
-            {changePct >= 0 ? "+" : ""}
-            {changePct.toFixed(1)}%
-          </span>
+          {delta && (
+            <span
+              className={`text-[13px] font-[400] tabular-nums ${delta.signed >= 0 ? "text-green" : "text-red"}`}
+            >
+              {delta.label}
+            </span>
+          )}
         </div>
       </div>
       {/* Chart plot area with 8px margin */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type SovereignRow = {
   country: string;
@@ -24,27 +24,28 @@ export function useFixedIncomeData() {
   const [money, setMoney] = useState<MoneyRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const [a, b, c] = await Promise.all([
-          fetch("/api/fixed-income/sovereign"),
-          fetch("/api/fixed-income/credit-spreads"),
-          fetch("/api/fixed-income/money-markets"),
-        ]);
-        const sovereignJson = await a.json();
-        const spreadsJson = await b.json();
-        const moneyJson = await c.json();
-        setSovereign(sovereignJson.rows ?? []);
-        setSpreads(spreadsJson.spreads ?? []);
-        setMoney(moneyJson.rows ?? []);
-      } finally {
-        setLoading(false);
-      }
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [a, b, c] = await Promise.all([
+        fetch("/api/fixed-income/sovereign"),
+        fetch("/api/fixed-income/credit-spreads"),
+        fetch("/api/fixed-income/money-markets"),
+      ]);
+      const sovereignJson = await a.json();
+      const spreadsJson = await b.json();
+      const moneyJson = await c.json();
+      setSovereign(sovereignJson.rows ?? []);
+      setSpreads(spreadsJson.spreads ?? []);
+      setMoney(moneyJson.rows ?? []);
+    } finally {
+      setLoading(false);
     }
-    load();
   }, []);
 
-  return { sovereign, spreads, money, loading };
+  useEffect(() => {
+    void refetch();
+  }, [refetch]);
+
+  return { sovereign, spreads, money, loading, refetch };
 }

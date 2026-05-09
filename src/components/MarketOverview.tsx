@@ -13,12 +13,13 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   CAD: "C$",
 };
 
-function fmtCurrency(value: number, currency: string): string {
-  const sym = CURRENCY_SYMBOLS[currency] || currency + " ";
-  return `${sym}${value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+/** Compact index levels for narrow columns; change % stays full precision on its own line. */
+function fmtAbbrevIndexPrice(value: number, currency: string): string {
+  const sym = CURRENCY_SYMBOLS[currency] || `${currency} `;
+  if (value >= 1000) {
+    return `${sym}${(value / 1000).toFixed(1)}k`;
+  }
+  return `${sym}${value.toFixed(2)}`;
 }
 
 export default function MarketOverview() {
@@ -95,15 +96,17 @@ export default function MarketOverview() {
               {index.name}
             </span>
             <span
+              className="tabular-nums"
               style={{
                 fontSize: "1.05rem",
                 fontWeight: 700,
                 fontFamily: "var(--font-mono)",
               }}
             >
-              {fmtCurrency(index.priceUSD, "USD")}
+              {fmtAbbrevIndexPrice(index.priceUSD, "USD")}
             </span>
             <span
+              className="whitespace-nowrap tabular-nums shrink-0"
               style={{
                 fontSize: "0.75rem",
                 fontFamily: "var(--font-mono)",

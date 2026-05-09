@@ -11,11 +11,14 @@ import {
 import { useMobileNav } from "@/components/MobileNavProvider";
 
 function isActivePath(pathname: string, href: string, exact: boolean) {
+  if (href === "/dashboard" && exact) {
+    return pathname === "/" || pathname === "/dashboard";
+  }
   return exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 }
 
 const ITEMS = [
-  { href: "/", label: "Home", icon: LayoutDashboard, exact: true },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard, exact: true },
   { href: "/portfolio", label: "Portfolio", icon: Briefcase, exact: false },
   { href: "/analysis", label: "Analysis", icon: Search, exact: false },
 ] as const;

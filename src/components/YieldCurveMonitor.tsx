@@ -89,7 +89,9 @@ function TenYearHistoryChart({ points }: { points: HistoryPoint[] }) {
 
   const first = quarterly[0].close;
   const last = quarterly[quarterly.length - 1].close;
+  /** Yield change in percentage points; ×100 for basis points (avoid %Δ vs a low yield). */
   const diff = last - first;
+  const bpsOverWindow = diff * 100;
   const isUp = diff >= 0;
 
   function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
@@ -134,8 +136,8 @@ function TenYearHistoryChart({ points }: { points: HistoryPoint[] }) {
           ) : (
             <TrendingDown className="h-3 w-3" />
           )}
-          {isUp ? "+" : ""}
-          {diff.toFixed(2)}% ({((diff / first) * 100).toFixed(1)}%)
+          {bpsOverWindow >= 0 ? "+" : ""}
+          {bpsOverWindow.toFixed(0)} bps
         </span>
       </div>
       <svg

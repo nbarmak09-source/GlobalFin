@@ -201,13 +201,25 @@ export default function MacroIndicators() {
 
   const selectedContent = selectedMacro ? MACRO_DESCRIPTIONS[selectedMacro] : null;
 
+  const dataPeriodLabel =
+    data.asOf ?
+      new Date(data.asOf)
+        .toLocaleDateString("en-US", { month: "short", year: "numeric" })
+        .toUpperCase()
+    : null;
+
   return (
     <>
-      {/* Last updated row */}
-      {data.asOf && (
-        <div className="flex items-center gap-2 mb-2">
-          <span className="pulse-gold" style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--color-primary)", flexShrink: 0 }} aria-hidden="true" />
-          <span className="text-label">Last updated: {new Date(data.asOf).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+      {dataPeriodLabel && (
+        <div className="mb-2 text-label">
+          <span
+            title="FRED releases macro data 4–6 weeks after the reference period."
+            className="cursor-help"
+          >
+            DATA PERIOD: {dataPeriodLabel}
+          </span>
+          {"  ·  "}
+          <span>sourced from FRED®</span>
         </div>
       )}
 

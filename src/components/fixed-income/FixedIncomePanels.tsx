@@ -1,13 +1,19 @@
 "use client";
 
-import { TrendingUp } from "lucide-react";
+import { RefreshCw, TrendingUp } from "lucide-react";
 import type {
   MoneyRow,
   SovereignRow,
   SpreadRow,
 } from "@/hooks/useFixedIncomeData";
 
-export function SovereignDebtTable({ sovereign }: { sovereign: SovereignRow[] }) {
+export function SovereignDebtTable({
+  sovereign,
+  onRetry,
+}: {
+  sovereign: SovereignRow[];
+  onRetry?: () => void;
+}) {
   return (
     <section
       aria-label="Sovereign debt"
@@ -52,8 +58,26 @@ export function SovereignDebtTable({ sovereign }: { sovereign: SovereignRow[] })
           </div>
         ))}
         {!sovereign.length && (
-          <div className="px-5 py-4 text-xs text-muted">
-            No sovereign data available right now.
+          <div className="px-5 py-4">
+            {onRetry ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-sm text-muted">
+                  Sovereign yield data is temporarily unavailable.
+                </p>
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="text-xs text-accent flex items-center gap-1"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Try again
+                </button>
+              </div>
+            ) : (
+              <div className="text-xs text-muted">
+                No sovereign data available right now.
+              </div>
+            )}
           </div>
         )}
       </div>
