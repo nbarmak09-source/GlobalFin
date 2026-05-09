@@ -41,6 +41,43 @@ function getCloseFromSeriesData(seriesData: ReadonlyMap<unknown, unknown>): numb
   return null;
 }
 
+function dataPointTimeMs(t: string | number): number {
+  if (typeof t === "number") return t * 1000;
+  if (typeof t === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t)) {
+    return new Date(`${t}T12:00:00Z`).getTime();
+  }
+  return new Date(t).getTime();
+}
+
+function chartTimeToMs(ct: ChartTime): number {
+  if (typeof ct === "number") return ct * 1000;
+  if (typeof ct === "string") {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(ct)) return new Date(`${ct}T12:00:00Z`).getTime();
+    return new Date(ct).getTime();
+  }
+  return Date.UTC(ct.year, ct.month - 1, ct.day);
+}
+
+/** Close prices on each bar between the two endpoints (inclusive), in time order — traces the displayed series. */
+function buildClosePathAlongBars(
+  hist: HistoricalDataPoint[],
+  endA: ChartTime,
+  endB: ChartTime
+): { time: string | number; value: number }[] {
+  const lo = Math.min(chartTimeToMs(endA), chartTimeToMs(endB));
+  const hi = Math.max(chartTimeToMs(endA), chartTimeToMs(endB));
+
+  return hist
+    .filter((p) => {
+      const t = dataPointTimeMs(p.time);
+      return t >= lo && t <= hi;
+    })
+    .sort((a, b) => dataPointTimeMs(a.time) - dataPointTimeMs(b.time))
+    .map((p) => ({ time: p.time, value: p.close }));
+}
+
+export type StockChartStyle = "candles" | "line" | "area";
+
 interface StockChartProps {
   symbol: string;
   period: string;
@@ -52,9 +89,19 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
   const chartRef = useRef<ReturnType<typeof import("lightweight-charts").createChart> | null>(null);
   const [data, setData] = useState<HistoricalDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartStyle, setChartStyle] = useState<StockChartStyle>("candles");
   const [rangeMeasure, setRangeMeasure] = useState<RangeMeasure | null>(null);
   const [hasAnchor, setHasAnchor] = useState(false);
   const anchorRef = useRef<{ time: ChartTime; value: number } | null>(null);
+  const previewEndRef = useRef<{ time: ChartTime; value: number } | null>(null);
+  const rangeMeasureRef = useRef<RangeMeasure | null>(null);
+  const measureOverlayUpdateRef = useRef<(() => void) | null>(null);
+  /** Defer overlay setData — synchronous setData inside subscribeCrosshairMove re-triggers crosshair and overflows the stack */
+  const measureOverlayRafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    rangeMeasureRef.current = rangeMeasure;
+  }, [rangeMeasure]);
 
   useEffect(() => {
     async function fetchData() {
@@ -86,9 +133,17 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
       ColorType,
       CrosshairMode,
       LineSeries,
+      LineStyle,
+      AreaSeries,
       CandlestickSeries,
       HistogramSeries,
     } = await import("lightweight-charts");
+
+    measureOverlayUpdateRef.current = null;
+    if (measureOverlayRafRef.current !== null) {
+      cancelAnimationFrame(measureOverlayRafRef.current);
+      measureOverlayRafRef.current = null;
+    }
 
     if (chartRef.current) {
       chartRef.current.remove();
@@ -123,28 +178,26 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
 
     chartRef.current = chart;
 
-    const isIntraday = period === "1D" || period === "5D";
+    const priceFormat = {
+      type: "price" as const,
+      precision: 2,
+      minMove: 0.01,
+    };
 
-    if (isIntraday) {
-      const lineSeries = chart.addSeries(LineSeries, {
-        color: "#c9a227",
-        lineWidth: 2,
-        crosshairMarkerVisible: true,
-        crosshairMarkerRadius: 4,
-        priceFormat: {
-          type: "price",
-          precision: 2,
-          minMove: 0.01,
-        },
-      });
+    const candleInput = data.map((d) => ({
+      time: d.time as string,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+    }));
 
-      lineSeries.setData(
-        data.map((d) => ({
-          time: d.time as string,
-          value: d.close,
-        })) as Parameters<typeof lineSeries.setData>[0]
-      );
-    } else {
+    const singleValueInput = data.map((d) => ({
+      time: d.time as string,
+      value: d.close,
+    }));
+
+    if (chartStyle === "candles") {
       const candleSeries = chart.addSeries(CandlestickSeries, {
         upColor: "#10b981",
         downColor: "#dc2626",
@@ -152,21 +205,34 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
         borderDownColor: "#dc2626",
         wickUpColor: "#10b981",
         wickDownColor: "#dc2626",
-        priceFormat: {
-          type: "price",
-          precision: 2,
-          minMove: 0.01,
-        },
+        priceFormat,
       });
-
       candleSeries.setData(
-        data.map((d) => ({
-          time: d.time as string,
-          open: d.open,
-          high: d.high,
-          low: d.low,
-          close: d.close,
-        })) as Parameters<typeof candleSeries.setData>[0]
+        candleInput as Parameters<typeof candleSeries.setData>[0]
+      );
+    } else if (chartStyle === "area") {
+      const areaSeries = chart.addSeries(AreaSeries, {
+        lineColor: "#c9a227",
+        topColor: "rgba(201, 162, 39, 0.32)",
+        bottomColor: "rgba(201, 162, 39, 0)",
+        lineWidth: 2,
+        crosshairMarkerVisible: true,
+        crosshairMarkerRadius: 4,
+        priceFormat,
+      });
+      areaSeries.setData(
+        singleValueInput as Parameters<typeof areaSeries.setData>[0]
+      );
+    } else {
+      const lineSeries = chart.addSeries(LineSeries, {
+        color: "#c9a227",
+        lineWidth: 2,
+        crosshairMarkerVisible: true,
+        crosshairMarkerRadius: 4,
+        priceFormat,
+      });
+      lineSeries.setData(
+        singleValueInput as Parameters<typeof lineSeries.setData>[0]
       );
     }
 
@@ -188,22 +254,22 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
           color: d.close >= d.open ? "#10b98140" : "#dc262640",
         })) as Parameters<typeof volumeSeries.setData>[0]
       );
-    }
 
-    if (compact) {
-      chart.applyOptions({
-        handleScroll: false,
-        handleScale: false,
-        timeScale: { visible: false, borderColor: "#2d333b" },
-        rightPriceScale: { visible: false, borderColor: "#2d333b" },
-        crosshair: {
-          vertLine: { visible: false },
-          horzLine: { visible: false },
+      const measureOverlaySeries = chart.addSeries(LineSeries, {
+        color: "rgba(147, 197, 253, 0.98)",
+        lineWidth: 2,
+        lineStyle: LineStyle.LargeDashed,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+        priceFormat: {
+          type: "price",
+          precision: 2,
+          minMove: 0.01,
         },
       });
-    }
+      measureOverlaySeries.setData([]);
 
-    if (!compact) {
       const computeMeasure = (
         anchor: { time: ChartTime; value: number },
         toTime: ChartTime,
@@ -222,20 +288,63 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
         };
       };
 
+      const applyMeasureOverlay = () => {
+        const locked = rangeMeasureRef.current;
+        const anchor = anchorRef.current;
+        const preview = previewEndRef.current;
+
+        let tA: ChartTime | null = null;
+        let tB: ChartTime | null = null;
+
+        if (anchor && preview) {
+          tA = anchor.time;
+          tB = preview.time;
+        } else if (locked) {
+          tA = locked.fromTime;
+          tB = locked.toTime;
+        }
+
+        if (tA !== null && tB !== null) {
+          const path = buildClosePathAlongBars(data, tA, tB);
+          measureOverlaySeries.setData(
+            path as Parameters<typeof measureOverlaySeries.setData>[0]
+          );
+        } else {
+          measureOverlaySeries.setData([]);
+        }
+      };
+
+      measureOverlayUpdateRef.current = applyMeasureOverlay;
+
+      const scheduleMeasureOverlayFromCrosshair = () => {
+        if (measureOverlayRafRef.current !== null) {
+          cancelAnimationFrame(measureOverlayRafRef.current);
+        }
+        measureOverlayRafRef.current = requestAnimationFrame(() => {
+          measureOverlayRafRef.current = null;
+          applyMeasureOverlay();
+        });
+      };
+
       const onCrosshairMove = (param: MouseEventParams) => {
         if (!param.time || !anchorRef.current || param.seriesData.size === 0) return;
         const price = getCloseFromSeriesData(
           param.seriesData as ReadonlyMap<unknown, unknown>
         );
         if (price === null) return;
+        previewEndRef.current = { time: param.time as ChartTime, value: price };
         setRangeMeasure(computeMeasure(anchorRef.current, param.time as ChartTime, price));
+        scheduleMeasureOverlayFromCrosshair();
       };
 
       const onChartClick = (param: MouseEventParams) => {
         if (!param.time || param.seriesData.size === 0) {
           anchorRef.current = null;
+          previewEndRef.current = null;
+          rangeMeasureRef.current = null;
           setHasAnchor(false);
           setRangeMeasure(null);
+          applyMeasureOverlay();
           return;
         }
         const price = getCloseFromSeriesData(
@@ -244,15 +353,24 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
         if (price === null) return;
 
         if (!anchorRef.current) {
+          rangeMeasureRef.current = null;
           anchorRef.current = { time: param.time as ChartTime, value: price };
+          previewEndRef.current = null;
           setHasAnchor(true);
           setRangeMeasure(null);
+          applyMeasureOverlay();
         } else {
-          setRangeMeasure(
-            computeMeasure(anchorRef.current, param.time as ChartTime, price)
+          const locked = computeMeasure(
+            anchorRef.current,
+            param.time as ChartTime,
+            price
           );
+          rangeMeasureRef.current = locked;
+          setRangeMeasure(locked);
           anchorRef.current = null;
+          previewEndRef.current = null;
           setHasAnchor(false);
+          applyMeasureOverlay();
         }
       };
 
@@ -260,7 +378,24 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
       chart.subscribeClick(onChartClick);
     }
 
+    if (compact) {
+      chart.applyOptions({
+        handleScroll: false,
+        handleScale: false,
+        timeScale: { visible: false, borderColor: "#2d333b" },
+        rightPriceScale: { visible: false, borderColor: "#2d333b" },
+        crosshair: {
+          vertLine: { visible: false },
+          horzLine: { visible: false },
+        },
+      });
+    }
+
     chart.timeScale().fitContent();
+
+    queueMicrotask(() => {
+      measureOverlayUpdateRef.current?.();
+    });
 
     const handleResize = () => {
       if (chartRef.current) {
@@ -275,11 +410,15 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [data, period, compact]);
+  }, [data, period, compact, chartStyle]);
 
   useEffect(() => {
     renderChart();
     return () => {
+      if (measureOverlayRafRef.current !== null) {
+        cancelAnimationFrame(measureOverlayRafRef.current);
+        measureOverlayRafRef.current = null;
+      }
       if (chartRef.current) {
         chartRef.current.remove();
         chartRef.current = null;
@@ -310,6 +449,35 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
   return (
     <div className="relative rounded-xl overflow-hidden border border-border">
       <div ref={chartContainerRef} className="w-full" />
+
+      {!compact && (
+        <div
+          className="absolute top-2 left-2 z-10 flex flex-wrap items-center gap-0.5 rounded-lg border border-border bg-card/90 px-1 py-1 shadow-sm backdrop-blur-sm"
+          role="group"
+          aria-label="Chart style"
+        >
+          {(
+            [
+              ["candles", "Candles"],
+              ["line", "Line"],
+              ["area", "Area"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setChartStyle(id)}
+              className={`rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                chartStyle === id
+                  ? "bg-accent/15 text-accent"
+                  : "text-muted hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {(hasAnchor || rangeMeasure) && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 rounded-xl border border-border bg-card/95 px-3 py-2 text-xs shadow-lg backdrop-blur-sm whitespace-nowrap pointer-events-auto">
@@ -347,8 +515,11 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
             type="button"
             onClick={() => {
               anchorRef.current = null;
+              previewEndRef.current = null;
+              rangeMeasureRef.current = null;
               setHasAnchor(false);
               setRangeMeasure(null);
+              measureOverlayUpdateRef.current?.();
             }}
             className="ml-1 rounded p-0.5 text-muted transition-colors hover:text-foreground cursor-pointer"
             aria-label="Clear measurement"
