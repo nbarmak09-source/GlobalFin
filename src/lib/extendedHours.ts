@@ -19,6 +19,8 @@ export interface ExtendedHoursLine {
   price: number;
   change: number;
   changePercent: number;
+  /** Regular-session previous close (Yahoo); optional, merged from quote when present */
+  previousClose?: number;
 }
 
 /** Single-line summary: prefer the session Yahoo marks active, else show post then pre when prices exist. */

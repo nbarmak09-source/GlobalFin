@@ -1,3 +1,5 @@
+import type { QuoteSummaryData, PortfolioFundamentals } from "./types";
+
 export interface MetricDef {
   label: string
   key: string
@@ -46,6 +48,10 @@ export const METRICS: MetricDef[] = [
   { label: 'Return on Capital',      key: 'roic',                           source: 'metrics',  format: 'percent',  description: 'Return on invested capital' },
   { label: 'Debt / Equity',          key: 'debtToEquity',                   source: 'metrics',  format: 'ratio',    description: 'Financial leverage ratio' },
   { label: 'Current Ratio',          key: 'currentRatio',                   source: 'metrics',  format: 'ratio',    description: 'Liquidity: current assets / current liabilities' },
+  { label: 'Quick Ratio',            key: 'quickRatio',                     source: 'metrics',  format: 'ratio',    description: 'Liquidity ex. inventory' },
+  { label: 'Forward P/E',            key: 'forwardPE',                    source: 'metrics',  format: 'ratio',    description: 'Price to forward earnings' },
+  { label: 'PEG Ratio',              key: 'pegRatio',                       source: 'metrics',  format: 'ratio',    description: 'P/E to growth' },
+  { label: 'Price / Sales',          key: 'priceToSales',                   source: 'metrics',  format: 'ratio',    description: 'Market cap to revenue (TTM)' },
   { label: 'Dividend Yield',         key: 'dividendYield',                  source: 'metrics',  format: 'percent',  description: 'Annual dividend as % of share price' },
   { label: 'Market Cap',             key: 'marketCap',                      source: 'metrics',  format: 'currency', description: 'Total market capitalisation' },
 ]
@@ -61,13 +67,18 @@ export interface AvailableTableMetric {
   defaultVisible: boolean
 }
 
-/** Full metric list shown in column picker (order preserved for defaults). */
-export const AVAILABLE_METRICS: AvailableTableMetric[] = [
+/** Core portfolio / watchlist columns (shown first in picker). */
+const PORTFOLIO_TABLE_BASE_METRICS: AvailableTableMetric[] = [
   { key: 'ticker', label: 'Ticker', defaultVisible: true },
+  { key: 'shares', label: 'Shares', defaultVisible: false },
+  { key: 'avgCost', label: 'Avg. Cost Basis', defaultVisible: false },
+  { key: 'marketValue', label: 'Market Value', defaultVisible: false },
+  { key: 'totalPLPercent', label: '% Chg.', defaultVisible: false },
+  { key: 'percentPortfolio', label: '% of Portfolio', defaultVisible: false },
   { key: 'name', label: 'Name', defaultVisible: true },
-  { key: 'price', label: 'Price', defaultVisible: true },
-  { key: 'change', label: 'Change', defaultVisible: true },
-  { key: 'changePercent', label: 'Change %', defaultVisible: false },
+  { key: 'price', label: 'Stock Price', defaultVisible: true },
+  { key: 'change', label: 'Daily $ Chg.', defaultVisible: true },
+  { key: 'changePercent', label: 'Daily % Chg.', defaultVisible: false },
   { key: 'marketCap', label: 'Mkt cap', defaultVisible: false },
   { key: 'pe', label: 'P/E', defaultVisible: false },
   { key: 'volume', label: 'Volume', defaultVisible: false },
@@ -75,16 +86,49 @@ export const AVAILABLE_METRICS: AvailableTableMetric[] = [
   { key: 'week52High', label: '52W high', defaultVisible: false },
   { key: 'week52Low', label: '52W low', defaultVisible: false },
   { key: 'sector', label: 'Sector', defaultVisible: false },
-  { key: 'shares', label: 'Shares', defaultVisible: false },
-  { key: 'avgCost', label: 'Avg cost', defaultVisible: false },
-  { key: 'marketValue', label: 'Mkt value', defaultVisible: false },
   { key: 'totalPL', label: 'Total P&L', defaultVisible: false },
+]
+
+const BASE_METRIC_KEY_SET = new Set(PORTFOLIO_TABLE_BASE_METRICS.map((m) => m.key))
+
+/** Non-removable holdings columns, matching the fixed setup in the portfolio table. */
+export const FIXED_PORTFOLIO_TABLE_METRIC_KEYS = [
+  "ticker",
+  "shares",
+  "avgCost",
+  "price",
+  "marketValue",
+  "totalPLPercent",
+  "percentPortfolio",
+] as const;
+
+export const FIXED_PORTFOLIO_TABLE_METRIC_KEY_SET = new Set<string>(
+  FIXED_PORTFOLIO_TABLE_METRIC_KEYS
+);
+
+/**
+ * All columns available in the portfolio / watchlist picker: tape cols + income / balance / CF / ratios from quote summary.
+ * Skips `peRatio` (duplicate of column `pe`).
+ */
+export const AVAILABLE_METRICS: AvailableTableMetric[] = [
+  ...PORTFOLIO_TABLE_BASE_METRICS,
+  ...METRICS.filter(
+    (m) => !BASE_METRIC_KEY_SET.has(m.key) && m.key !== "peRatio"
+  ).map((m) => ({
+    key: m.key,
+    label: m.label,
+    defaultVisible: false,
+  })),
 ]
 
 export const AVAILABLE_METRIC_KEY_SET = new Set(AVAILABLE_METRICS.map((m) => m.key))
 
 export function tableMetricLabel(key: string): string {
-  return AVAILABLE_METRICS.find((m) => m.key === key)?.label ?? key
+  return (
+    AVAILABLE_METRICS.find((m) => m.key === key)?.label ??
+    getMetric(key)?.label ??
+    key
+  );
 }
 
 /** Ordered keys that are visible by default (no localStorage yet). */
@@ -98,3 +142,95 @@ export const metricsBySource = () =>
     ;(acc[group] ??= []).push(m)
     return acc
   }, {})
+
+/** Map Yahoo quote summary into METRICS-shaped keys for portfolio/watchlist columns. */
+export function fundamentalsFromQuoteSummary(
+  s: QuoteSummaryData | null
+): PortfolioFundamentals | undefined {
+  if (!s) return undefined;
+
+  const o: PortfolioFundamentals = {};
+  const set = (key: string, v: number | undefined | null) => {
+    if (v == null || typeof v !== "number" || !Number.isFinite(v)) return;
+    o[key] = v;
+  };
+
+  set("revenue", s.totalRevenue > 0 ? s.totalRevenue : undefined);
+  set("grossProfit", s.grossProfits > 0 ? s.grossProfits : undefined);
+  if (Number.isFinite(s.grossMargins)) set("grossProfitRatio", s.grossMargins);
+
+  let operatingIncome: number | undefined;
+  if (s.statementOperatingIncome !== 0)
+    operatingIncome = s.statementOperatingIncome;
+  else if (s.operatingMargins > 0 && s.totalRevenue > 0)
+    operatingIncome = s.operatingMargins * s.totalRevenue;
+  set("operatingIncome", operatingIncome);
+
+  if (Number.isFinite(s.operatingMargins)) set("operatingIncomeRatio", s.operatingMargins);
+
+  set("ebitda", s.ebitda > 0 ? s.ebitda : undefined);
+  if (Number.isFinite(s.ebitdaMargins)) set("ebitdaratio", s.ebitdaMargins);
+
+  let netIncome: number | undefined;
+  if (s.statementNetIncome !== 0) netIncome = s.statementNetIncome;
+  else if (s.profitMargins > 0 && s.totalRevenue > 0)
+    netIncome = s.profitMargins * s.totalRevenue;
+  set("netIncome", netIncome);
+
+  if (Number.isFinite(s.profitMargins)) set("netIncomeRatio", s.profitMargins);
+
+  set(
+    "researchAndDevelopmentExpenses",
+    s.statementResearchDevelopment > 0 ? s.statementResearchDevelopment : undefined
+  );
+
+  if (Number.isFinite(s.trailingEps) && s.trailingEps !== 0)
+    set("epsdiluted", s.trailingEps);
+
+  if (s.statementInterestExpense !== 0)
+    set("interestExpense", Math.abs(s.statementInterestExpense));
+
+  set("totalAssets", s.statementTotalAssets > 0 ? s.statementTotalAssets : undefined);
+  set(
+    "totalStockholdersEquity",
+    s.statementStockholderEquity !== 0 ? s.statementStockholderEquity : undefined
+  );
+  set("totalDebt", s.totalDebt > 0 ? s.totalDebt : undefined);
+  set("cashAndCashEquivalents", s.totalCash > 0 ? s.totalCash : undefined);
+  if (s.totalCash > 0 || s.totalDebt > 0) set("netCash", s.totalCash - s.totalDebt);
+
+  set(
+    "operatingCashFlow",
+    s.operatingCashflow !== 0 ? s.operatingCashflow : undefined
+  );
+  set("freeCashFlow", s.freeCashflow !== 0 ? s.freeCashflow : undefined);
+  set(
+    "capitalExpenditure",
+    s.statementCapitalExpenditures !== 0 ? s.statementCapitalExpenditures : undefined
+  );
+  set(
+    "dividendsPaid",
+    s.statementDividendsPaid !== 0 ? s.statementDividendsPaid : undefined
+  );
+
+  set("peRatio", s.trailingPE > 0 ? s.trailingPE : undefined);
+  set("pbRatio", s.priceToBook > 0 ? s.priceToBook : undefined);
+  set("evToEbitda", s.enterpriseToEbitda > 0 ? s.enterpriseToEbitda : undefined);
+  set("evToSales", s.enterpriseToRevenue > 0 ? s.enterpriseToRevenue : undefined);
+  if (Number.isFinite(s.returnOnEquity)) set("roe", s.returnOnEquity);
+  if (Number.isFinite(s.returnOnAssets)) set("roa", s.returnOnAssets);
+  if (Number.isFinite(s.debtToEquity) && s.debtToEquity >= 0)
+    set("debtToEquity", s.debtToEquity);
+  set("currentRatio", s.currentRatio > 0 ? s.currentRatio : undefined);
+  set("quickRatio", s.quickRatio > 0 ? s.quickRatio : undefined);
+  set("forwardPE", s.forwardPE > 0 ? s.forwardPE : undefined);
+  set("pegRatio", s.pegRatio > 0 ? s.pegRatio : undefined);
+  set(
+    "priceToSales",
+    s.priceToSalesTrailing12Months > 0 ? s.priceToSalesTrailing12Months : undefined
+  );
+  set("dividendYield", s.dividendYield > 0 ? s.dividendYield : undefined);
+  set("marketCap", s.marketCap > 0 ? s.marketCap : undefined);
+
+  return Object.keys(o).length > 0 ? o : undefined;
+}

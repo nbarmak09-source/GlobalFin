@@ -1,14 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Eye, EyeOff, Lock } from "lucide-react";
-import type { EnrichedPosition, EnrichedWatchlistItem } from "@/lib/types";
+import { ChevronDown, Eye, EyeOff, Lock } from "lucide-react";
+import { Line, LineChart } from "recharts";
+import type {
+  EnrichedPosition,
+  EnrichedWatchlistItem,
+  WatchlistGroup,
+} from "@/lib/types";
 import { fmtBn } from "@/lib/formatBn";
+import TradingViewChart from "@/components/TradingViewChart";
 
 const MASK = "••••";
+
+const ACTIVE_WATCHLIST_GROUP_KEY = "active-watchlist-group-id";
 
 function loadValuesVisible(): boolean {
   try {
@@ -28,6 +36,47 @@ function formatPercent(n: number): string {
   return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 }
 
+function RangeCell({ low, high }: { low: number; high: number }) {
+  const ok = low > 0 && high > 0 && high >= low;
+  return (
+    <span className="text-[10px] font-mono text-muted leading-tight whitespace-nowrap tabular-nums">
+      {ok ? `$${formatPrice(low)}–$${formatPrice(high)}` : "—"}
+    </span>
+  );
+}
+
+function holdingsSparkData(pos: EnrichedPosition): { v: number }[] {
+  const previousClose =
+    pos.extendedHours?.previousClose ??
+    (pos.regularMarketPreviousClose > 0 ? pos.regularMarketPreviousClose : undefined);
+  const first = previousClose ?? pos.currentPrice;
+  return [{ v: first }, { v: pos.currentPrice }];
+}
+
+function HoldingsSparkline({ pos }: { pos: EnrichedPosition }) {
+  const data = useMemo(() => holdingsSparkData(pos), [pos]);
+  const stroke = pos.dayChangePercent >= 0 ? "#4ade80" : "#f87171";
+  return (
+    <div className="opacity-80 w-20 shrink-0 flex justify-center mx-auto">
+      <LineChart
+        width={80}
+        height={32}
+        data={data}
+        margin={{ top: 4, right: 0, bottom: 4, left: 0 }}
+      >
+        <Line
+          type="monotone"
+          dataKey="v"
+          stroke={stroke}
+          strokeWidth={1.5}
+          dot={false}
+          isAnimationActive={false}
+        />
+      </LineChart>
+    </div>
+  );
+}
+
 function ChangePill({ value }: { value: number }) {
   const positive = value >= 0;
   return (
@@ -41,35 +90,14 @@ function ChangePill({ value }: { value: number }) {
   );
 }
 
-function RangeBar({
-  low,
-  high,
-  current,
-}: {
-  low: number;
-  high: number;
-  current: number;
-}) {
-  const range = high - low;
-  const pct = range > 0 ? Math.min(Math.max(((current - low) / range) * 100, 0), 100) : 50;
-  return (
-    <div className="relative h-1.5 w-16 rounded-full bg-border">
-      <div
-        className="absolute left-0 top-0 h-full rounded-full bg-accent/60"
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  );
-}
-
-function SkeletonRows() {
+function SkeletonRows({ colSpan }: { colSpan: number }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <tbody>
           {[1, 2, 3].map((i) => (
             <tr key={i} className="border-b border-border/50">
-              <td colSpan={5} className="px-0 py-2.5">
+              <td colSpan={colSpan} className="px-0 py-2.5">
                 <div className="skeleton h-8 w-full rounded-lg" />
               </td>
             </tr>
@@ -81,7 +109,7 @@ function SkeletonRows() {
 }
 
 const thClass =
-  "text-[10px] uppercase tracking-wider text-muted font-medium border-b border-border bg-transparent py-2 text-left";
+  "text-[10px] uppercase tracking-wider text-muted font-medium border-b border-border bg-transparent py-2";
 
 type PortfolioFetchStatus = "idle" | "loading" | "success" | "error";
 
@@ -91,10 +119,18 @@ export default function DashboardPortfolioPanel() {
 
   const [positions, setPositions] = useState<EnrichedPosition[]>([]);
   const [watchlist, setWatchlist] = useState<EnrichedWatchlistItem[]>([]);
+  const [wlGroups, setWlGroups] = useState<WatchlistGroup[]>([]);
+  const [activeWlGroupId, setActiveWlGroupId] = useState<string | null>(null);
   const [fetchStatus, setFetchStatus] = useState<PortfolioFetchStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<"holdings" | "watchlist">("holdings");
   const [valuesVisible, setValuesVisible] = useState(loadValuesVisible);
+  const [expandedChartKey, setExpandedChartKey] = useState<string | null>(null);
+
+  function setActiveViewAndCollapseChart(next: "holdings" | "watchlist") {
+    setExpandedChartKey(null);
+    setActiveView(next);
+  }
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -104,14 +140,70 @@ export default function DashboardPortfolioPanel() {
       setFetchStatus("loading");
       setError(null);
       try {
-        const [portfolioData, watchlistData] = await Promise.all([
-          fetch("/api/portfolio").then((r) => r.json()),
-          fetch("/api/watchlist").then((r) => r.json()),
-        ]);
+        const portfolioRes = await fetch("/api/portfolio", { credentials: "include" });
+        const portfolioJson = await portfolioRes.json().catch(() => null);
         if (cancelled) return;
-        setPositions(Array.isArray(portfolioData) ? portfolioData : portfolioData?.positions ?? []);
-        setWatchlist(Array.isArray(watchlistData) ? watchlistData : watchlistData?.items ?? []);
-        setFetchStatus("success");
+        const portfolioData = portfolioJson?.positions ?? portfolioJson ?? [];
+        setPositions(Array.isArray(portfolioData) ? portfolioData : []);
+
+        let groupsParsed: WatchlistGroup[] = [];
+        let groupsAvailable = false;
+        try {
+          const groupsRes = await fetch("/api/watchlist/groups", { credentials: "include" });
+          if (groupsRes.ok) {
+            const raw = await groupsRes.json().catch(() => []);
+            groupsParsed = Array.isArray(raw) ? raw : [];
+            groupsAvailable = true;
+          }
+        } catch {
+          /* fall back to flat /api/watchlist */
+        }
+
+        if (cancelled) return;
+
+        if (groupsAvailable) {
+          setWlGroups(groupsParsed);
+
+          let nextGid: string | null = null;
+          try {
+            const saved = localStorage.getItem(ACTIVE_WATCHLIST_GROUP_KEY);
+            const match = saved ? groupsParsed.find((g) => g.id === saved) : null;
+            nextGid = match?.id ?? groupsParsed[0]?.id ?? null;
+          } catch {
+            nextGid = groupsParsed[0]?.id ?? null;
+          }
+
+          setActiveWlGroupId((prev) =>
+            prev && groupsParsed.some((g) => g.id === prev) ? prev : nextGid
+          );
+
+          if (nextGid) {
+            try {
+              localStorage.setItem(ACTIVE_WATCHLIST_GROUP_KEY, nextGid);
+            } catch {
+              /* ignore */
+            }
+          }
+        } else {
+          setWlGroups([]);
+          setActiveWlGroupId(null);
+          try {
+            const wlRes = await fetch("/api/watchlist", { credentials: "include" });
+            if (!cancelled && wlRes.ok) {
+              const watchlistRaw = await wlRes.json().catch(() => []);
+              const arr = Array.isArray(watchlistRaw)
+                ? watchlistRaw
+                : watchlistRaw?.items ?? [];
+              setWatchlist(arr);
+            } else if (!cancelled) {
+              setWatchlist([]);
+            }
+          } catch {
+            if (!cancelled) setWatchlist([]);
+          }
+        }
+
+        if (!cancelled) setFetchStatus("success");
       } catch {
         if (!cancelled) {
           setError("Couldn't load data — try refreshing.");
@@ -124,6 +216,49 @@ export default function DashboardPortfolioPanel() {
       cancelled = true;
     };
   }, [status]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    let cancelled = false;
+
+    void (async () => {
+      if (!activeWlGroupId) {
+        if (wlGroups.length === 0) {
+          return;
+        }
+        setWatchlist([]);
+        return;
+      }
+
+      try {
+        const wlRes = await fetch(
+          `/api/watchlist?groupId=${encodeURIComponent(activeWlGroupId)}`,
+          { credentials: "include" }
+        );
+        const watchlistRaw = wlRes.ok ? await wlRes.json().catch(() => []) : [];
+
+        try {
+          localStorage.setItem(ACTIVE_WATCHLIST_GROUP_KEY, activeWlGroupId);
+        } catch {
+          /* ignore */
+        }
+
+        if (!cancelled) {
+          const arr = Array.isArray(watchlistRaw)
+            ? watchlistRaw
+            : watchlistRaw?.items ?? [];
+          setWatchlist(arr);
+        }
+      } catch {
+        if (!cancelled) setWatchlist([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, activeWlGroupId, wlGroups.length]);
 
   function toggleValuesVisible() {
     const next = !valuesVisible;
@@ -175,7 +310,7 @@ export default function DashboardPortfolioPanel() {
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => setActiveView("holdings")}
+            onClick={() => setActiveViewAndCollapseChart("holdings")}
             className={`cursor-pointer rounded-full px-3 py-1 text-[12px] font-medium transition-colors duration-150 ${
               activeView === "holdings"
                 ? "border border-accent/20 bg-accent/10 text-accent"
@@ -186,7 +321,7 @@ export default function DashboardPortfolioPanel() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveView("watchlist")}
+            onClick={() => setActiveViewAndCollapseChart("watchlist")}
             className={`cursor-pointer rounded-full px-3 py-1 text-[12px] font-medium transition-colors duration-150 ${
               activeView === "watchlist"
                 ? "border border-accent/20 bg-accent/10 text-accent"
@@ -218,7 +353,7 @@ export default function DashboardPortfolioPanel() {
             </Link>
           ) : (
             <Link
-              href="/portfolio"
+              href="/portfolio?tab=watchlist"
               className="text-[11px] text-accent hover:underline transition-colors duration-150"
             >
               View full watchlist →
@@ -226,6 +361,30 @@ export default function DashboardPortfolioPanel() {
           )}
         </div>
       </div>
+
+      {fetchStatus === "success" &&
+        activeView === "watchlist" &&
+        wlGroups.length > 1 && (
+          <div className="flex flex-wrap items-center gap-1">
+            {wlGroups.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => {
+                  setExpandedChartKey(null);
+                  setActiveWlGroupId(g.id);
+                }}
+                className={`cursor-pointer rounded-full px-3 py-1 text-[12px] font-medium transition-colors duration-150 ${
+                  activeWlGroupId === g.id
+                    ? "border border-accent/20 bg-accent/10 text-accent"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                {g.name}
+              </button>
+            ))}
+          </div>
+        )}
 
       {/* Summary bar — holdings only */}
       {activeView === "holdings" && !loading && positions.length > 0 && (
@@ -258,7 +417,7 @@ export default function DashboardPortfolioPanel() {
       )}
 
       {/* Loading */}
-      {loading && <SkeletonRows />}
+      {loading && <SkeletonRows colSpan={7} />}
 
       {/* Error */}
       {!loading && error && (
@@ -282,43 +441,85 @@ export default function DashboardPortfolioPanel() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="table-fixed w-full">
                 <thead>
                   <tr>
-                    <th className={`${thClass} pr-4`}>Ticker</th>
-                    <th className={`${thClass} px-2 text-right`}>Price</th>
-                    <th className={`${thClass} px-2 text-right`}>Day %</th>
-                    <th className={`${thClass} px-2 text-right`}>P&amp;L %</th>
-                    <th className={`${thClass} pl-2 text-right`}>Mkt Value</th>
+                    <th className={`${thClass} min-w-0 text-left pr-4`}>Ticker</th>
+                    <th className={`${thClass} w-20 text-center px-0`} aria-hidden />
+                    <th className={`${thClass} w-20 text-right tabular-nums px-2`}>Price</th>
+                    <th className={`${thClass} w-20 text-right px-2`}>Day %</th>
+                    <th className={`${thClass} w-20 text-right px-2`}>P&amp;L %</th>
+                    <th className={`${thClass} hidden md:table-cell w-24 text-right tabular-nums pl-2`}>
+                      Mkt Value
+                    </th>
+                    <th className={`${thClass} w-9 px-0 text-center`} aria-label="Chart" />
                   </tr>
                 </thead>
                 <tbody>
-                  {displayPositions.map((pos) => (
-                    <tr
-                      key={pos.id}
-                      className="border-b border-border/50 last:border-0 hover:bg-card/40 cursor-pointer transition-colors duration-150"
-                      onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(pos.symbol)}`)}
-                    >
-                      <td className="py-2.5 pr-4">
-                        <div className="font-semibold text-[12px] text-foreground">{pos.symbol}</div>
-                        <div className="text-[10px] text-muted truncate max-w-[140px]">
-                          {pos.name.length > 18 ? pos.name.slice(0, 18) + "…" : pos.name}
-                        </div>
-                      </td>
-                      <td className="px-2 py-2.5 text-right font-mono text-[12px] text-foreground">
-                        ${formatPrice(pos.currentPrice)}
-                      </td>
-                      <td className="px-2 py-2.5 text-right">
-                        <ChangePill value={pos.dayChangePercent} />
-                      </td>
-                      <td className="px-2 py-2.5 text-right">
-                        <ChangePill value={pos.totalPLPercent} />
-                      </td>
-                      <td className="pl-2 py-2.5 text-right font-mono text-[12px] text-muted">
-                        {valuesVisible ? `$${formatPrice(pos.marketValue)}` : MASK}
-                      </td>
-                    </tr>
-                  ))}
+                  {displayPositions.map((pos) => {
+                    const chartKey = `h:${pos.id}`;
+                    const chartOpen = expandedChartKey === chartKey;
+                    return (
+                      <Fragment key={pos.id}>
+                        <tr
+                          className="border-b border-border/50 last:border-0 hover:bg-card/40 cursor-pointer transition-colors duration-150"
+                          onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(pos.symbol)}`)}
+                        >
+                          <td className="py-2.5 pr-4 min-w-0 align-top">
+                            <div className="font-semibold text-[12px] text-foreground">{pos.symbol}</div>
+                            <div className="text-[10px] text-muted truncate max-w-[160px]">
+                              {pos.name.length > 18 ? pos.name.slice(0, 18) + "…" : pos.name}
+                            </div>
+                          </td>
+                          <td className="w-20 text-center align-middle py-2.5 px-0">
+                            <HoldingsSparkline pos={pos} />
+                          </td>
+                          <td className="w-20 px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top tabular-nums">
+                            ${formatPrice(pos.currentPrice)}
+                          </td>
+                          <td className="w-20 px-2 py-2.5 text-right align-top">
+                            <ChangePill value={pos.dayChangePercent} />
+                          </td>
+                          <td className="w-20 px-2 py-2.5 text-right align-top">
+                            <ChangePill value={pos.totalPLPercent} />
+                          </td>
+                          <td className="hidden md:table-cell w-24 pl-2 py-2.5 text-right font-mono text-[12px] text-muted align-top tabular-nums">
+                            {valuesVisible ? `$${formatPrice(pos.marketValue)}` : MASK}
+                          </td>
+                          <td className="w-9 py-2.5 text-center align-top">
+                            <button
+                              type="button"
+                              className="cursor-pointer rounded-md p-1 text-muted transition-colors hover:bg-card-hover hover:text-accent"
+                              aria-expanded={chartOpen}
+                              aria-label={chartOpen ? "Hide TradingView chart" : "Show TradingView chart"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedChartKey((k) => (k === chartKey ? null : chartKey));
+                              }}
+                            >
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform duration-200 ${chartOpen ? "rotate-180" : ""}`}
+                              />
+                            </button>
+                          </td>
+                        </tr>
+                        {chartOpen && (
+                          <tr className="border-b border-border/50 bg-card/20">
+                            <td colSpan={7} className="p-0 px-1 py-3">
+                              <div onClick={(e) => e.stopPropagation()} className="min-w-0">
+                                <TradingViewChart
+                                  symbol={pos.symbol}
+                                  height={260}
+                                  yahooExchange={pos.exchange}
+                                  yahooExchangeName={pos.exchangeName}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
               {positions.length > 10 && (
@@ -353,42 +554,78 @@ export default function DashboardPortfolioPanel() {
               <table className="w-full">
                 <thead>
                   <tr>
-                    <th className={`${thClass} pr-4`}>Ticker</th>
+                    <th className={`${thClass} pr-4 text-left`}>Ticker</th>
+                    <th className={`${thClass} px-2 text-right`}>Day range</th>
+                    <th className={`${thClass} px-2 text-right`}>52W</th>
                     <th className={`${thClass} px-2 text-right`}>Price</th>
                     <th className={`${thClass} px-2 text-right`}>Day %</th>
-                    <th className={`${thClass} px-2`}>52W Range</th>
                     <th className={`${thClass} pl-2 text-right`}>Mkt Cap</th>
+                    <th className={`${thClass} w-9 px-0 text-center`} aria-label="Chart" />
                   </tr>
                 </thead>
                 <tbody>
-                  {displayWatchlist.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="border-b border-border/50 last:border-0 hover:bg-card/40 cursor-pointer transition-colors duration-150"
-                      onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(item.symbol)}`)}
-                    >
-                      <td className="py-2.5 pr-4">
-                        <div className="font-semibold text-[12px] text-foreground">{item.symbol}</div>
-                        <div className="text-[10px] text-muted truncate max-w-[140px]">{item.name}</div>
-                      </td>
-                      <td className="px-2 py-2.5 text-right font-mono text-[12px] text-foreground">
-                        ${formatPrice(item.currentPrice)}
-                      </td>
-                      <td className="px-2 py-2.5 text-right">
-                        <ChangePill value={item.dayChangePercent} />
-                      </td>
-                      <td className="px-2 py-2.5">
-                        <RangeBar
-                          low={item.fiftyTwoWeekLow}
-                          high={item.fiftyTwoWeekHigh}
-                          current={item.currentPrice}
-                        />
-                      </td>
-                      <td className="pl-2 py-2.5 text-right text-[11px] text-muted">
-                        {fmtBn(item.marketCap / 1e9)}
-                      </td>
-                    </tr>
-                  ))}
+                  {displayWatchlist.map((item) => {
+                    const chartKey = `w:${item.id}`;
+                    const chartOpen = expandedChartKey === chartKey;
+                    return (
+                      <Fragment key={item.id}>
+                        <tr
+                          className="border-b border-border/50 last:border-0 hover:bg-card/40 cursor-pointer transition-colors duration-150"
+                          onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(item.symbol)}`)}
+                        >
+                          <td className="py-2.5 pr-4">
+                            <div className="font-semibold text-[12px] text-foreground">{item.symbol}</div>
+                            <div className="text-[10px] text-muted truncate max-w-[160px]">{item.name}</div>
+                          </td>
+                          <td className="px-2 py-2.5 text-right align-top">
+                            <RangeCell low={item.regularMarketDayLow} high={item.regularMarketDayHigh} />
+                          </td>
+                          <td className="px-2 py-2.5 text-right align-top">
+                            <RangeCell low={item.fiftyTwoWeekLow} high={item.fiftyTwoWeekHigh} />
+                          </td>
+                          <td className="px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top">
+                            ${formatPrice(item.currentPrice)}
+                          </td>
+                          <td className="px-2 py-2.5 text-right align-top">
+                            <ChangePill value={item.dayChangePercent} />
+                          </td>
+                          <td className="pl-2 py-2.5 text-right text-[11px] text-muted align-top">
+                            {fmtBn(item.marketCap / 1e9)}
+                          </td>
+                          <td className="w-9 py-2.5 text-center align-top">
+                            <button
+                              type="button"
+                              className="cursor-pointer rounded-md p-1 text-muted transition-colors hover:bg-card-hover hover:text-accent"
+                              aria-expanded={chartOpen}
+                              aria-label={chartOpen ? "Hide TradingView chart" : "Show TradingView chart"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedChartKey((k) => (k === chartKey ? null : chartKey));
+                              }}
+                            >
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform duration-200 ${chartOpen ? "rotate-180" : ""}`}
+                              />
+                            </button>
+                          </td>
+                        </tr>
+                        {chartOpen && (
+                          <tr className="border-b border-border/50 bg-card/20">
+                            <td colSpan={7} className="p-0 px-1 py-3">
+                              <div onClick={(e) => e.stopPropagation()} className="min-w-0">
+                                <TradingViewChart
+                                  symbol={item.symbol}
+                                  height={260}
+                                  yahooExchange={item.exchange}
+                                  yahooExchangeName={item.exchangeName}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
               {watchlist.length > 10 && (

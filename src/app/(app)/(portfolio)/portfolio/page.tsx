@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Plus,
   RefreshCw,
@@ -12,19 +13,23 @@ import {
   Download,
 } from "lucide-react";
 import PortfolioTable from "@/components/PortfolioTable";
-import PortfolioPerformanceChart from "@/components/PortfolioPerformanceChart";
 import PortfolioEarningsUpcoming from "@/components/PortfolioEarningsUpcoming";
 import PortfolioStats from "@/components/portfolio/PortfolioStats";
 import AddPositionModal from "@/components/AddPositionModal";
 import EditPositionModal from "@/components/EditPositionModal";
 import WatchlistTable from "@/components/WatchlistTable";
 import AddToWatchlistModal from "@/components/AddToWatchlistModal";
-import type { EnrichedPosition, EnrichedWatchlistItem, UserPortfolio } from "@/lib/types";
+import type { EnrichedPosition, UserPortfolio } from "@/lib/types";
 import { useColumnPreferences } from "@/hooks/useColumnPreferences";
-import { AVAILABLE_METRICS, tableMetricLabel } from "@/lib/metrics";
+import {
+  AVAILABLE_METRICS,
+  FIXED_PORTFOLIO_TABLE_METRIC_KEYS,
+  FIXED_PORTFOLIO_TABLE_METRIC_KEY_SET,
+  tableMetricLabel,
+} from "@/lib/metrics";
 import type { NumberScale } from "@/components/PortfolioWatchlistMetricCells";
 
-type PortfolioTab = "summary" | "performance" | "watchlist";
+type PortfolioSubTab = "holdings" | "watchlist";
 
 const ACTIVE_PORTFOLIO_KEY = "active-portfolio-id";
 const NUMBER_SCALE_KEY = "gcm-number-scale";
@@ -36,16 +41,22 @@ const apiFetch = (input: string, init?: RequestInit) =>
 const ghostBtn =
   "inline-flex items-center gap-2 rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12px] font-medium text-muted transition-colors hover:bg-card hover:text-foreground";
 
-export default function PortfolioPage() {
-  const [activeTab, setActiveTab] = useState<PortfolioTab>("summary");
+function PortfolioPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeTab: PortfolioSubTab =
+    searchParams.get("tab") === "watchlist" ? "watchlist" : "holdings";
+
   const [portfolios, setPortfolios] = useState<UserPortfolio[]>([]);
   const [portfoliosLoading, setPortfoliosLoading] = useState(true);
   const [portfoliosError, setPortfoliosError] = useState<string | null>(null);
   const [positionsError, setPositionsError] = useState<string | null>(null);
   const [activePortfolioId, setActivePortfolioId] = useState<string | null>(null);
 
+  const wlGroupRef = useRef<string | null>(null);
+  const [watchlistRefreshNonce, setWatchlistRefreshNonce] = useState(0);
+
   const [positions, setPositions] = useState<EnrichedPosition[]>([]);
-  const [watchlist, setWatchlist] = useState<EnrichedWatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPositionModal, setShowPositionModal] = useState(false);
   const [showWatchlistModal, setShowWatchlistModal] = useState(false);
@@ -91,6 +102,22 @@ export default function PortfolioPage() {
         m.label.toLowerCase().includes(q) || m.key.toLowerCase().includes(q)
     );
   }, [metricQuery]);
+
+  const portfolioVisibleKeys = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const key of FIXED_PORTFOLIO_TABLE_METRIC_KEYS) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(key);
+    }
+    for (const key of visibleKeys) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(key);
+    }
+    return out;
+  }, [visibleKeys]);
 
   const fetchPortfolios = useCallback(async () => {
     setPortfoliosLoading(true);
@@ -174,30 +201,9 @@ export default function PortfolioPage() {
     }
   }, [activePortfolioId]);
 
-  const fetchWatchlist = useCallback(async (showLoader = true) => {
-    if (showLoader) setLoading(true);
-    else setRefreshing(true);
-    try {
-      const res = await apiFetch("/api/watchlist");
-      if (res.ok) {
-        const data = await res.json();
-        setWatchlist(data);
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
   useEffect(() => {
     fetchPositions();
   }, [fetchPositions]);
-
-  useEffect(() => {
-    fetchWatchlist();
-  }, [fetchWatchlist]);
 
   async function handleAddPosition(position: {
     symbol: string;
@@ -234,20 +240,17 @@ export default function PortfolioPage() {
   }
 
   async function handleAddWatchlist(item: { symbol: string; name: string }) {
+    const groupId = wlGroupRef.current;
     const res = await apiFetch("/api/watchlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(item),
+      body: JSON.stringify({
+        ...item,
+        ...(groupId ? { groupId } : {}),
+      }),
     });
     if (res.ok) {
-      fetchWatchlist(false);
-    }
-  }
-
-  async function handleRemoveWatchlist(id: string) {
-    const res = await apiFetch(`/api/watchlist?id=${id}`, { method: "DELETE" });
-    if (res.ok) {
-      fetchWatchlist(false);
+      setWatchlistRefreshNonce((n) => n + 1);
     }
   }
 
@@ -262,15 +265,6 @@ export default function PortfolioPage() {
         body: JSON.stringify({ orderedIds: reordered.map((p) => p.id) }),
       }
     );
-  }
-
-  async function handleReorderWatchlist(reordered: EnrichedWatchlistItem[]) {
-    setWatchlist(reordered);
-    await apiFetch("/api/watchlist", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderedIds: reordered.map((w) => w.id) }),
-    });
   }
 
   async function handleCreatePortfolio(e: React.FormEvent) {
@@ -336,7 +330,7 @@ export default function PortfolioPage() {
 
   function handleRefresh() {
     if (activeTab === "watchlist") {
-      fetchWatchlist(false);
+      setWatchlistRefreshNonce((n) => n + 1);
       return;
     }
     fetchPositions(false);
@@ -355,17 +349,77 @@ export default function PortfolioPage() {
     setEditingPosition(position);
   }
 
+  async function handleInlinePositionUpdate(
+    position: EnrichedPosition,
+    updates: Partial<Pick<EnrichedPosition, "shares" | "avgCost">>
+  ) {
+    if (!activePortfolioId) return;
+
+    const nextShares = updates.shares ?? position.shares;
+    const nextAvgCost = updates.avgCost ?? position.avgCost;
+    if (
+      !Number.isFinite(nextShares) ||
+      nextShares <= 0 ||
+      !Number.isFinite(nextAvgCost) ||
+      nextAvgCost <= 0
+    ) {
+      return;
+    }
+
+    setPositions((prev) =>
+      prev.map((p) => {
+        if (p.id !== position.id) return p;
+        const marketValue = p.currentPrice * nextShares;
+        const costBasis = nextAvgCost * nextShares;
+        const totalPL = marketValue - costBasis;
+        return {
+          ...p,
+          shares: nextShares,
+          avgCost: nextAvgCost,
+          marketValue,
+          totalPL,
+          totalPLPercent: costBasis > 0 ? (totalPL / costBasis) * 100 : 0,
+        };
+      })
+    );
+
+    const res = await apiFetch(
+      `/api/portfolio?portfolioId=${encodeURIComponent(activePortfolioId)}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: position.id, ...updates }),
+      }
+    );
+
+    if (!res.ok) {
+      await fetchPositions(false);
+      throw new Error("Failed to update position");
+    }
+
+    fetchPositions(false);
+    fetchPortfolios();
+  }
+
   function addMetricColumn(key: string) {
-    if (!visibleKeys.includes(key)) toggleKey(key);
+    if (
+      !visibleKeys.includes(key) &&
+      !FIXED_PORTFOLIO_TABLE_METRIC_KEY_SET.has(key)
+    ) {
+      toggleKey(key);
+    }
     setMetricQuery("");
   }
 
-  const tabPill = (id: PortfolioTab, label: string) => {
+  const tabPill = (id: PortfolioSubTab, label: string) => {
     const active = activeTab === id;
     return (
       <button
         type="button"
-        onClick={() => setActiveTab(id)}
+        onClick={() => {
+          if (id === "holdings") router.replace("/portfolio", { scroll: false });
+          else router.replace("/portfolio?tab=watchlist", { scroll: false });
+        }}
         className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
           active
             ? "border border-accent/20 bg-accent/10 text-accent"
@@ -382,8 +436,7 @@ export default function PortfolioPage() {
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-wrap gap-2">
-        {tabPill("summary", "Summary")}
-        {tabPill("performance", "Performance")}
+        {tabPill("holdings", "Holdings")}
         {tabPill("watchlist", "Watchlist")}
       </div>
 
@@ -410,9 +463,10 @@ export default function PortfolioPage() {
           )}
           {" · "}
           Use <span className="text-foreground/90">New portfolio</span> for separate holdings lists.
-          Switch <span className="text-foreground/90">Summary</span> /{" "}
-          <span className="text-foreground/90">Performance</span> /{" "}
-          <span className="text-foreground/90">Watchlist</span> above.
+          Switch <span className="text-foreground/90">Holdings</span> and{" "}
+          <span className="text-foreground/90">Watchlist</span> above; open{" "}
+          <span className="text-foreground/90">Performance</span> from the sidebar for history and
+          benchmark charts.
         </p>
         <div className="flex flex-wrap items-center gap-2">
           {portfoliosLoading ? (
@@ -455,7 +509,7 @@ export default function PortfolioPage() {
             <FolderPlus className="h-4 w-4" />
             New portfolio
           </button>
-          {activeTab === "summary" &&
+          {activeTab === "holdings" &&
             portfolios.length > 1 &&
             activePortfolioId && (
               <button
@@ -471,7 +525,7 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      {activeTab === "summary" && (
+      {activeTab === "holdings" && (
         <>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
             <div className="relative min-w-[12rem] max-w-md flex-1">
@@ -479,9 +533,9 @@ export default function PortfolioPage() {
                 type="search"
                 value={metricQuery}
                 onChange={(e) => setMetricQuery(e.target.value)}
-                placeholder="Select & search metrics..."
+                placeholder="Search columns: revenue, margins, balance sheet, P/E…"
                 className="w-full rounded-lg border border-border bg-card px-3 py-2 text-[12px] text-foreground placeholder:text-muted outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
-                aria-label="Search columns to add"
+                aria-label="Search columns to add (price, fundamentals, ratios)"
               />
               {metricQuery.trim() && filteredMetrics.length > 0 && (
                 <ul className="absolute left-0 right-0 top-full z-30 mt-1 max-h-48 overflow-auto rounded-lg border border-border bg-card py-1 shadow-lg">
@@ -500,20 +554,22 @@ export default function PortfolioPage() {
               )}
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              {visibleKeys.map((key) => (
+              {portfolioVisibleKeys.map((key) => (
                 <span
                   key={key}
                   className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-0.5 text-[11px] font-medium text-foreground"
                 >
                   {tableMetricLabel(key)}
-                  <button
-                    type="button"
-                    className="rounded-full p-0.5 text-muted hover:text-foreground"
-                    aria-label={`Remove ${tableMetricLabel(key)}`}
-                    onClick={() => toggleKey(key)}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+                  {!FIXED_PORTFOLIO_TABLE_METRIC_KEY_SET.has(key) && (
+                    <button
+                      type="button"
+                      className="rounded-full p-0.5 text-muted hover:text-foreground"
+                      aria-label={`Remove ${tableMetricLabel(key)}`}
+                      onClick={() => toggleKey(key)}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </span>
               ))}
             </div>
@@ -602,10 +658,11 @@ export default function PortfolioPage() {
 
           <PortfolioTable
             positions={positions}
-            visibleKeys={visibleKeys}
+            visibleKeys={portfolioVisibleKeys}
             numberScale={numberScale}
             onDelete={handleDeletePosition}
             onReorder={handleReorderPositions}
+            onUpdatePosition={handleInlinePositionUpdate}
             valuesVisible={valuesVisible}
             onEdit={handleEditPositionRequest}
             loading={loading}
@@ -613,25 +670,6 @@ export default function PortfolioPage() {
 
           <PortfolioStats positions={positions} />
         </>
-      )}
-
-      {activeTab === "performance" && (
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className={`${ghostBtn} disabled:opacity-40`}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </button>
-          </div>
-          <PortfolioPerformanceChart portfolioId={activePortfolioId} />
-        </div>
       )}
 
       {activeTab === "watchlist" && (
@@ -668,11 +706,9 @@ export default function PortfolioPage() {
             </div>
           </div>
           <WatchlistTable
-            items={watchlist}
-            onRemove={handleRemoveWatchlist}
-            onReorder={handleReorderWatchlist}
             valuesVisible={valuesVisible}
-            loading={loading}
+            refreshNonce={watchlistRefreshNonce}
+            activeGroupIdRef={wlGroupRef}
           />
         </div>
       )}
@@ -756,5 +792,20 @@ export default function PortfolioPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PortfolioPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="h-40 animate-pulse rounded-xl border border-border bg-card"
+          aria-hidden
+        />
+      }
+    >
+      <PortfolioPageContent />
+    </Suspense>
   );
 }

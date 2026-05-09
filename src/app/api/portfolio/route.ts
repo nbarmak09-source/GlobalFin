@@ -8,10 +8,11 @@ import {
   ensureDefaultPortfolio,
   assertPortfolioOwnership,
 } from "@/lib/portfolio";
-import { getMultipleQuotes, getSectorsForSymbols } from "@/lib/yahoo";
+import { getMultipleQuotes, getSectorsForSymbols, getQuoteSummary } from "@/lib/yahoo";
 import { getExtendedHoursLine } from "@/lib/extendedHours";
 import { auth } from "@/lib/auth";
 import type { EnrichedPosition } from "@/lib/types";
+import { fundamentalsFromQuoteSummary } from "@/lib/metrics";
 
 const SYMBOL_REGEX = /^[A-Za-z0-9.-]{1,10}$/;
 
@@ -85,8 +86,25 @@ export async function GET(request: NextRequest) {
     }
     const quoteMap = new Map(quotes.map((q) => [q.symbol, q]));
 
+    const summaryBySymbol = new Map<string, Awaited<ReturnType<typeof getQuoteSummary>>>();
+    try {
+      const summaries = await Promise.all(
+        symbols.map((sym) => getQuoteSummary(sym.trim().toUpperCase()))
+      );
+      for (let i = 0; i < symbols.length; i++) {
+        summaryBySymbol.set(symbols[i].trim().toUpperCase(), summaries[i]);
+      }
+    } catch (sumErr) {
+      console.error(
+        "Portfolio GET fundamentals (quote summary) failed:",
+        sumErr instanceof Error ? sumErr.message : sumErr
+      );
+    }
+
     const enriched: EnrichedPosition[] = positions.map((pos) => {
       const quote = quoteMap.get(pos.symbol);
+      const symU = pos.symbol.trim().toUpperCase();
+      const summary = summaryBySymbol.get(symU) ?? null;
       const sector = sectorMap.get(pos.symbol.trim().toUpperCase()) ?? "";
       const currentPrice = quote?.regularMarketPrice ?? pos.avgCost;
       const marketValue = currentPrice * pos.shares;
@@ -95,6 +113,15 @@ export async function GET(request: NextRequest) {
       const totalPLPercent = costBasis > 0 ? (totalPL / costBasis) * 100 : 0;
       const dayChange = quote?.regularMarketChange ?? 0;
       const dayChangePercent = quote?.regularMarketChangePercent ?? 0;
+      const previousClose = quote?.regularMarketPreviousClose ?? 0;
+      const extLine = quote ? getExtendedHoursLine(quote) : null;
+      const extendedHours =
+        extLine != null
+          ? {
+              ...extLine,
+              ...(previousClose > 0 ? { previousClose } : {}),
+            }
+          : null;
 
       return {
         ...pos,
@@ -104,14 +131,20 @@ export async function GET(request: NextRequest) {
         dayChangePercent,
         totalPL,
         totalPLPercent,
-        extendedHours: quote ? getExtendedHoursLine(quote) : null,
+        regularMarketPreviousClose: previousClose,
+        extendedHours,
         sector,
         fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh ?? 0,
         fiftyTwoWeekLow: quote?.fiftyTwoWeekLow ?? 0,
+        regularMarketDayHigh: quote?.regularMarketDayHigh ?? 0,
+        regularMarketDayLow: quote?.regularMarketDayLow ?? 0,
+        exchange: quote?.exchange,
+        exchangeName: quote?.exchangeName,
         marketCap: quote?.marketCap ?? 0,
         volume: quote?.regularMarketVolume ?? 0,
         pe: quote?.trailingPE ?? 0,
         ytdReturn: quote?.ytdReturn != null && Number.isFinite(quote.ytdReturn) ? quote.ytdReturn : null,
+        fundamentals: fundamentalsFromQuoteSummary(summary),
       };
     });
 

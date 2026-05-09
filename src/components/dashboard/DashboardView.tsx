@@ -1,63 +1,11 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import MarketOverview from "@/components/MarketOverview";
-import VisualCapitalistCard from "@/components/VisualCapitalistCard";
-import CurrenciesPanel from "@/components/CurrenciesPanel";
-import YieldCurveMonitor from "@/components/YieldCurveMonitor";
-import Treasury10y2yChart from "@/components/Treasury10y2yChart";
 import MacroIndicators from "@/components/MacroIndicators";
-import MacroCharts from "@/components/MacroCharts";
-import GlobalMacroPanel from "@/components/GlobalMacroPanel";
-import DashboardMarketsPanel from "@/components/markets/DashboardMarketsPanel";
 import DashboardPortfolioPanel from "@/components/dashboard/DashboardPortfolioPanel";
-import { LivePriceDemo } from "@/components/LivePriceDemo";
-import { SectionHeading } from "@/components/PageHeader";
-import {
-  ImageIcon,
-  DollarSign,
-  Activity,
-  LayoutGrid,
-  BarChart3,
-  Loader2,
-  Globe,
-  Landmark,
-  Sparkles,
-  Radio,
-  Briefcase,
-} from "lucide-react";
-
-type DashboardTab = "overview" | "rates" | "insights" | "markets" | "portfolio";
-
-function parseDashboardTab(param: string | null): DashboardTab {
-  if (param === "markets" || param === "rates" || param === "insights" || param === "portfolio") return param;
-  return "overview";
-}
-
-const TAB_META: Record<DashboardTab, { title: string; subtitle: string }> = {
-  overview: {
-    title: "Overview",
-    subtitle: "Major indices, macro data, and market performance",
-  },
-  rates: {
-    title: "Rates & FX",
-    subtitle: "Treasury curve, spreads, and major currencies",
-  },
-  insights: {
-    title: "Insights",
-    subtitle: "Charts and long-form market context",
-  },
-  markets: {
-    title: "Markets",
-    subtitle: "Sectors, valuations, analyst activity, and headlines",
-  },
-  portfolio: {
-    title: "Portfolio",
-    subtitle: "Your holdings and watchlist at a glance",
-  },
-};
+import { Activity, Loader2 } from "lucide-react";
 
 function SectionHeader({
   icon: Icon,
@@ -80,11 +28,7 @@ function SectionHeader({
 }
 
 function DashboardInner() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const { data: session } = useSession();
-  const tab = parseDashboardTab(searchParams.get("tab"));
-
   const firstName = session?.user?.name?.trim().split(/\s+/)[0] ?? null;
 
   function getGreeting() {
@@ -94,152 +38,44 @@ function DashboardInner() {
     return "Good evening";
   }
 
-  function setTab(next: DashboardTab) {
-    if (next === "overview") {
-      router.replace("/", { scroll: false });
-    } else {
-      router.replace(`/?tab=${next}`, { scroll: false });
-    }
-  }
-
-  const meta = TAB_META[tab];
-
-  const dashboardTabs: { id: DashboardTab; label: string; icon: typeof LayoutGrid }[] = [
-    { id: "overview", label: "Overview", icon: LayoutGrid },
-    { id: "rates", label: "Rates & FX", icon: Landmark },
-    { id: "insights", label: "Insights", icon: Sparkles },
-    { id: "markets", label: "Markets", icon: BarChart3 },
-    { id: "portfolio", label: "Portfolio", icon: Briefcase },
-  ];
-
   return (
     <div className="space-y-0 min-w-0">
       <div className="flex flex-col gap-3 mb-4">
-        <div>
-          {firstName && (
-            <p className="text-xs mb-1" style={{ color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
-              {getGreeting()}, {firstName}
-            </p>
-          )}
-          <h1
-            className="text-xl sm:text-2xl mb-1 text-heading"
-            style={{ color: "var(--color-text)" }}
+        {firstName && (
+          <p
+            className="text-xs mb-1"
+            style={{ color: "var(--color-muted)", fontFamily: "var(--font-body)" }}
           >
-            {meta.title}
-          </h1>
-          <p className="text-sm" style={{ color: "var(--color-muted)" }}>{meta.subtitle}</p>
-        </div>
-        <div
-          className="flex w-full max-w-full gap-1 p-1 overflow-x-auto sm:flex-wrap sm:overflow-visible sm:w-fit [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{
-            background: "var(--color-surface)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-sm)",
-          }}
-          role="tablist"
-          aria-label="Dashboard view"
-        >
-          {dashboardTabs.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={tab === id}
-              onClick={() => setTab(id)}
-              className="flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:px-4"
-              style={{
-                background: tab === id ? "var(--color-primary)" : "transparent",
-                color: tab === id ? "#0B0B0F" : "var(--color-muted)",
-                boxShadow: tab === id ? "var(--shadow-gold)" : "none",
-                fontFamily: "var(--font-heading)",
-              }}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span className="whitespace-nowrap">{label}</span>
-            </button>
-          ))}
-        </div>
+            {getGreeting()}, {firstName}
+          </p>
+        )}
       </div>
 
-      {tab === "overview" && (
-        <div>
-          <section aria-label="Macro indicators">
-            <SectionHeader icon={Activity} label="Macro" />
-            <MacroIndicators />
-            <p className="mt-3 text-[11px] text-muted">
-              Macro data sourced from{" "}
-              <a
-                href="https://fred.stlouisfed.org"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline underline-offset-2 hover:text-accent transition-colors duration-200 cursor-pointer"
-              >
-                FRED®
-              </a>{" "}
-              (Federal Reserve Bank of St. Louis)
-            </p>
-            <div className="mt-3">
-              <MacroCharts />
-            </div>
-            <div className="mt-4">
-              <Treasury10y2yChart />
-            </div>
-          </section>
+      <Suspense fallback={<div className="skeleton h-64 w-full rounded-xl mb-6" />}>
+        <DashboardPortfolioPanel />
+      </Suspense>
 
-          <section aria-label="Global macro">
-            <SectionHeader icon={Globe} label="Global Macro" />
-            <GlobalMacroPanel />
-          </section>
-
-          <section aria-label="Market indices">
-            <SectionHeading>Indices</SectionHeading>
-            <MarketOverview />
-          </section>
-
-          <section aria-label="Live quotes" className="mt-4">
-            <SectionHeader icon={Radio} label="Live quotes" />
-            <LivePriceDemo />
-            <p className="mt-3 text-[11px] text-muted">
-              Quotes refresh about every 20 seconds while this tab is visible.
-              Data is delayed; not for trading decisions.
-            </p>
-          </section>
-        </div>
-      )}
-
-      {tab === "rates" && (
-        <div>
-          <section aria-label="Currencies">
-            <SectionHeader icon={DollarSign} label="Currencies" />
-            <CurrenciesPanel />
-          </section>
-
-          <section aria-label="Yield curve" className="mt-6">
-            <YieldCurveMonitor />
-          </section>
-
-          <section aria-label="10Y and 2Y Treasury history" className="mt-6">
-            <Treasury10y2yChart />
-          </section>
-        </div>
-      )}
-
-      {tab === "insights" && (
-        <div>
-          <section aria-label="Visual Capitalist insight">
-            <SectionHeader icon={ImageIcon} label="Visual Capitalist Insight" />
-            <VisualCapitalistCard />
-          </section>
-        </div>
-      )}
-
-      {tab === "markets" && <DashboardMarketsPanel />}
-
-      {tab === "portfolio" && (
-        <Suspense fallback={<div className="skeleton h-64 w-full rounded-xl" />}>
-          <DashboardPortfolioPanel />
-        </Suspense>
-      )}
+      <section aria-label="Market pulse" className="mt-6">
+        <SectionHeader icon={Activity} label="Market Pulse" />
+        <MacroIndicators />
+        <p className="mt-3 text-[11px] text-muted">
+          Macro data sourced from{" "}
+          <a
+            href="https://fred.stlouisfed.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-accent transition-colors duration-200 cursor-pointer"
+          >
+            FRED®
+          </a>{" "}
+          (Federal Reserve Bank of St. Louis)
+        </p>
+        <MarketOverview />
+        <p className="mt-3 text-[11px] text-muted">
+          Quotes refresh about every 20 seconds while this page is visible. Data is delayed; not for
+          trading decisions.
+        </p>
+      </section>
     </div>
   );
 }

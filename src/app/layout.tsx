@@ -6,6 +6,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
+import { auth } from "@/lib/auth";
+import { isDevAuthBypassEnabled } from "@/lib/dev-auth";
 
 /* ----------------------------------------------------------------
    FONT SETUP
@@ -79,11 +81,14 @@ export const viewport: Viewport = {
    LAYOUT
    ---------------------------------------------------------------- */
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+  const devBypass = isDevAuthBypassEnabled();
+
   return (
     <html
       lang="en"
@@ -95,7 +100,12 @@ export default function RootLayout({
         className="bg-background text-foreground font-sans antialiased min-h-dvh overflow-x-hidden"
         suppressHydrationWarning
       >
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider
+          session={session}
+          refetchOnWindowFocus={!devBypass}
+        >
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );

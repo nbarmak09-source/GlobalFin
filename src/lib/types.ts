@@ -63,6 +63,16 @@ export interface UserPortfolio {
   positionCount: number;
 }
 
+/** Named watchlist list (user can have multiple). */
+export interface WatchlistGroup {
+  id: string;
+  userId: string;
+  name: string;
+  sortOrder: number;
+  createdAt: string;
+  itemCount: number;
+}
+
 export interface PortfolioPosition {
   id: string;
   symbol: string;
@@ -72,20 +82,29 @@ export interface PortfolioPosition {
   purchaseDate?: string; // YYYY-MM-DD, optional
 }
 
+/** Keys populated from Yahoo quote summary for portfolio/watchlist metric columns */
+export type PortfolioFundamentals = Partial<Record<string, number>>;
+
 export interface WatchlistItem {
   id: string;
   symbol: string;
   name: string;
   addedAt: string;
+  groupId?: string | null;
 }
 
 export interface EnrichedWatchlistItem extends WatchlistItem {
   currentPrice: number;
   dayChange: number;
   dayChangePercent: number;
+  regularMarketDayHigh: number;
+  regularMarketDayLow: number;
   fiftyTwoWeekHigh: number;
   fiftyTwoWeekLow: number;
   marketCap: number;
+  /** Yahoo Finance exchange code (e.g. NMS); optional, for TradingView routing */
+  exchange?: string;
+  exchangeName?: string;
   /** Daily volume (regular session) */
   volume: number;
   /** Trailing P/E when Yahoo provides it */
@@ -96,6 +115,8 @@ export interface EnrichedWatchlistItem extends WatchlistItem {
   extendedHours: ExtendedHoursLine | null;
   /** From Yahoo quoteSummary (asset/summary profile); may be empty for some tickers */
   sector?: string;
+  /** Optional fundamentals for extra table columns (from quote summary) */
+  fundamentals?: PortfolioFundamentals;
 }
 
 export interface EnrichedPosition extends PortfolioPosition {
@@ -105,16 +126,25 @@ export interface EnrichedPosition extends PortfolioPosition {
   dayChangePercent: number;
   totalPL: number;
   totalPLPercent: number;
+  /** Prior regular-session close from Yahoo (sparkline / context) */
+  regularMarketPreviousClose: number;
+  regularMarketDayHigh: number;
+  regularMarketDayLow: number;
   fiftyTwoWeekHigh: number;
   fiftyTwoWeekLow: number;
   marketCap: number;
   volume: number;
   pe: number;
   ytdReturn: number | null;
+  /** Yahoo Finance exchange code (e.g. NMS); optional, for TradingView routing */
+  exchange?: string;
+  exchangeName?: string;
   /** Pre-market or after-hours snapshot when Yahoo publishes it */
   extendedHours: ExtendedHoursLine | null;
   /** From Yahoo quoteSummary (asset/summary profile); may be empty for some tickers */
   sector?: string;
+  /** Optional fundamentals for extra table columns (from quote summary) */
+  fundamentals?: PortfolioFundamentals;
 }
 
 export interface HistoricalDataPoint {
@@ -364,6 +394,24 @@ export interface QuoteSummaryData {
   quickRatio: number;
   freeCashflow: number;
   operatingCashflow: number;
+
+  /**
+   * Most recent filing when Yahoo returns statement modules (annual, else quarterly).
+   * Often zero if Yahoo omits those modules.
+   */
+  statementNetIncome: number;
+  statementOperatingIncome: number;
+  statementCostOfRevenue: number;
+  statementInterestExpense: number;
+  statementResearchDevelopment: number;
+  statementSellingGeneralAdmin: number;
+  statementTotalAssets: number;
+  statementTotalLiabilities: number;
+  statementStockholderEquity: number;
+  /** Capital expenditures (Yahoo convention may be negative). */
+  statementCapitalExpenditures: number;
+  /** Dividends paid (Yahoo convention may be negative). */
+  statementDividendsPaid: number;
 
   // Key Statistics
   sharesOutstanding: number;

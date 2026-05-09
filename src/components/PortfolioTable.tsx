@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import PositionDetailPanel from "./PositionDetailPanel";
 import type { EnrichedPosition } from "@/lib/types";
@@ -9,8 +9,11 @@ import {
   metricCellThClass,
   renderPortfolioWatchlistMetricCell,
   formatUsdScaled,
+  formatUsdFull,
+  formatFundamentalDisplay,
   type NumberScale,
 } from "@/components/PortfolioWatchlistMetricCells";
+import { getMetric } from "@/lib/metrics";
 import {
   DndContext,
   closestCenter,
@@ -44,6 +47,10 @@ interface PortfolioTableProps {
   numberScale: NumberScale;
   onDelete: (id: string) => void;
   onReorder: (positions: EnrichedPosition[]) => void;
+  onUpdatePosition?: (
+    position: EnrichedPosition,
+    updates: Partial<Pick<EnrichedPosition, "shares" | "avgCost">>
+  ) => Promise<void>;
   valuesVisible?: boolean;
   onEdit?: (position: EnrichedPosition) => void;
   loading?: boolean;
@@ -56,10 +63,78 @@ function formatCurrency(value: number): string {
   });
 }
 
+function EditableNumberCell({
+  value,
+  prefix = "",
+  ariaLabel,
+  onCommit,
+}: {
+  value: number;
+  prefix?: string;
+  ariaLabel: string;
+  onCommit: (next: number) => Promise<void>;
+}) {
+  const [draft, setDraft] = useState(String(value));
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!saving) setDraft(String(value));
+  }, [saving, value]);
+
+  async function commit() {
+    const next = Number(draft);
+    if (!Number.isFinite(next) || next <= 0) {
+      setDraft(String(value));
+      return;
+    }
+    if (Math.abs(next - value) < 0.000001) {
+      setDraft(String(value));
+      return;
+    }
+    setSaving(true);
+    try {
+      await onCommit(next);
+    } catch {
+      setDraft(String(value));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <td className="px-4 py-2 text-right font-mono">
+      <div className="flex items-center justify-end gap-1">
+        {prefix ? <span className="text-muted">{prefix}</span> : null}
+        <input
+          type="number"
+          step="any"
+          min="0"
+          value={draft}
+          disabled={saving}
+          aria-label={ariaLabel}
+          onClick={(e) => e.stopPropagation()}
+          onFocus={(e) => e.currentTarget.select()}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => void commit()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            if (e.key === "Escape") {
+              setDraft(String(value));
+              e.currentTarget.blur();
+            }
+          }}
+          className="h-8 w-24 rounded-md border border-transparent bg-background/50 px-2 text-right text-[13px] text-foreground outline-none transition-colors hover:border-border focus:border-accent focus:bg-background disabled:opacity-60"
+        />
+      </div>
+    </td>
+  );
+}
+
 function SortableRow({
   pos,
   onDelete,
   onEdit,
+  onUpdatePosition,
   valuesVisible,
   isExpanded,
   onToggleExpand,
@@ -67,10 +142,15 @@ function SortableRow({
   visibleKeys,
   chevronAnchorKey,
   numberScale,
+  totalPortfolioValue,
 }: {
   pos: EnrichedPosition;
   onDelete: (id: string) => void;
   onEdit?: (position: EnrichedPosition) => void;
+  onUpdatePosition?: (
+    position: EnrichedPosition,
+    updates: Partial<Pick<EnrichedPosition, "shares" | "avgCost">>
+  ) => Promise<void>;
   valuesVisible: boolean;
   isExpanded: boolean;
   onToggleExpand: () => void;
@@ -78,6 +158,7 @@ function SortableRow({
   visibleKeys: string[];
   chevronAnchorKey: string | undefined;
   numberScale: NumberScale;
+  totalPortfolioValue: number;
 }) {
   const {
     attributes,
@@ -133,18 +214,44 @@ function SortableRow({
           </button>
         )}
       </td>
-      {visibleKeys.map((metricKey) =>
-        renderPortfolioWatchlistMetricCell(
-          metricKey,
-          { mode: "holdings", row: pos, valuesVisible },
-          {
-            stocksHref,
-            attachChevron: metricKey === chevronAnchorKey,
-            isExpanded,
-            numberScale,
-          }
-        )
-      )}
+      {visibleKeys.map((metricKey) => {
+        if (metricKey === "shares" && onUpdatePosition) {
+          return (
+            <EditableNumberCell
+              key={metricKey}
+              value={pos.shares}
+              ariaLabel={`Edit shares for ${pos.symbol}`}
+              onCommit={(shares) => onUpdatePosition(pos, { shares })}
+            />
+          );
+        }
+        if (metricKey === "avgCost" && onUpdatePosition) {
+          return (
+            <EditableNumberCell
+              key={metricKey}
+              value={pos.avgCost}
+              prefix="$"
+              ariaLabel={`Edit average cost for ${pos.symbol}`}
+              onCommit={(avgCost) => onUpdatePosition(pos, { avgCost })}
+            />
+          );
+        }
+        return (
+          <Fragment key={metricKey}>
+            {renderPortfolioWatchlistMetricCell(
+              metricKey,
+              { mode: "holdings", row: pos, valuesVisible },
+              {
+                stocksHref,
+                attachChevron: metricKey === chevronAnchorKey,
+                isExpanded,
+                numberScale,
+                totalPortfolioValue,
+              }
+            )}
+          </Fragment>
+        );
+      })}
       <td className="px-4 py-3">
         <div className="flex items-center gap-1">
           {onEdit && (
@@ -210,6 +317,7 @@ export default function PortfolioTable({
   numberScale,
   onDelete,
   onReorder,
+  onUpdatePosition,
   valuesVisible = true,
   onEdit,
   loading = false,
@@ -369,7 +477,7 @@ export default function PortfolioTable({
       case "marketValue":
         return (
           <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
-            {valuesVisible ? formatUsdScaled(totalValue, numberScale) : MASK}
+            {valuesVisible ? formatUsdFull(totalValue) : MASK}
           </td>
         );
       case "totalPL":
@@ -407,6 +515,22 @@ export default function PortfolioTable({
             {`${totalDayChangePercent >= 0 ? "+" : ""}${totalDayChangePercent.toFixed(2)}%`}
           </td>
         );
+      case "totalPLPercent":
+        return (
+          <td
+            className={`px-4 py-3 text-right font-mono font-medium text-[13px] ${
+              totalPLPercent >= 0 ? "text-green" : "text-red"
+            }`}
+          >
+            {`${totalPLPercent >= 0 ? "+" : ""}${totalPLPercent.toFixed(2)}%`}
+          </td>
+        );
+      case "percentPortfolio":
+        return (
+          <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
+            {totalValue > 0 ? "100.00%" : "—"}
+          </td>
+        );
       case "marketCap":
         return (
           <td className="px-4 py-3 text-right font-mono font-medium text-[13px] text-foreground">
@@ -431,12 +555,34 @@ export default function PortfolioTable({
             )}
           </td>
         );
-      default:
+      default: {
+        const metric = getMetric(metricKey);
+        if (metric) {
+          const w = weightedByMarketValue(displayPositions, (p) => {
+            const val = p.fundamentals?.[metricKey];
+            return val != null && Number.isFinite(val) ? val : null;
+          });
+          if (w == null) {
+            return (
+              <td className={metricCellThClass(metricKey)}>
+                <span className="text-muted">—</span>
+              </td>
+            );
+          }
+          return (
+            <td
+              className={`${metricCellThClass(metricKey)} font-mono font-medium text-[13px] text-foreground`}
+            >
+              {formatFundamentalDisplay(metricKey, metric, w, numberScale)}
+            </td>
+          );
+        }
         return (
           <td className={metricCellThClass(metricKey)}>
             <span className="text-muted">—</span>
           </td>
         );
+      }
     }
   }
 
@@ -500,6 +646,7 @@ export default function PortfolioTable({
                           pos={pos}
                           onDelete={onDelete}
                           onEdit={onEdit}
+                          onUpdatePosition={onUpdatePosition}
                           valuesVisible={valuesVisible}
                           isExpanded={expandedId === pos.id}
                           onToggleExpand={() =>
@@ -511,6 +658,7 @@ export default function PortfolioTable({
                           visibleKeys={visibleKeys}
                           chevronAnchorKey={chevronAnchorKey}
                           numberScale={numberScale}
+                          totalPortfolioValue={totalValue}
                         />
                         {expandedId === pos.id && (
                           <tr>

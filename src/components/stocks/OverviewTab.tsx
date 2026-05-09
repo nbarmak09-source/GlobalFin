@@ -22,23 +22,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-function formatNumber(value: number): string {
-  if (!value) return "N/A";
-  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
-  if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-  if (value >= 1e3) return `$${(value / 1e3).toFixed(2)}K`;
-  return `$${value.toLocaleString()}`;
-}
-
-function fmt(val: number, decimals = 2): string {
-  return val ? val.toFixed(decimals) : "N/A";
-}
-
-function pct(val: number): string {
-  return val ? `${(val * 100).toFixed(2)}%` : "N/A";
-}
-
 interface OverviewTabProps {
   data: QuoteSummaryData;
   symbol: string;
@@ -49,38 +32,6 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
   const [expanded, setExpanded] = useState(false);
   const powerTier = getTierBySymbol(symbol);
   const supplyChainMatch = getSupplyChainByTicker(symbol);
-
-  const stats: { label: string; value: string }[] = [
-    { label: "Market Cap", value: formatNumber(data.marketCap) },
-    { label: "P/E Ratio (TTM)", value: fmt(data.trailingPE) },
-    { label: "EPS (TTM)", value: data.trailingEps ? `$${fmt(data.trailingEps)}` : "N/A" },
-    { label: "Beta", value: fmt(data.beta) },
-    { label: "52-Week High", value: `$${fmt(data.fiftyTwoWeekHigh)}` },
-    { label: "52-Week Low", value: `$${fmt(data.fiftyTwoWeekLow)}` },
-    { label: "Volume", value: data.regularMarketVolume?.toLocaleString() || "N/A" },
-    { label: "Avg Volume (10D)", value: "—" },
-    { label: "Dividend Yield", value: data.dividendYield ? pct(data.dividendYield) : "N/A" },
-    { label: "Open", value: `$${fmt(data.regularMarketOpen)}` },
-    { label: "Day High", value: `$${fmt(data.regularMarketDayHigh)}` },
-    { label: "Day Low", value: `$${fmt(data.regularMarketDayLow)}` },
-    { label: "Prev Close", value: `$${fmt(data.regularMarketPreviousClose)}` },
-    { label: "Shares Outstanding", value: data.sharesOutstanding ? (data.sharesOutstanding / 1e9).toFixed(2) + "B" : "N/A" },
-  ];
-
-  if (data.preMarketPrice != null && data.preMarketPrice > 0) {
-    const up = (data.preMarketChange ?? 0) >= 0;
-    stats.push({
-      label: "Pre-market",
-      value: `$${data.preMarketPrice.toFixed(2)} · ${up ? "+" : ""}${(data.preMarketChange ?? 0).toFixed(2)} (${up ? "+" : ""}${(data.preMarketChangePercent ?? 0).toFixed(2)}%)`,
-    });
-  }
-  if (data.postMarketPrice != null && data.postMarketPrice > 0) {
-    const up = (data.postMarketChange ?? 0) >= 0;
-    stats.push({
-      label: "After hours",
-      value: `$${data.postMarketPrice.toFixed(2)} · ${up ? "+" : ""}${(data.postMarketChange ?? 0).toFixed(2)} (${up ? "+" : ""}${(data.postMarketChangePercent ?? 0).toFixed(2)}%)`,
-    });
-  }
 
   return (
     <div className="space-y-6">
@@ -132,23 +83,6 @@ export default function OverviewTab({ data, symbol, onViewChart }: OverviewTabPr
                 yahooExchange={data.exchange}
                 yahooExchangeName={data.exchangeName}
               />
-            </div>
-          </div>
-
-          <div className="rounded-xl bg-card border border-border p-5">
-            <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">
-              Key Statistics
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {stats.map((s) => (
-                <div
-                  key={s.label}
-                  className="flex items-center justify-between py-2 px-3 rounded-lg bg-background text-sm"
-                >
-                  <span className="text-muted">{s.label}</span>
-                  <span className="font-mono font-medium">{s.value}</span>
-                </div>
-              ))}
             </div>
           </div>
         </div>

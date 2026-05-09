@@ -1,5 +1,10 @@
 import { prisma } from "./prisma";
-import type { PortfolioPosition, UserPortfolio, WatchlistItem } from "./types";
+import type {
+  PortfolioPosition,
+  UserPortfolio,
+  WatchlistGroup,
+  WatchlistItem,
+} from "./types";
 
 function toPosition(row: {
   id: string;
@@ -24,13 +29,155 @@ function toWatchlistItem(row: {
   symbol: string;
   name: string;
   addedAt: Date;
+  groupId?: string | null;
 }): WatchlistItem {
   return {
     id: row.id,
     symbol: row.symbol,
     name: row.name,
     addedAt: row.addedAt.toISOString(),
+    ...(row.groupId != null && { groupId: row.groupId }),
   };
+}
+
+/** Migrates orphan items (group_id null) onto the primary list. */
+export async function ensureDefaultWatchlistGroup(
+  userId: string
+): Promise<{ id: string; name: string }> {
+  const first = await prisma.watchlistGroup.findFirst({
+    where: { userId },
+    orderBy: { sortOrder: "asc" },
+  });
+  if (first) {
+    await prisma.watchlistItem.updateMany({
+      where: { userId, groupId: null },
+      data: { groupId: first.id },
+    });
+    return { id: first.id, name: first.name };
+  }
+  const group = await prisma.watchlistGroup.create({
+    data: {
+      userId,
+      name: "Main Watchlist",
+      sortOrder: 0,
+    },
+  });
+  await prisma.watchlistItem.updateMany({
+    where: { userId },
+    data: { groupId: group.id },
+  });
+  return { id: group.id, name: group.name };
+}
+
+export async function assertWatchlistGroupOwnership(
+  userId: string,
+  groupId: string
+): Promise<boolean> {
+  const g = await prisma.watchlistGroup.findFirst({
+    where: { id: groupId, userId },
+  });
+  return !!g;
+}
+
+export async function getWatchlistGroups(userId: string): Promise<WatchlistGroup[]> {
+  const rows = await prisma.watchlistGroup.findMany({
+    where: { userId },
+    orderBy: { sortOrder: "asc" },
+    include: {
+      _count: { select: { items: true } },
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    userId: r.userId,
+    name: r.name,
+    sortOrder: r.sortOrder,
+    createdAt: r.createdAt.toISOString(),
+    itemCount: r._count.items,
+  }));
+}
+
+export async function createWatchlistGroup(
+  userId: string,
+  name: string
+): Promise<WatchlistGroup> {
+  const trimmed = name.trim();
+  const displayName = trimmed.length > 0 ? trimmed : "New List";
+  const maxOrder = await prisma.watchlistGroup.aggregate({
+    where: { userId },
+    _max: { sortOrder: true },
+  });
+  const sortOrder = (maxOrder._max.sortOrder ?? -1) + 1;
+  const row = await prisma.watchlistGroup.create({
+    data: {
+      userId,
+      name: displayName,
+      sortOrder,
+    },
+    include: { _count: { select: { items: true } } },
+  });
+  return {
+    id: row.id,
+    userId: row.userId,
+    name: row.name,
+    sortOrder: row.sortOrder,
+    createdAt: row.createdAt.toISOString(),
+    itemCount: row._count.items,
+  };
+}
+
+export async function renameWatchlistGroup(
+  userId: string,
+  groupId: string,
+  name: string
+): Promise<WatchlistGroup | null> {
+  const trimmed = name.trim();
+  const displayName = trimmed.length > 0 ? trimmed : "New List";
+  const existing = await prisma.watchlistGroup.findFirst({
+    where: { id: groupId, userId },
+  });
+  if (!existing) return null;
+  const row = await prisma.watchlistGroup.update({
+    where: { id: groupId },
+    data: { name: displayName },
+    include: { _count: { select: { items: true } } },
+  });
+  return {
+    id: row.id,
+    userId: row.userId,
+    name: row.name,
+    sortOrder: row.sortOrder,
+    createdAt: row.createdAt.toISOString(),
+    itemCount: row._count.items,
+  };
+}
+
+export async function deleteWatchlistGroup(
+  userId: string,
+  groupId: string
+): Promise<boolean> {
+  const count = await prisma.watchlistGroup.count({ where: { userId } });
+  if (count <= 1) {
+    return false;
+  }
+  const deleted = await prisma.watchlistGroup.deleteMany({
+    where: { id: groupId, userId },
+  });
+  return deleted.count > 0;
+}
+
+export async function reorderWatchlistGroups(
+  userId: string,
+  orderedIds: string[]
+): Promise<void> {
+  await prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.watchlistGroup.updateMany({
+        where: { id, userId },
+        data: { sortOrder: index },
+      })
+    )
+  );
 }
 
 /** Creates "Main Portfolio" if none exist and attaches orphan positions. */
@@ -259,10 +406,13 @@ export async function deletePosition(
 }
 
 export async function getWatchlist(
-  userId: string
+  userId: string,
+  groupId?: string
 ): Promise<WatchlistItem[]> {
+  const where =
+    groupId !== undefined ? { userId, groupId } : { userId };
   const rows = await prisma.watchlistItem.findMany({
-    where: { userId },
+    where,
     orderBy: { sortOrder: "asc" },
   });
   return rows.map(toWatchlistItem);
@@ -270,15 +420,18 @@ export async function getWatchlist(
 
 export async function addToWatchlist(
   userId: string,
-  item: Omit<WatchlistItem, "id" | "addedAt">
+  item: Omit<WatchlistItem, "id" | "addedAt" | "groupId">,
+  groupId?: string | null
 ): Promise<WatchlistItem> {
   const existing = await prisma.watchlistItem.findFirst({
     where: { userId, symbol: item.symbol },
   });
   if (existing) return toWatchlistItem(existing);
 
+  const orderScope =
+    groupId != null ? { userId, groupId } : { userId };
   const maxOrder = await prisma.watchlistItem.aggregate({
-    where: { userId },
+    where: orderScope,
     _max: { sortOrder: true },
   });
   const sortOrder = (maxOrder._max.sortOrder ?? -1) + 1;
@@ -289,6 +442,7 @@ export async function addToWatchlist(
       symbol: item.symbol,
       name: item.name,
       sortOrder,
+      ...(groupId != null ? { groupId } : {}),
     },
   });
   return toWatchlistItem(row);
@@ -296,12 +450,13 @@ export async function addToWatchlist(
 
 export async function removeFromWatchlist(
   userId: string,
-  id: string
+  id: string,
+  groupId?: string
 ): Promise<WatchlistItem[]> {
   await prisma.watchlistItem.deleteMany({
     where: { id, userId },
   });
-  return getWatchlist(userId);
+  return getWatchlist(userId, groupId);
 }
 
 export async function reorderPositions(
@@ -322,15 +477,19 @@ export async function reorderPositions(
 
 export async function reorderWatchlist(
   userId: string,
-  orderedIds: string[]
+  orderedIds: string[],
+  groupId?: string
 ): Promise<WatchlistItem[]> {
   await prisma.$transaction(
     orderedIds.map((id, index) =>
       prisma.watchlistItem.updateMany({
-        where: { id, userId },
+        where:
+          groupId !== undefined
+            ? { id, userId, groupId }
+            : { id, userId },
         data: { sortOrder: index },
       })
     )
   );
-  return getWatchlist(userId);
+  return getWatchlist(userId, groupId);
 }

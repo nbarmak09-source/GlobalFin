@@ -671,6 +671,34 @@ export async function getQuoteSummaryHeavy(
   )();
 }
 
+/** Yahoo quote-summary money fields are sometimes `{ raw: number }`. */
+function yahooQuoteSummaryMoney(v: unknown): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (v && typeof v === "object" && "raw" in v) {
+    const r = (v as { raw?: unknown }).raw;
+    if (typeof r === "number" && Number.isFinite(r)) return r;
+  }
+  return 0;
+}
+
+function firstQuoteSummaryStatementRow(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  result: any,
+  historyKey: string,
+  arrayKey: string
+): Record<string, unknown> | null {
+  const h = result[historyKey];
+  const arr = h?.[arrayKey];
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+  const r = arr[0];
+  return r && typeof r === "object" ? (r as Record<string, unknown>) : null;
+}
+
+function stmtMoney(row: Record<string, unknown> | null, key: string): number {
+  if (!row) return 0;
+  return yahooQuoteSummaryMoney(row[key]);
+}
+
 /** Uncached Yahoo fetch — see `getQuoteSummary` for caching. */
 async function fetchQuoteSummaryFromYahoo(
   symbol: string
@@ -692,6 +720,12 @@ async function fetchQuoteSummaryFromYahoo(
           "recommendationTrend",
           "calendarEvents",
           "price",
+          "incomeStatementHistory",
+          "incomeStatementHistoryQuarterly",
+          "balanceSheetHistory",
+          "balanceSheetHistoryQuarterly",
+          "cashflowStatementHistory",
+          "cashflowStatementHistoryQuarterly",
         ],
       },
       // Skip strict validation — large payloads are slow and Yahoo sometimes
@@ -711,6 +745,40 @@ async function fetchQuoteSummaryFromYahoo(
     const cal = result.calendarEvents;
     const et = result.earningsTrend;
     const rt = result.recommendationTrend;
+
+    const isRow =
+      firstQuoteSummaryStatementRow(
+        result,
+        "incomeStatementHistory",
+        "incomeStatementHistory"
+      ) ??
+      firstQuoteSummaryStatementRow(
+        result,
+        "incomeStatementHistoryQuarterly",
+        "incomeStatementHistoryQuarterly"
+      );
+    const bsRow =
+      firstQuoteSummaryStatementRow(
+        result,
+        "balanceSheetHistory",
+        "balanceSheetHistory"
+      ) ??
+      firstQuoteSummaryStatementRow(
+        result,
+        "balanceSheetHistoryQuarterly",
+        "balanceSheetHistoryQuarterly"
+      );
+    const cfRow =
+      firstQuoteSummaryStatementRow(
+        result,
+        "cashflowStatementHistory",
+        "cashflowStatementHistory"
+      ) ??
+      firstQuoteSummaryStatementRow(
+        result,
+        "cashflowStatementHistoryQuarterly",
+        "cashflowStatementHistoryQuarterly"
+      );
 
     return {
       shortName: price?.shortName || "",
@@ -783,6 +851,23 @@ async function fetchQuoteSummaryFromYahoo(
       quickRatio: fin?.quickRatio ?? 0,
       freeCashflow: fin?.freeCashflow ?? 0,
       operatingCashflow: fin?.operatingCashflow ?? 0,
+
+      statementNetIncome: stmtMoney(isRow, "netIncome"),
+      statementOperatingIncome: stmtMoney(isRow, "operatingIncome"),
+      statementCostOfRevenue: stmtMoney(isRow, "costOfRevenue"),
+      statementInterestExpense: stmtMoney(isRow, "interestExpense"),
+      statementResearchDevelopment: stmtMoney(isRow, "researchDevelopment"),
+      statementSellingGeneralAdmin: stmtMoney(
+        isRow,
+        "sellingGeneralAdministrative"
+      ),
+      statementTotalAssets: stmtMoney(bsRow, "totalAssets"),
+      statementTotalLiabilities:
+        stmtMoney(bsRow, "totalLiab") ||
+        stmtMoney(bsRow, "totalLiabilities"),
+      statementStockholderEquity: stmtMoney(bsRow, "totalStockholderEquity"),
+      statementCapitalExpenditures: stmtMoney(cfRow, "capitalExpenditures"),
+      statementDividendsPaid: stmtMoney(cfRow, "dividendsPaid"),
 
       sharesOutstanding: stats?.sharesOutstanding ?? 0,
       floatShares: stats?.floatShares ?? 0,

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import SymbolSearch from "@/components/SymbolSearch";
+import BullsBears from "@/components/BullsBears";
 import OverviewTab from "@/components/stocks/OverviewTab";
 import ValuationTab from "@/components/stocks/ValuationTab";
 import FinancialsTab from "@/components/stocks/FinancialsTab";
@@ -31,6 +32,7 @@ import {
 
 const SUB_TABS = [
   "Overview",
+  "Bulls & Bears",
   "Valuation",
   "Financials",
   "Forecast",
@@ -47,6 +49,7 @@ type SubTab = (typeof SUB_TABS)[number];
 
 const SUBTAB_TO_SLUG: Record<SubTab, string> = {
   Overview: "overview",
+  "Bulls & Bears": "bulls-bears",
   Valuation: "valuation",
   Financials: "financials",
   Forecast: "forecast",
@@ -283,6 +286,9 @@ function AnalysisPageContent() {
     }
     if (activeTab === "Historical Price") {
       return <HistoricalPriceTab symbol={symbol} summaryData={data ?? undefined} />;
+    }
+    if (activeTab === "Bulls & Bears") {
+      return <BullsBears ticker={symbol} />;
     }
     if (activeTab === "SEC Filings") {
       return <SECFilingsTab symbol={symbol} />;

@@ -60,6 +60,9 @@ export async function GET(request: NextRequest) {
         series: [],
         firstValue: 0,
         lastValue: 0,
+        portfolioIndexed: [],
+        benchmarkIndexed: [],
+        benchmarkSymbol: "^GSPC",
       });
     }
 
@@ -183,7 +186,75 @@ export async function GET(request: NextRequest) {
     const firstValue = series.length > 0 ? series[0].value : 0;
     const lastValue = series.length > 0 ? series[series.length - 1].value : 0;
 
-    return NextResponse.json({ series, firstValue, lastValue });
+    const BENCHMARK = "^GSPC";
+    const portfolioIndexed: { time: string | number; value: number }[] = [];
+    const benchmarkIndexed: { time: string | number; value: number }[] = [];
+
+    if (series.length > 0) {
+      const spxHist = await getHistoricalData(BENCHMARK, validPeriod);
+      if (spxHist.length > 0) {
+        const spxSorted = [...spxHist].sort(
+          (a, b) => toTimeMs(a.time) - toTimeMs(b.time)
+        );
+        const spxTimes = spxSorted.map((p) => p.time);
+        const spxCloses = spxSorted.map((p) => p.close);
+
+        const spxCloseAtOrBefore = (t: string | number): number | null => {
+          const target = toTimeMs(t);
+          let lo = 0;
+          let hi = spxSorted.length - 1;
+          let ans = -1;
+          while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            const mt = toTimeMs(spxTimes[mid]);
+            if (mt <= target) {
+              ans = mid;
+              lo = mid + 1;
+            } else {
+              hi = mid - 1;
+            }
+          }
+          if (ans < 0) return null;
+          const c = spxCloses[ans];
+          return c > 0 ? c : null;
+        };
+
+        let startIdx = -1;
+        for (let i = 0; i < series.length; i++) {
+          const sx = spxCloseAtOrBefore(series[i].time);
+          if (sx != null && series[i].value > 0) {
+            startIdx = i;
+            break;
+          }
+        }
+
+        if (startIdx >= 0) {
+          const p0 = series[startIdx].value;
+          const s0 = spxCloseAtOrBefore(series[startIdx].time)!;
+          for (let i = startIdx; i < series.length; i++) {
+            const sx = spxCloseAtOrBefore(series[i].time);
+            if (sx == null) continue;
+            portfolioIndexed.push({
+              time: series[i].time,
+              value: Math.round((series[i].value / p0) * 10000) / 100,
+            });
+            benchmarkIndexed.push({
+              time: series[i].time,
+              value: Math.round((sx / s0) * 10000) / 100,
+            });
+          }
+        }
+      }
+    }
+
+    return NextResponse.json({
+      series,
+      firstValue,
+      lastValue,
+      portfolioIndexed,
+      benchmarkIndexed,
+      benchmarkSymbol: BENCHMARK,
+    });
   } catch (error) {
     console.error("Portfolio performance error:", error);
     return NextResponse.json(

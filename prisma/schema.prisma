@@ -28,6 +28,7 @@ model User {
   positions     Position[]
   portfolios    Portfolio[]
   watchlistItems WatchlistItem[]
+  watchlistGroups WatchlistGroup[]
   pitches       Pitch[]
   alerts        Alert[]
 }
@@ -99,6 +100,19 @@ model Position {
   @@index([portfolioId])
 }
 
+model WatchlistGroup {
+  id        String          @id @default(cuid())
+  userId    String
+  name      String
+  sortOrder Int             @default(0) @map("sort_order")
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items WatchlistItem[]
+
+  @@index([userId])
+}
+
 model WatchlistItem {
   id        String   @id @default(cuid())
   userId    String
@@ -106,10 +120,13 @@ model WatchlistItem {
   name      String
   addedAt   DateTime @default(now()) @map("added_at")
   sortOrder Int      @default(0) @map("sort_order")
+  groupId   String?  @map("group_id")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group WatchlistGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([groupId])
 }
 
 // --- App: per-user saved pitches ---

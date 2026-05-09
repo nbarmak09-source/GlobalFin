@@ -25,6 +25,15 @@ function isSidebarChildActive(
 
   if (pathname !== url.pathname) return false
 
+  if (pathname === "/portfolio" && url.pathname === "/portfolio") {
+    const childTab = url.searchParams.get("tab")
+    const pageTab = searchParams.get("tab")
+    if (childTab === "watchlist") return pageTab === "watchlist"
+    if (!url.searchParams.has("tab")) {
+      return pageTab !== "watchlist"
+    }
+  }
+
   const queryKeys = [...url.searchParams.keys()]
   if (queryKeys.length === 0) {
     return true
@@ -71,17 +80,22 @@ const NAV_ITEMS: NavEntry[] = [
     children: [],
   },
   {
-    label: 'Charting',
-    href: '/charting',
+    label: 'Portfolio',
+    href: '/portfolio',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <rect x="2" y="11" width="4" height="7" rx="1"/>
-        <rect x="8" y="7"  width="4" height="11" rx="1"/>
-        <rect x="14" y="3" width="4" height="15" rx="1"/>
-        <line x1="2" y1="19" x2="18" y2="19"/>
+        <rect x="3" y="6" width="14" height="11" rx="1.5"/>
+        <path d="M7 6V5a3 3 0 016 0v1"/>
+        <line x1="10" y1="10" x2="10" y2="13"/><line x1="8" y1="11.5" x2="12" y2="11.5"/>
       </svg>
     ),
-    children: [],
+    children: [
+      { label: 'Holdings',     href: '/portfolio',                 icon: '◎' },
+      { label: 'Watchlist',    href: '/portfolio?tab=watchlist',   icon: '☆' },
+      { label: 'Performance',  href: '/portfolio/performance',   icon: '△' },
+      { label: 'Allocation',   href: '/portfolio/allocation',    icon: '◈' },
+      { label: 'Risk',         href: '/portfolio/risk',          icon: '≋' },
+    ],
   },
   {
     label: 'Analysis',
@@ -96,6 +110,7 @@ const NAV_ITEMS: NavEntry[] = [
     ),
     children: [
       { label: 'Overview',         href: '/analysis?tab=overview',    icon: '◎' },
+      { label: 'Bulls & Bears',    href: '/analysis?tab=bulls-bears', icon: '⚖' },
       { label: 'Valuation',        href: '/analysis?tab=valuation',   icon: '▦' },
       { label: 'Financials',       href: '/analysis?tab=financials',  icon: '≋' },
       { label: 'Forecast',         href: '/analysis?tab=forecast',    icon: '△' },
@@ -104,6 +119,19 @@ const NAV_ITEMS: NavEntry[] = [
       { label: 'Solvency',         href: '/analysis?tab=solvency',    icon: '⊞' },
       { label: 'SEC Filings',      href: '/analysis?tab=sec-filings', icon: '⬡' },
     ],
+  },
+  {
+    label: 'Charting',
+    href: '/charting',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <rect x="2" y="11" width="4" height="7" rx="1"/>
+        <rect x="8" y="7"  width="4" height="11" rx="1"/>
+        <rect x="14" y="3" width="4" height="15" rx="1"/>
+        <line x1="2" y1="19" x2="18" y2="19"/>
+      </svg>
+    ),
+    children: [],
   },
   {
     label: 'Macro',
@@ -176,6 +204,24 @@ const NAV_ITEMS: NavEntry[] = [
     ],
   },
   {
+    label: 'Supply Chain',
+    href: '/supply-chain',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <circle cx="4"  cy="10" r="2"/><circle cx="10" cy="4"  r="2"/>
+        <circle cx="16" cy="10" r="2"/><circle cx="10" cy="16" r="2"/>
+        <line x1="6"  y1="10" x2="8"  y2="10"/><line x1="12" y1="10" x2="14" y2="10"/>
+        <line x1="10" y1="6"  x2="10" y2="8"/><line x1="10" y1="12" x2="10" y2="14"/>
+      </svg>
+    ),
+    children: [
+      { label: 'Overview',     href: '/supply-chain',               icon: '◎' },
+      { label: 'Suppliers',    href: '/supply-chain/suppliers',     icon: '⤢' },
+      { label: 'Disruptions',  href: '/supply-chain/disruptions',   icon: '△' },
+      { label: 'Trade Flows',  href: '/supply-chain/trade',         icon: '≋' },
+    ],
+  },
+  {
     label: 'Tools',
     href: '/models',
     extraActivePrefixes: ['/pitch', '/filings'],
@@ -195,41 +241,6 @@ const NAV_ITEMS: NavEntry[] = [
       { label: 'LBO',                   href: '/models/lbo',   icon: '⊞' },
       { label: 'Pitch builder',        href: '/pitch',       icon: '✦' },
       { label: 'SEC filing summaries', href: '/filings',    icon: '▤' },
-    ],
-  },
-  {
-    label: 'Portfolio',
-    href: '/portfolio',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <rect x="3" y="6" width="14" height="11" rx="1.5"/>
-        <path d="M7 6V5a3 3 0 016 0v1"/>
-        <line x1="10" y1="10" x2="10" y2="13"/><line x1="8" y1="11.5" x2="12" y2="11.5"/>
-      </svg>
-    ),
-    children: [
-      { label: 'Holdings',     href: '/portfolio',             icon: '◎' },
-      { label: 'Performance',  href: '/portfolio/performance', icon: '△' },
-      { label: 'Allocation',   href: '/portfolio/allocation',  icon: '◈' },
-      { label: 'Risk',         href: '/portfolio/risk',        icon: '≋' },
-    ],
-  },
-  {
-    label: 'Supply Chain',
-    href: '/supply-chain',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <circle cx="4"  cy="10" r="2"/><circle cx="10" cy="4"  r="2"/>
-        <circle cx="16" cy="10" r="2"/><circle cx="10" cy="16" r="2"/>
-        <line x1="6"  y1="10" x2="8"  y2="10"/><line x1="12" y1="10" x2="14" y2="10"/>
-        <line x1="10" y1="6"  x2="10" y2="8"/><line x1="10" y1="12" x2="10" y2="14"/>
-      </svg>
-    ),
-    children: [
-      { label: 'Overview',     href: '/supply-chain',               icon: '◎' },
-      { label: 'Suppliers',    href: '/supply-chain/suppliers',     icon: '⤢' },
-      { label: 'Disruptions',  href: '/supply-chain/disruptions',   icon: '△' },
-      { label: 'Trade Flows',  href: '/supply-chain/trade',         icon: '≋' },
     ],
   },
 ]
@@ -473,17 +484,24 @@ export function Sidebar() {
             <SidebarNavPanel items={NAV_BOTTOM} searchParams={EMPTY_SEARCH_PARAMS} />
           </nav>
           <div className="flex justify-center pb-1 pt-0.5">
-            <span style={{
-              fontSize: '10px',
-              fontWeight: 500,
-              letterSpacing: '0.04em',
-              color: 'var(--color-primary)',
-              background: 'rgba(201,162,39,0.1)',
-              borderRadius: '4px',
-              padding: '2px 7px',
-              fontFamily: 'var(--font-heading)',
-            }}>
-              v2.0
+            <span
+              title={
+                process.env.NEXT_PUBLIC_RELEASE_SHA
+                  ? `Build ${process.env.NEXT_PUBLIC_RELEASE_BUILD} · ${process.env.NEXT_PUBLIC_RELEASE_SHA}`
+                  : `Build ${process.env.NEXT_PUBLIC_RELEASE_BUILD ?? ""}`
+              }
+              style={{
+                fontSize: '10px',
+                fontWeight: 500,
+                letterSpacing: '0.04em',
+                color: 'var(--color-primary)',
+                background: 'rgba(201,162,39,0.1)',
+                borderRadius: '4px',
+                padding: '2px 7px',
+                fontFamily: 'var(--font-heading)',
+              }}
+            >
+              #{process.env.NEXT_PUBLIC_RELEASE_BUILD ?? "—"}
             </span>
           </div>
         </div>

@@ -6,6 +6,8 @@ import { useState } from "react";
 import { ChevronDown, TrendingDown, TrendingUp } from "lucide-react";
 import ExtendedHoursInline from "@/components/ExtendedHoursInline";
 import type { EnrichedPosition, EnrichedWatchlistItem } from "@/lib/types";
+import { getMetric } from "@/lib/metrics";
+import type { MetricDef } from "@/lib/metrics";
 
 const MASK = "••••";
 
@@ -49,10 +51,20 @@ export function formatUsdScaled(value: number, scale: NumberScale): string {
   const d = divisorForScale(scale);
   const v = value / d;
   const suffix = suffixForScale(scale);
-  return `$${Math.abs(v).toLocaleString(undefined, {
+  const sign = value < 0 ? "-" : "";
+  return `${sign}$${Math.abs(v).toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}${suffix}`;
+}
+
+/** Full dollar amount (no K/M/B); used for market value so it stays readable regardless of scale. */
+export function formatUsdFull(value: number): string {
+  const sign = value < 0 ? "-" : "";
+  return `${sign}$${Math.abs(value).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function formatVolumeScaled(vol: number, scale: NumberScale): string {
@@ -79,11 +91,42 @@ const RIGHT_KEYS = new Set([
   "avgCost",
   "marketValue",
   "totalPL",
+  "totalPLPercent",
+  "percentPortfolio",
 ]);
+
+/** Display quote-summary fundamentals in holdings/watchlist cells (and portfolio total row). */
+export function formatFundamentalDisplay(
+  metricKey: string,
+  metric: MetricDef,
+  v: number,
+  numberScale: NumberScale
+): string {
+  switch (metric.format) {
+    case "currency": {
+      const abs = Math.abs(v);
+      if (abs >= 1e6) return formatUsdScaled(v, numberScale);
+      const neg = v < 0 ? "-" : "";
+      return `${neg}$${abs.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+        minimumFractionDigits: 0,
+      })}`;
+    }
+    case "percent":
+      return `${(v * 100).toFixed(2)}%`;
+    case "ratio":
+      return metricKey === "epsdiluted" ? `$${v.toFixed(2)}` : v.toFixed(2);
+    case "number":
+      return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    default:
+      return String(v);
+  }
+}
 
 export function metricCellThClass(metricKey: string): string {
   const base = "px-4 py-3";
-  if (RIGHT_KEYS.has(metricKey)) return `${base} text-right`;
+  if (RIGHT_KEYS.has(metricKey) || getMetric(metricKey))
+    return `${base} text-right`;
   return base;
 }
 
@@ -97,6 +140,8 @@ export interface MetricCellOpts {
   isExpanded: boolean;
   /** Holdings/table large-number formatting; watchlist ignores where unused */
   numberScale?: NumberScale;
+  /** Holdings table total value, used for % of portfolio. */
+  totalPortfolioValue?: number;
 }
 
 function ClearbitOrLetterAvatar({ symbol }: { symbol: string }) {
@@ -140,7 +185,13 @@ export function renderPortfolioWatchlistMetricCell(
   pack: RowPack,
   opts: MetricCellOpts
 ): ReactNode {
-  const { stocksHref, attachChevron, isExpanded, numberScale = "B" } = opts;
+  const {
+    stocksHref,
+    attachChevron,
+    isExpanded,
+    numberScale = "B",
+    totalPortfolioValue = 0,
+  } = opts;
   const row = pack.row;
   const isHoldings = pack.mode === "holdings";
 
@@ -339,11 +390,36 @@ export function renderPortfolioWatchlistMetricCell(
         <td className="px-4 py-3 text-right font-mono">
           {isHoldings
             ? pack.valuesVisible
-              ? formatUsdScaled(pack.row.marketValue, numberScale)
+              ? formatUsdFull(pack.row.marketValue)
               : MASK
             : "—"}
         </td>
       );
+    case "totalPLPercent":
+      return (
+        <td className="px-4 py-3 text-right font-mono">
+          {isHoldings ? (
+            <span
+              className={pack.row.totalPLPercent >= 0 ? "text-green" : "text-red"}
+            >
+              {`${pack.row.totalPLPercent >= 0 ? "+" : ""}${pack.row.totalPLPercent.toFixed(2)}%`}
+            </span>
+          ) : (
+            "—"
+          )}
+        </td>
+      );
+    case "percentPortfolio": {
+      const pct =
+        isHoldings && totalPortfolioValue > 0
+          ? (pack.row.marketValue / totalPortfolioValue) * 100
+          : null;
+      return (
+        <td className="px-4 py-3 text-right font-mono">
+          {pct != null ? `${pct.toFixed(2)}%` : "—"}
+        </td>
+      );
+    }
     case "totalPL":
       return (
         <td className="px-4 py-3 text-right">
@@ -371,11 +447,24 @@ export function renderPortfolioWatchlistMetricCell(
           )}
         </td>
       );
-    default:
+    default: {
+      const metric = getMetric(metricKey);
+      const fund = pack.row.fundamentals;
+      const v = fund?.[metricKey];
+      if (metric && v != null && Number.isFinite(v)) {
+        return (
+          <td
+            className={`${metricCellThClass(metricKey)} font-mono text-[13px]`}
+          >
+            {formatFundamentalDisplay(metricKey, metric, v, numberScale)}
+          </td>
+        );
+      }
       return (
         <td className={metricCellThClass(metricKey)}>
           <span className="text-muted">—</span>
         </td>
       );
+    }
   }
 }
