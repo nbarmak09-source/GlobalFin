@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   Sparkles,
   Newspaper,
@@ -9,14 +8,12 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Landmark,
-  CalendarDays,
 } from "lucide-react";
 import { PageHeader, SectionHeading } from "@/components/PageHeader";
 import MarketOverview from "@/components/MarketOverview";
 import IndexCharts from "@/components/IndexCharts";
 import NewsCard from "@/components/NewsCard";
-import StocksEarningsThisWeek from "@/components/stocks/StocksEarningsThisWeek";
-import PortfolioEarningsUpcoming from "@/components/PortfolioEarningsUpcoming";
+import EarningsCalendar from "@/components/equities/EarningsCalendar";
 import type { NewsArticle } from "@/lib/types";
 
 export type EquitiesView =
@@ -68,8 +65,8 @@ const VIEW_META: Record<
     subtitle: "IPO, M&A, and SPAC headlines from the ECM feed.",
   },
   earnings: {
-    title: "Earnings",
-    subtitle: "Calendar-style view: this week’s tape and your portfolio names.",
+    title: "Earnings Calendar",
+    subtitle: "Market-wide earnings schedule sorted by market cap.",
   },
   news: {
     title: "Market news",
@@ -331,33 +328,8 @@ export default function EquitiesDashboard({
       )}
 
       {showEarnings && (
-        <section aria-label="Earnings calendar" className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">
-              For dividends and full calendar filters, open the dedicated{" "}
-              <Link
-                href="/calendar"
-                className="text-accent underline underline-offset-2 hover:text-foreground"
-              >
-                earnings &amp; dividends calendar
-              </Link>
-              .
-            </p>
-            <Link
-              href="/calendar"
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-card-hover transition-colors"
-            >
-              <CalendarDays className="h-4 w-4 text-accent" />
-              Open calendar
-            </Link>
-          </div>
-          <StocksEarningsThisWeek />
-          <div>
-            <h2 className="text-lg font-semibold text-foreground mb-3">
-              Your holdings
-            </h2>
-            <PortfolioEarningsUpcoming />
-          </div>
+        <section aria-label="Earnings calendar">
+          <EarningsCalendar />
         </section>
       )}
 

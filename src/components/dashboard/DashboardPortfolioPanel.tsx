@@ -1,11 +1,10 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ChevronDown, Eye, EyeOff, Lock } from "lucide-react";
-import { Line, LineChart } from "recharts";
 import type {
   EnrichedPosition,
   EnrichedWatchlistItem,
@@ -45,34 +44,67 @@ function RangeCell({ low, high }: { low: number; high: number }) {
   );
 }
 
-function holdingsSparkData(pos: EnrichedPosition): { v: number }[] {
-  const previousClose =
-    pos.extendedHours?.previousClose ??
-    (pos.regularMarketPreviousClose > 0 ? pos.regularMarketPreviousClose : undefined);
-  const first = previousClose ?? pos.currentPrice;
-  return [{ v: first }, { v: pos.currentPrice }];
+/** Compact dollar for small range labels (matches Yahoo session endpoints). */
+function formatSessionEndpoint(n: number): string {
+  return `$${formatPrice(n)}`;
 }
 
-function HoldingsSparkline({ pos }: { pos: EnrichedPosition }) {
-  const data = useMemo(() => holdingsSparkData(pos), [pos]);
-  const stroke = pos.dayChangePercent >= 0 ? "#4ade80" : "#f87171";
+/**
+ * Shows where **regular market price** sits between Yahoo’s **regular session** day low and high.
+ * Uses the same fields as `/api/portfolio`: `regularMarketPrice` vs day low/high (not extended-hours highs/lows).
+ */
+function DayRangeIndicator({
+  low,
+  high,
+  price,
+  dayChangePercent,
+}: {
+  low: number;
+  high: number;
+  price: number;
+  dayChangePercent: number;
+}) {
+  const ok =
+    Number.isFinite(low) &&
+    Number.isFinite(high) &&
+    Number.isFinite(price) &&
+    low > 0 &&
+    high >= low;
+
+  if (!ok) {
+    return (
+      <div className="opacity-80 w-[7.25rem] shrink-0 flex justify-center mx-auto min-h-[2.25rem] items-center" aria-hidden>
+        <span className="text-[10px] text-muted">—</span>
+      </div>
+    );
+  }
+
+  const span = high === low ? 1 : high - low;
+  const rawPct = ((price - low) / span) * 100;
+  const clamped = rawPct < 0 || rawPct > 100;
+  const pctThrough = high === low ? 50 : Math.min(100, Math.max(0, rawPct));
+  const markerClass = dayChangePercent >= 0 ? "bg-green" : "bg-red";
+
+  const tip =
+    `Regular session (Yahoo): low ${formatSessionEndpoint(low)}, high ${formatSessionEndpoint(high)}; last regular price ${formatSessionEndpoint(price)}.${clamped ? " Marker pinned to bar end because price is outside that range." : ""}`;
+
   return (
-    <div className="opacity-80 w-20 shrink-0 flex justify-center mx-auto">
-      <LineChart
-        width={80}
-        height={32}
-        data={data}
-        margin={{ top: 4, right: 0, bottom: 4, left: 0 }}
-      >
-        <Line
-          type="monotone"
-          dataKey="v"
-          stroke={stroke}
-          strokeWidth={1.5}
-          dot={false}
-          isAnimationActive={false}
+    <div
+      className="opacity-95 w-[7.25rem] shrink-0 flex flex-col justify-center gap-0.5 mx-auto py-0.5"
+      role="img"
+      title={tip}
+      aria-label={`Regular session range ${formatSessionEndpoint(low)} to ${formatSessionEndpoint(high)}; price about ${Math.round(pctThrough)}% from low toward high${clamped ? "; pinned to end of bar" : ""}`}
+    >
+      <div className="flex justify-between gap-1 text-[9px] font-mono text-muted tabular-nums leading-none px-px">
+        <span className="truncate min-w-0">{formatSessionEndpoint(low)}</span>
+        <span className="truncate min-w-0 text-right">{formatSessionEndpoint(high)}</span>
+      </div>
+      <div className="relative h-1.5 w-full rounded-full bg-gradient-to-r from-red/20 via-muted/40 to-green/20 overflow-visible">
+        <div
+          className={`absolute top-1/2 z-[1] -translate-x-1/2 -translate-y-1/2 w-[3px] h-3.5 rounded-[2px] shadow-sm ring-1 ring-background ${markerClass}`}
+          style={{ left: `${pctThrough}%` }}
         />
-      </LineChart>
+      </div>
     </div>
   );
 }
@@ -445,7 +477,12 @@ export default function DashboardPortfolioPanel() {
                 <thead>
                   <tr>
                     <th className={`${thClass} min-w-0 text-left pr-4`}>Ticker</th>
-                    <th className={`${thClass} w-20 text-center px-0`} aria-hidden />
+                    <th
+                      className={`${thClass} w-[7.25rem] text-center px-0`}
+                      title="Regular session low / high (Yahoo). Marker = regular market price within that range."
+                    >
+                      <span className="sr-only">Day range</span>
+                    </th>
                     <th className={`${thClass} w-20 text-right tabular-nums px-2`}>Price</th>
                     <th className={`${thClass} w-20 text-right px-2`}>Day %</th>
                     <th className={`${thClass} w-20 text-right px-2`}>P&amp;L %</th>
@@ -471,8 +508,13 @@ export default function DashboardPortfolioPanel() {
                               {pos.name.length > 18 ? pos.name.slice(0, 18) + "…" : pos.name}
                             </div>
                           </td>
-                          <td className="w-20 text-center align-middle py-2.5 px-0">
-                            <HoldingsSparkline pos={pos} />
+                          <td className="w-[7.25rem] text-center align-middle py-2.5 px-0">
+                            <DayRangeIndicator
+                              low={pos.regularMarketDayLow}
+                              high={pos.regularMarketDayHigh}
+                              price={pos.currentPrice}
+                              dayChangePercent={pos.dayChangePercent}
+                            />
                           </td>
                           <td className="w-20 px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top tabular-nums">
                             ${formatPrice(pos.currentPrice)}

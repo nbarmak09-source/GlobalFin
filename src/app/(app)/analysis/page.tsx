@@ -476,7 +476,7 @@ function AnalysisPageContent() {
           <div className="relative">
             <div
               ref={tabBarRef}
-              className="sticky top-[56px] z-20 flex items-center gap-1 overflow-x-auto border-b border-border bg-background -mx-3 px-3 pb-px scrollbar-hide scroll-smooth sm:static sm:mx-0 sm:px-0"
+              className="sticky top-[92px] z-20 flex items-center gap-1 overflow-x-auto border-b border-border bg-background -mx-3 px-3 pb-px scrollbar-hide scroll-smooth sm:static sm:mx-0 sm:px-0"
             >
               {SUB_TABS.map((tab) => (
                 <button

@@ -177,7 +177,7 @@ const NAV_ITEMS: NavEntry[] = [
       { label: 'Indices',            href: '/equities/indices',       icon: '▦' },
       { label: 'Sector Performance', href: '/equities/sectors',       icon: '⊞' },
       { label: 'Deal Flow',          href: '/equities/deal-flow',     icon: '⤢' },
-      { label: 'Earnings',           href: '/equities/earnings',      icon: '◈' },
+      { label: 'Earnings Calendar',  href: '/equities/earnings',      icon: '◈' },
       { label: 'News',               href: '/equities/news',          icon: '≋' },
     ],
   },
@@ -232,6 +232,25 @@ const NAV_ITEMS: NavEntry[] = [
       { label: 'Suppliers',    href: '/supply-chain/suppliers',     icon: '⤢' },
       { label: 'Disruptions',  href: '/supply-chain/disruptions',   icon: '△' },
       { label: 'Trade Flows',  href: '/supply-chain/trade',         icon: '≋' },
+    ],
+  },
+  {
+    label: 'Research',
+    href: '/research',
+    extraActivePrefixes: ['/research'],
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <path d="M4 2h9l4 4v12a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+        <polyline points="13 2 13 6 17 6"/>
+        <line x1="7" y1="9" x2="13" y2="9"/>
+        <line x1="7" y1="12" x2="13" y2="12"/>
+        <line x1="7" y1="15" x2="10" y2="15"/>
+      </svg>
+    ),
+    children: [
+      { label: 'Discover',         href: '/research',                        icon: '◎' },
+      { label: 'Fund Letters',     href: '/research/fund-letters',           icon: '◎' },
+      { label: 'Super Investors',  href: '/research/super-investors',        icon: '⊞' },
     ],
   },
   {
