@@ -408,7 +408,7 @@ function ScreenerContent() {
                 placeholder="AAPL, Apple…"
                 value={filters.query}
                 onChange={(e) => setFilter("query", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-2 text-[16px] focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
           </div>
@@ -418,7 +418,7 @@ function ScreenerContent() {
             <select
               value={filters.sector}
               onChange={(e) => setFilter("sector", e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[16px] focus:outline-none focus:ring-1 focus:ring-accent"
             >
               <option value="">All Sectors</option>
               {SECTORS.filter(Boolean).map((s) => (
@@ -437,14 +437,14 @@ function ScreenerContent() {
                 placeholder="Min"
                 value={filters.minPE}
                 onChange={(e) => setFilter("minPE", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[16px] focus:outline-none focus:ring-1 focus:ring-accent"
               />
               <input
                 type="number"
                 placeholder="Max"
                 value={filters.maxPE}
                 onChange={(e) => setFilter("maxPE", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[16px] focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
           </div>
@@ -460,7 +460,7 @@ function ScreenerContent() {
                 step="0.1"
                 value={filters.minDividendYield}
                 onChange={(e) => setFilter("minDividendYield", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[16px] focus:outline-none focus:ring-1 focus:ring-accent"
               />
               <input
                 type="number"
@@ -468,7 +468,7 @@ function ScreenerContent() {
                 step="0.1"
                 value={filters.maxDividendYield}
                 onChange={(e) => setFilter("maxDividendYield", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[16px] focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
           </div>
@@ -482,7 +482,7 @@ function ScreenerContent() {
                 step="0.1"
                 value={filters.minBeta}
                 onChange={(e) => setFilter("minBeta", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[16px] focus:outline-none focus:ring-1 focus:ring-accent"
               />
               <input
                 type="number"
@@ -490,7 +490,7 @@ function ScreenerContent() {
                 step="0.1"
                 value={filters.maxBeta}
                 onChange={(e) => setFilter("maxBeta", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[16px] focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
           </div>
@@ -505,7 +505,7 @@ function ScreenerContent() {
               step="1"
               value={filters.minRevenueGrowth}
               onChange={(e) => setFilter("minRevenueGrowth", e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[16px] focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
 
@@ -516,7 +516,7 @@ function ScreenerContent() {
             <select
               value={filters.minMarketCap}
               onChange={(e) => setFilter("minMarketCap", e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[16px] focus:outline-none focus:ring-1 focus:ring-accent"
             >
               <option value="">Any</option>
               <option value="1000000000">$1B+</option>

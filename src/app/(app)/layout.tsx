@@ -20,9 +20,9 @@ export default function AppLayout({
           @media (min-width: 768px) {
             .page-shell { margin-left: var(--sidebar-w); }
           }
-          /* 40px ticker (h-10); +52px search row on md+ */
+          /* 36px ticker (h-9) on mobile; 40px (h-10) + 52px search row on md+ */
           .app-content-below-header {
-            padding-top: 40px;
+            padding-top: 36px;
           }
           @media (min-width: 768px) {
             .app-content-below-header {
