@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { ExternalLink, X } from "lucide-react";
 import type { HistoricalDataPoint } from "@/lib/types";
+import type { MouseEventParams } from "lightweight-charts";
 
 type ChartTime = string | number | { year: number; month: number; day: number };
 
@@ -221,16 +222,16 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
         };
       };
 
-      const unsubHover = chart.subscribeCrosshairMove((param) => {
+      const onCrosshairMove = (param: MouseEventParams) => {
         if (!param.time || !anchorRef.current || param.seriesData.size === 0) return;
         const price = getCloseFromSeriesData(
           param.seriesData as ReadonlyMap<unknown, unknown>
         );
         if (price === null) return;
         setRangeMeasure(computeMeasure(anchorRef.current, param.time as ChartTime, price));
-      });
+      };
 
-      const unsubClick = chart.subscribeClick((param) => {
+      const onChartClick = (param: MouseEventParams) => {
         if (!param.time || param.seriesData.size === 0) {
           anchorRef.current = null;
           setHasAnchor(false);
@@ -253,16 +254,10 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
           anchorRef.current = null;
           setHasAnchor(false);
         }
-      });
+      };
 
-      (container as HTMLDivElement & {
-        __unsubHover?: () => void;
-        __unsubClick?: () => void;
-      }).__unsubHover = unsubHover;
-      (container as HTMLDivElement & {
-        __unsubHover?: () => void;
-        __unsubClick?: () => void;
-      }).__unsubClick = unsubClick;
+      chart.subscribeCrosshairMove(onCrosshairMove);
+      chart.subscribeClick(onChartClick);
     }
 
     chart.timeScale().fitContent();
@@ -279,12 +274,6 @@ export default function StockChart({ symbol, period, compact = false }: StockCha
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      const c = container as HTMLDivElement & {
-        __unsubHover?: () => void;
-        __unsubClick?: () => void;
-      };
-      c.__unsubHover?.();
-      c.__unsubClick?.();
     };
   }, [data, period, compact]);
 
