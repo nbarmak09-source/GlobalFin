@@ -3,7 +3,7 @@ import { FUND_LETTERS } from "@/lib/fundLetters"
 import FundLettersArchiveClient from "./FundLettersArchiveClient"
 
 export const metadata: Metadata = {
-  title: "Fund Letters Archive | Capital Markets Hub",
+  title: "Fund Letters Archive | GlobalFin",
   description: "Curated quarterly letters from top hedge funds and investment firms.",
 }
 

@@ -151,7 +151,7 @@ export async function fetchRssArticles(
             Accept:
               "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
             "User-Agent":
-              "CapitalMarketsHub/1.0 (capital-markets dashboard; macro news aggregation)",
+              "GlobalFin/1.0 (globalfin.app; macro news aggregation)",
           },
         });
         if (!res.ok) return [];

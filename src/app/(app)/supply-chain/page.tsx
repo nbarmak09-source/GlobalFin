@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import SupplyChainPage from "@/components/supply-chain/SupplyChainPage";
 
 export const metadata: Metadata = {
-  title: "Supply Chain | Capital Markets Hub",
+  title: "Supply Chain | GlobalFin",
   description:
     "Explore supply chain layers and AI ecosystem dependencies across key industries.",
 };

@@ -4,7 +4,7 @@ import { InvestorAvatar } from "@/components/research/InvestorAvatar"
 import { SUPER_INVESTORS } from "@/lib/superInvestors"
 
 export const metadata: Metadata = {
-  title: "Super Investors | Capital Markets Hub",
+  title: "Super Investors | GlobalFin",
   description: "Track 13F filings from the world's top institutional investors.",
 }
 

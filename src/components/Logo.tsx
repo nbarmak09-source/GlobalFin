@@ -1,5 +1,5 @@
 /**
- * GLOBALFIN Capital Markets — vector identity only (no PNG lockups).
+ * GlobalFin — vector identity only (no PNG lockups).
  * Crisp on retina, matches `--color-bg` (#0B0B0F), scales across sidebar / navbar / auth.
  */
 
@@ -82,25 +82,6 @@ function WordGLOBALFIN({
   );
 }
 
-/** Stack CAPITAL / MARKETS for narrow sidebar rail */
-function SubtitleRail() {
-  return (
-    <span
-      className="flex flex-col items-center gap-px uppercase leading-none font-medium text-center"
-      style={{
-        fontFamily: "var(--font-body)",
-        fontSize: 8,
-        letterSpacing: "0.12em",
-        color: "var(--color-primary)",
-        opacity: 0.92,
-      }}
-    >
-      <span>CAPITAL</span>
-      <span>MARKETS</span>
-    </span>
-  );
-}
-
 /** Thin gold accent — mirrors printed lockup */
 function BrandDivider({ wide }: { wide?: boolean }) {
   return (
@@ -131,9 +112,6 @@ export function GlobalFinBrand({
       <span className={`flex flex-col items-center justify-center ${className}`}>
         <LogoMark size={26} />
         <WordGLOBALFIN sizePx={11} />
-        <div className="mt-1">
-          <SubtitleRail />
-        </div>
       </span>
     );
   }
@@ -170,16 +148,6 @@ export function GlobalFinBrand({
       <span className={`flex flex-col items-center gap-2 ${className}`}>
         <LogoMark size={40} />
         <WordGLOBALFIN sizePx={22} />
-        <span
-          className="uppercase tracking-[0.12em]"
-          style={{
-            fontFamily: "var(--font-body)",
-            fontSize: 9,
-            color: "var(--color-primary)",
-          }}
-        >
-          Capital Markets
-        </span>
         <BrandDivider wide />
       </span>
     );
@@ -190,16 +158,6 @@ export function GlobalFinBrand({
     <span className={`flex flex-col items-center gap-2 ${className}`}>
       <LogoMark size={48} />
       <WordGLOBALFIN sizePx={28} />
-      <span
-        className="uppercase tracking-[0.14em]"
-        style={{
-          fontFamily: "var(--font-body)",
-          fontSize: 10,
-          color: "var(--color-primary)",
-        }}
-      >
-        Capital Markets
-      </span>
       <BrandDivider wide />
     </span>
   );

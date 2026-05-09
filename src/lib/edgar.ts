@@ -30,7 +30,7 @@ async function fetchJSON<T>(url: string): Promise<T> {
   const res = await fetch(url, {
     headers: {
       "User-Agent":
-        "Capital-Markets-Dashboard/1.0 (contact: example@example.com)",
+        "GlobalFin/1.0 (contact: example@example.com)",
       Accept: "application/json",
     },
   });
@@ -168,7 +168,7 @@ export async function fetchEdgarFilingText(
   const res = await fetch(url, {
     headers: {
       "User-Agent":
-        "Capital-Markets-Dashboard/1.0 (contact: example@example.com)",
+        "GlobalFin/1.0 (contact: example@example.com)",
       Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     },
   });

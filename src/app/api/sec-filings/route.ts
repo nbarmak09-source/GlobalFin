@@ -17,7 +17,7 @@ async function fetchJSON<T>(url: string): Promise<T> {
   const res = await fetch(url, {
     headers: {
       "User-Agent":
-        "Capital-Markets-Dashboard/1.0 (contact: example@example.com)",
+        "GlobalFin/1.0 (contact: example@example.com)",
       Accept: "application/json",
     },
   });

@@ -493,7 +493,7 @@ export function Sidebar() {
           <Link
             href="/"
             className="flex flex-col items-center justify-center rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
-            aria-label="GLOBALFIN Capital Markets — Home"
+            aria-label="GlobalFin — Home"
           >
             <GlobalFinBrand variant="sidebar" />
           </Link>

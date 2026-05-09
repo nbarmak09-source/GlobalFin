@@ -152,7 +152,7 @@ export function TopBar() {
         <Link
           href="/"
           className="mr-2 shrink-0 select-none rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
-          aria-label="GLOBALFIN Capital Markets — Home"
+          aria-label="GlobalFin — Home"
         >
           <GlobalFinBrand variant="topbar" />
         </Link>

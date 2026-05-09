@@ -17,7 +17,7 @@ export default function AuthLayout({
           <Link
             href="/"
             className="inline-flex flex-col items-center gap-3 rounded-xl px-2 py-1 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
-            aria-label="GLOBALFIN Capital Markets — Home"
+            aria-label="GlobalFin — Home"
           >
             <GlobalFinBrand variant="auth" />
             {/* Tagline hidden on very narrow screens so auth forms stay above the fold */}

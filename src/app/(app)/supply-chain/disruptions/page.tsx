@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import SupplyChainPage from "@/components/supply-chain/SupplyChainPage";
 
 export const metadata: Metadata = {
-  title: "Supply chain — Disruptions | Capital Markets Hub",
+  title: "Supply chain — Disruptions | GlobalFin",
   description: "Energy and upstream disruption lens on global supply chains.",
 };
 

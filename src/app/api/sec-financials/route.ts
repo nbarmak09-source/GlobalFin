@@ -12,7 +12,7 @@ const CACHE_PATH = path.join(process.cwd(), "sec-financials-cache.json");
 function secUserAgent(): string {
   const fromEnv = process.env.SEC_USER_AGENT?.trim();
   if (fromEnv) return fromEnv;
-  return "GlobalCapitalMarkets/1.0 (https://github.com/nbarmak09-source/Global-Capital-Markets; support@example.com)";
+  return "GlobalFin/1.0 (https://github.com/nbarmak09-source/GlobalFin; support@example.com)";
 }
 
 type CachedSECEntry = SECFinancials;

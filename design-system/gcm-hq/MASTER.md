@@ -6,7 +6,7 @@
 
 ---
 
-**Project:** Capital Markets Hub
+**Project:** GlobalFin
 **Generated:** 2026-04-11 21:51:47
 **Category:** Fintech/Crypto
 

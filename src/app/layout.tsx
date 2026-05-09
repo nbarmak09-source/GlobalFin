@@ -1,4 +1,4 @@
-// GLOBALFIN Capital Markets — Root Layout
+// GlobalFin — Root Layout
 // Uses next/font for Space Grotesk + Inter (NOT Google Fonts <link> tags —
 // those cause FOUT and don't work with Next.js font optimization)
 
@@ -37,8 +37,8 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default: "GLOBALFIN Capital Markets",
-    template: "%s | GLOBALFIN Capital Markets",
+    default: "GlobalFin",
+    template: "%s | GlobalFin",
   },
   description:
     "Institutional-grade market intelligence, execution systems, and analytics designed for modern finance.",
@@ -51,8 +51,8 @@ export const metadata: Metadata = {
     "equities",
     "alternatives",
   ],
-  authors: [{ name: "GLOBALFIN Capital Markets" }],
-  creator: "GLOBALFIN Capital Markets",
+  authors: [{ name: "GlobalFin" }],
+  creator: "GlobalFin",
   icons: {
     // repo ships logo.svg; add /favicon.ico when available
     icon: "/logo.svg",
@@ -60,10 +60,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    siteName: "GLOBALFIN Capital Markets",
-    title: "GLOBALFIN Capital Markets",
+    siteName: "GlobalFin",
+    title: "GlobalFin",
     description:
-      "Precision Infrastructure for Global Capital Markets. Smarter Markets. Better Outcomes.",
+      "Institutional-grade market intelligence and analytics. Smarter markets, better outcomes.",
   },
 };
 
