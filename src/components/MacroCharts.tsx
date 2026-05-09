@@ -116,7 +116,7 @@ export default function MacroCharts({
   if (error) {
     return (
       <div className="rounded-xl bg-card border border-border p-5 text-center text-sm text-muted">
-        Macro chart data unavailable. Make sure FRED_API_KEY is set.
+        Macro chart data is temporarily unavailable.
       </div>
     );
   }

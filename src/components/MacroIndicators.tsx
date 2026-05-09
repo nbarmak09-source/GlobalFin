@@ -185,7 +185,7 @@ export default function MacroIndicators() {
   if (error || !data) {
     return (
       <div className="card p-4 text-center text-sm" style={{ color: "var(--color-muted)" }}>
-        Macro indicator data unavailable. Make sure FRED_API_KEY is set in your .env file.
+        Macro indicator data is temporarily unavailable.
       </div>
     );
   }

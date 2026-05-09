@@ -71,6 +71,24 @@ function PortfolioPageContent() {
   const [metricQuery, setMetricQuery] = useState("");
   const [numberScale, setNumberScale] = useState<NumberScale>("B");
 
+  const activePortfolioIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    activePortfolioIdRef.current = activePortfolioId;
+  }, [activePortfolioId]);
+
+  /** First successful load per portfolio id uses `cache: 'no-store'`; manual refresh does not. */
+  const holdingsNoStoreDoneForIdRef = useRef<string | null>(null);
+  const positionsBackoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (positionsBackoffTimerRef.current) {
+        clearTimeout(positionsBackoffTimerRef.current);
+        positionsBackoffTimerRef.current = null;
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const stored = localStorage.getItem("portfolio-values-visible");
     if (stored !== null) setValuesVisible(stored === "true");
@@ -164,46 +182,91 @@ function PortfolioPageContent() {
     localStorage.setItem(ACTIVE_PORTFOLIO_KEY, activePortfolioId);
   }, [activePortfolioId]);
 
-  const fetchPositions = useCallback(async (showLoader = true) => {
+  const fetchPositions = useCallback(
+    async (showLoader = true, attempt = 0, manualRefresh = false) => {
+      if (!activePortfolioId) {
+        setPositions([]);
+        setPositionsError(null);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      const pid = activePortfolioId;
+      if (attempt === 0) {
+        setPositionsError(null);
+        if (showLoader) setLoading(true);
+        else setRefreshing(true);
+      }
+
+      const useNoStore =
+        attempt === 0 &&
+        !manualRefresh &&
+        holdingsNoStoreDoneForIdRef.current !== pid;
+
+      const finishLoading = () => {
+        setLoading(false);
+        setRefreshing(false);
+      };
+
+      let scheduleRetry = false;
+
+      try {
+        const res = await apiFetch(
+          `/api/portfolio?portfolioId=${encodeURIComponent(pid)}`,
+          useNoStore ? { cache: "no-store" } : undefined
+        );
+
+        if (res.status === 429) {
+          if (attempt >= 3) {
+            setPositionsError("Too many requests");
+            setPositions([]);
+            finishLoading();
+            return;
+          }
+          const delay = Math.min(1000 * 2 ** attempt, 8000);
+          positionsBackoffTimerRef.current = setTimeout(() => {
+            positionsBackoffTimerRef.current = null;
+            if (activePortfolioIdRef.current !== pid) return;
+            void fetchPositions(showLoader, attempt + 1, manualRefresh);
+          }, delay);
+          scheduleRetry = true;
+          return;
+        }
+
+        if (res.ok) {
+          holdingsNoStoreDoneForIdRef.current = pid;
+          const data = await res.json();
+          setPositions(Array.isArray(data) ? data : []);
+        } else {
+          let msg = "Could not load holdings.";
+          try {
+            const body = await res.json();
+            if (typeof body?.error === "string") msg = body.error;
+          } catch {
+            /* ignore */
+          }
+          setPositionsError(msg);
+          setPositions([]);
+        }
+      } catch {
+        setPositionsError("Portfolio data unavailable");
+        setPositions([]);
+      } finally {
+        if (!scheduleRetry) finishLoading();
+      }
+    },
+    [activePortfolioId]
+  );
+
+  useEffect(() => {
     if (!activePortfolioId) {
       setPositions([]);
       setPositionsError(null);
       setLoading(false);
       return;
     }
-    if (showLoader) setLoading(true);
-    else setRefreshing(true);
-    setPositionsError(null);
-    try {
-      const res = await apiFetch(
-        `/api/portfolio?portfolioId=${encodeURIComponent(activePortfolioId)}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setPositions(data);
-      } else {
-        let msg = "Could not load holdings.";
-        try {
-          const body = await res.json();
-          if (typeof body?.error === "string") msg = body.error;
-        } catch {
-          /* ignore */
-        }
-        setPositionsError(msg);
-        setPositions([]);
-      }
-    } catch {
-      setPositionsError("Network error loading holdings.");
-      setPositions([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [activePortfolioId]);
-
-  useEffect(() => {
-    fetchPositions();
-  }, [fetchPositions]);
+    void fetchPositions(true, 0, false);
+  }, [activePortfolioId, fetchPositions]);
 
   async function handleAddPosition(position: {
     symbol: string;
@@ -222,7 +285,7 @@ function PortfolioPageContent() {
       }
     );
     if (res.ok) {
-      fetchPositions(false);
+      fetchPositions(false, 0, true);
       fetchPortfolios();
     }
   }
@@ -234,7 +297,7 @@ function PortfolioPageContent() {
       { method: "DELETE" }
     );
     if (res.ok) {
-      fetchPositions(false);
+      fetchPositions(false, 0, true);
       fetchPortfolios();
     }
   }
@@ -333,7 +396,7 @@ function PortfolioPageContent() {
       setWatchlistRefreshNonce((n) => n + 1);
       return;
     }
-    fetchPositions(false);
+    fetchPositions(false, 0, true);
     fetchPortfolios();
   }
 
@@ -393,11 +456,11 @@ function PortfolioPageContent() {
     );
 
     if (!res.ok) {
-      await fetchPositions(false);
+      await fetchPositions(false, 0, true);
       throw new Error("Failed to update position");
     }
 
-    fetchPositions(false);
+    fetchPositions(false, 0, true);
     fetchPortfolios();
   }
 
@@ -646,7 +709,7 @@ function PortfolioPageContent() {
               {positionsError}
               <button
                 type="button"
-                onClick={() => fetchPositions(false)}
+                onClick={() => fetchPositions(false, 0, true)}
                 className="ml-3 underline hover:text-foreground"
               >
                 Retry
@@ -672,8 +735,12 @@ function PortfolioPageContent() {
         </>
       )}
 
-      {activeTab === "watchlist" && (
-        <div className="flex flex-col gap-4">
+      <div
+        className={
+          activeTab === "watchlist" ? "flex flex-col gap-4" : "hidden"
+        }
+        aria-hidden={activeTab !== "watchlist"}
+      >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -710,8 +777,7 @@ function PortfolioPageContent() {
             refreshNonce={watchlistRefreshNonce}
             activeGroupIdRef={wlGroupRef}
           />
-        </div>
-      )}
+      </div>
 
       {showPositionModal && (
         <AddPositionModal
@@ -727,7 +793,7 @@ function PortfolioPageContent() {
           onClose={() => setEditingPosition(null)}
           onSaved={() => {
             setEditingPosition(null);
-            fetchPositions(false);
+            fetchPositions(false, 0, true);
             fetchPortfolios();
           }}
         />

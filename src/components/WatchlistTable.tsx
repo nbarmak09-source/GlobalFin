@@ -141,6 +141,7 @@ function SortableRow({
               stocksHref,
               attachChevron: metricKey === chevronAnchorKey,
               isExpanded,
+              showTickerNameSubtitle: !visibleKeys.includes("name"),
               tdClassName: i === 0
                 ? "sticky left-8 z-20 min-w-[120px] border-r border-border/80 bg-card hover:bg-card-hover"
                 : undefined,
@@ -208,6 +209,26 @@ export default function WatchlistTable({
     }
   }, [activeGroupId, activeGroupIdRef]);
 
+  const activeWatchlistGroupRef = useRef<string | null>(null);
+  useEffect(() => {
+    activeWatchlistGroupRef.current = activeGroupId;
+  }, [activeGroupId]);
+
+  const watchlistBackoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const watchlistNoStoreDoneForIdRef = useRef<string | null>(null);
+  const prevRefreshNonceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (watchlistBackoffTimerRef.current) {
+        clearTimeout(watchlistBackoffTimerRef.current);
+        watchlistBackoffTimerRef.current = null;
+      }
+    };
+  }, []);
+
   const loadGroups = useCallback(async () => {
     setGroupsLoading(true);
     try {
@@ -263,33 +284,72 @@ export default function WatchlistTable({
     }
   }, [activeGroupId]);
 
-  const fetchItemsForGroup = useCallback(async () => {
-    if (!activeGroupId) {
-      setItems([]);
-      setItemsLoading(false);
-      return;
-    }
-    setItems([]);
-    setItemsLoading(true);
-    try {
-      const qs = `?groupId=${encodeURIComponent(activeGroupId)}`;
-      const res = await apiFetch(`/api/watchlist${qs}`);
-      if (res.ok) {
-        const data = (await res.json()) as EnrichedWatchlistItem[];
-        setItems(Array.isArray(data) ? data : []);
-      } else {
+  const fetchItemsForGroup = useCallback(
+    async (attempt = 0, manualRefresh = false) => {
+      const gid = activeGroupId;
+      if (!gid) {
         setItems([]);
+        setItemsLoading(false);
+        return;
       }
-    } catch {
-      setItems([]);
-    } finally {
-      setItemsLoading(false);
-    }
-  }, [activeGroupId]);
+
+      if (attempt === 0) {
+        setItems([]);
+        setItemsLoading(true);
+      }
+
+      const useNoStore =
+        attempt === 0 &&
+        !manualRefresh &&
+        watchlistNoStoreDoneForIdRef.current !== gid;
+
+      let scheduleRetry = false;
+
+      try {
+        const qs = `?groupId=${encodeURIComponent(gid)}`;
+        const res = await apiFetch(
+          `/api/watchlist${qs}`,
+          useNoStore ? { cache: "no-store" } : undefined
+        );
+
+        if (res.status === 429) {
+          if (attempt >= 3) {
+            setItems([]);
+            setItemsLoading(false);
+            return;
+          }
+          const delay = Math.min(1000 * 2 ** attempt, 8000);
+          watchlistBackoffTimerRef.current = setTimeout(() => {
+            watchlistBackoffTimerRef.current = null;
+            if (activeWatchlistGroupRef.current !== gid) return;
+            void fetchItemsForGroup(attempt + 1, manualRefresh);
+          }, delay);
+          scheduleRetry = true;
+          return;
+        }
+
+        if (res.ok) {
+          watchlistNoStoreDoneForIdRef.current = gid;
+          const data = (await res.json()) as EnrichedWatchlistItem[];
+          setItems(Array.isArray(data) ? data : []);
+        } else {
+          setItems([]);
+        }
+      } catch {
+        setItems([]);
+      } finally {
+        if (!scheduleRetry) setItemsLoading(false);
+      }
+    },
+    [activeGroupId]
+  );
 
   useEffect(() => {
-    void fetchItemsForGroup();
-  }, [fetchItemsForGroup, refreshNonce]);
+    const prev = prevRefreshNonceRef.current;
+    prevRefreshNonceRef.current = refreshNonce;
+    const manualRefresh = prev !== null && refreshNonce !== prev;
+    void fetchItemsForGroup(0, manualRefresh);
+  }, [fetchItemsForGroup, refreshNonce, activeGroupId]);
 
   useEffect(() => {
     function closeMenu(ev: MouseEvent) {
@@ -386,7 +446,7 @@ export default function WatchlistTable({
       method: "DELETE",
     });
     if (!res.ok) return;
-    void fetchItemsForGroup();
+    void fetchItemsForGroup(0, true);
     await loadGroups();
   }
 
@@ -659,7 +719,7 @@ export default function WatchlistTable({
 
       {(loading || itemsLoading) && items.length === 0 ? (
       <div className="rounded-xl bg-card border border-border overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto pr-4 max-sm:pr-5">
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
@@ -700,7 +760,7 @@ export default function WatchlistTable({
 
       {items.length > 0 ? (
       <div className="rounded-xl bg-card border border-border overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto pr-4 max-sm:pr-5">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}

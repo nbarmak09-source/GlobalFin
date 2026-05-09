@@ -78,7 +78,7 @@ export default function ChatInterface() {
         {
           role: "assistant",
           content:
-            "Sorry, I encountered an error. Please make sure your Anthropic API key is configured in `.env.local`.",
+            "Sorry, I encountered an error. Please try again in a moment.",
         },
       ]);
     } finally {

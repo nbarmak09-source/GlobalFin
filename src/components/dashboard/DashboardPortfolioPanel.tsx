@@ -13,6 +13,8 @@ import type {
 import { fmtBn } from "@/lib/formatBn";
 import StockChart from "@/components/StockChart";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
+import ChangePercentPill, { formatSignedPercentPct } from "@/components/ChangePercentPill";
+import SymbolSparkline from "@/components/SymbolSparkline";
 
 const MASK = "••••";
 
@@ -33,7 +35,7 @@ function formatPrice(n: number): string {
 }
 
 function formatPercent(n: number): string {
-  return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
+  return formatSignedPercentPct(n);
 }
 
 function RangeCell({ low, high }: { low: number; high: number }) {
@@ -110,18 +112,7 @@ function DayRangeIndicator({
   );
 }
 
-function ChangePill({ value }: { value: number }) {
-  const positive = value >= 0;
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-        positive ? "bg-green/10 text-green" : "bg-red/10 text-red"
-      }`}
-    >
-      {formatPercent(value)}
-    </span>
-  );
-}
+
 
 function SkeletonRows({ colSpan }: { colSpan: number }) {
   return (
@@ -335,6 +326,10 @@ export default function DashboardPortfolioPanel() {
 
   const displayPositions = positions.slice(0, 10);
   const displayWatchlist = watchlist.slice(0, 10);
+  const watchlistSectionTitle =
+    activeWlGroupId && wlGroups.length > 0
+      ? wlGroups.find((g) => g.id === activeWlGroupId)?.name ?? "Watchlist"
+      : "Watchlist";
 
   return (
     <div className="min-w-0 overflow-hidden space-y-3">
@@ -474,63 +469,63 @@ export default function DashboardPortfolioPanel() {
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-separate border-spacing-0">
-                <thead>
-                  <tr>
-                    <th className={`${thClass} sticky left-0 z-10 bg-background min-w-[100px] text-left pr-4`}>Ticker</th>
-                    <th
-                      className={`${thClass} w-[7.25rem] text-center px-0`}
-                      title="Regular session low / high (Yahoo). Marker = regular market price within that range."
-                    >
-                      <span className="sr-only">Day range</span>
-                    </th>
-                    <th className={`${thClass} w-20 text-right tabular-nums px-2`}>Price</th>
-                    <th className={`${thClass} w-20 text-right px-2`}>Day %</th>
-                    <th className={`${thClass} w-20 text-right px-2`}>P&amp;L %</th>
-                    <th className={`${thClass} hidden md:table-cell w-24 text-right tabular-nums pl-2`}>
-                      Mkt Value
-                    </th>
-                    <th className={`${thClass} w-9 px-0 text-center`} aria-label="Chart" />
-                  </tr>
-                </thead>
-                <tbody>
+            <>
+              <div className="md:hidden rounded-xl border border-border/80 bg-card/30 overflow-hidden">
+                <div className="px-3 py-2 border-b border-border/60 bg-card/40">
+                  <span className="text-[10px] uppercase tracking-wider text-muted font-medium">
+                    Positions
+                  </span>
+                </div>
+                <ul className="divide-y divide-border/55">
                   {displayPositions.map((pos) => (
-                    <tr
-                      key={pos.id}
-                      className="border-b border-border/50 last:border-0 group hover:bg-card/40 cursor-pointer transition-colors duration-150"
-                      onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(pos.symbol)}`)}
-                    >
-                      <td className="sticky left-0 z-10 bg-background group-hover:bg-card/40 min-w-[100px] py-2.5 pr-4 align-top transition-colors duration-150">
-                        <div className="font-semibold text-[12px] text-foreground">{pos.symbol}</div>
-                        <div className="text-[10px] text-muted truncate max-w-[160px]">
-                          {pos.name.length > 18 ? pos.name.slice(0, 18) + "…" : pos.name}
+                    <li key={pos.id}>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            router.push(`/analysis?symbol=${encodeURIComponent(pos.symbol)}`);
+                          }
+                        }}
+                        className="flex items-center gap-2 pl-3 pr-1.5 py-3 w-full text-left hover:bg-card/45 transition-colors cursor-pointer touch-manipulation min-w-0"
+                        onClick={() =>
+                          router.push(`/analysis?symbol=${encodeURIComponent(pos.symbol)}`)
+                        }
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-[13px] text-foreground tabular-nums tracking-tight">
+                            {pos.symbol}
+                          </div>
+                          <div className="text-[10px] text-muted truncate pr-1">{pos.name}</div>
                         </div>
-                      </td>
-                      <td className="w-[7.25rem] text-center align-middle py-2.5 px-0">
-                        <DayRangeIndicator
-                          low={pos.regularMarketDayLow}
-                          high={pos.regularMarketDayHigh}
-                          price={pos.currentPrice}
-                          dayChangePercent={pos.dayChangePercent}
+                        <SymbolSparkline
+                          symbol={pos.symbol}
+                          trendPositive={pos.dayChangePercent >= 0}
                         />
-                      </td>
-                      <td className="w-20 px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top tabular-nums">
-                        ${formatPrice(pos.currentPrice)}
-                      </td>
-                      <td className="w-20 px-2 py-2.5 text-right align-top">
-                        <ChangePill value={pos.dayChangePercent} />
-                      </td>
-                      <td className="w-20 px-2 py-2.5 text-right align-top">
-                        <ChangePill value={pos.totalPLPercent} />
-                      </td>
-                      <td className="hidden md:table-cell w-24 pl-2 py-2.5 text-right font-mono text-[12px] text-muted align-top tabular-nums">
-                        {valuesVisible ? `$${formatPrice(pos.marketValue)}` : MASK}
-                      </td>
-                      <td className="w-9 py-2.5 text-center align-top">
+                        <div className="shrink-0 flex flex-col items-end gap-0.5 pl-1 text-right">
+                          <span className="font-mono font-semibold text-[13px] text-foreground tabular-nums whitespace-nowrap">
+                            ${formatPrice(pos.currentPrice)}
+                          </span>
+                          <ChangePercentPill value={pos.dayChangePercent} />
+                          <span
+                            className={`text-[10px] font-semibold tabular-nums tracking-tight whitespace-nowrap ${
+                              pos.totalPLPercent >= 0 ? "text-green" : "text-red"
+                            }`}
+                          >
+                            {valuesVisible
+                              ? `${formatSignedPercentPct(pos.totalPLPercent)} net`
+                              : MASK}
+                          </span>
+                          {pos.ytdReturn != null && Number.isFinite(pos.ytdReturn) ? (
+                            <span className="text-[9px] font-medium tabular-nums text-violet-400/90 whitespace-nowrap">
+                              YTD {formatSignedPercentPct(pos.ytdReturn)}
+                            </span>
+                          ) : null}
+                        </div>
                         <button
                           type="button"
-                          className="cursor-pointer rounded-md p-1 text-muted transition-colors hover:bg-card-hover hover:text-accent"
+                          className="shrink-0 self-center rounded-md p-1.5 text-muted hover:bg-card-hover hover:text-accent touch-manipulation"
                           aria-label="Show chart"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -540,19 +535,103 @@ export default function DashboardPortfolioPanel() {
                         >
                           <ChevronDown className="h-4 w-4" />
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </li>
                   ))}
-                </tbody>
-              </table>
-              {positions.length > 10 && (
-                <div className="mt-2 text-right">
-                  <Link href="/portfolio" className="text-[11px] text-accent hover:underline">
-                    Show all {positions.length} positions →
-                  </Link>
-                </div>
-              )}
-            </div>
+                </ul>
+                {positions.length > 10 && (
+                  <div className="border-t border-border/55 px-3 py-2.5 text-right">
+                    <Link href="/portfolio" className="text-[11px] text-accent hover:underline">
+                      Show all {positions.length} positions →
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full border-separate border-spacing-0">
+                  <thead>
+                    <tr>
+                      <th className={`${thClass} sticky left-0 z-10 bg-background min-w-[100px] text-left pr-4`}>
+                        Ticker
+                      </th>
+                      <th
+                        className={`${thClass} w-[7.25rem] text-center px-0`}
+                        title="Regular session low / high (Yahoo). Marker = regular market price within that range."
+                      >
+                        <span className="sr-only">Day range</span>
+                      </th>
+                      <th className={`${thClass} w-20 text-right tabular-nums px-2`}>Price</th>
+                      <th className={`${thClass} w-20 text-right px-2`}>Day %</th>
+                      <th className={`${thClass} w-20 text-right px-2`}>P&amp;L %</th>
+                      <th className={`${thClass} hidden md:table-cell w-24 text-right tabular-nums pl-2`}>
+                        Mkt Value
+                      </th>
+                      <th className={`${thClass} w-9 px-0 text-center`} aria-label="Chart" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayPositions.map((pos) => (
+                      <tr
+                        key={pos.id}
+                        className="border-b border-border/50 last:border-0 group hover:bg-card/40 cursor-pointer transition-colors duration-150"
+                        onClick={() =>
+                          router.push(`/analysis?symbol=${encodeURIComponent(pos.symbol)}`)
+                        }
+                      >
+                        <td className="sticky left-0 z-10 bg-background group-hover:bg-card/40 min-w-[100px] py-2.5 pr-4 align-top transition-colors duration-150">
+                          <div className="font-semibold text-[12px] text-foreground">{pos.symbol}</div>
+                          <div className="text-[10px] text-muted truncate max-w-[160px]">
+                            {pos.name.length > 18 ? pos.name.slice(0, 18) + "…" : pos.name}
+                          </div>
+                        </td>
+                        <td className="w-[7.25rem] text-center align-middle py-2.5 px-0">
+                          <DayRangeIndicator
+                            low={pos.regularMarketDayLow}
+                            high={pos.regularMarketDayHigh}
+                            price={pos.currentPrice}
+                            dayChangePercent={pos.dayChangePercent}
+                          />
+                        </td>
+                        <td className="w-20 px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top tabular-nums">
+                          ${formatPrice(pos.currentPrice)}
+                        </td>
+                        <td className="w-20 px-2 py-2.5 text-right align-top">
+                          <ChangePercentPill value={pos.dayChangePercent} />
+                        </td>
+                        <td className="w-20 px-2 py-2.5 text-right align-top">
+                          <ChangePercentPill value={pos.totalPLPercent} />
+                        </td>
+                        <td className="hidden md:table-cell w-24 pl-2 py-2.5 text-right font-mono text-[12px] text-muted align-top tabular-nums">
+                          {valuesVisible ? `$${formatPrice(pos.marketValue)}` : MASK}
+                        </td>
+                        <td className="w-9 py-2.5 text-center align-top">
+                          <button
+                            type="button"
+                            className="cursor-pointer rounded-md p-1 text-muted transition-colors hover:bg-card-hover hover:text-accent"
+                            aria-label="Show chart"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSheetSymbol(pos.symbol);
+                              setSheetPeriod("1y");
+                            }}
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {positions.length > 10 && (
+                  <div className="mt-2 text-right">
+                    <Link href="/portfolio" className="text-[11px] text-accent hover:underline">
+                      Show all {positions.length} positions →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </>
       )}
@@ -573,49 +652,57 @@ export default function DashboardPortfolioPanel() {
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-separate border-spacing-0">
-                <thead>
-                  <tr>
-                    <th className={`${thClass} sticky left-0 z-10 bg-background min-w-[100px] pr-4 text-left`}>Ticker</th>
-                    <th className={`${thClass} px-2 text-right`}>Day range</th>
-                    <th className={`${thClass} px-2 text-right`}>52W</th>
-                    <th className={`${thClass} px-2 text-right`}>Price</th>
-                    <th className={`${thClass} px-2 text-right`}>Day %</th>
-                    <th className={`${thClass} pl-2 text-right`}>Mkt Cap</th>
-                    <th className={`${thClass} w-9 px-0 text-center`} aria-label="Chart" />
-                  </tr>
-                </thead>
-                <tbody>
+            <>
+              <div className="md:hidden rounded-xl border border-border/80 bg-card/30 overflow-hidden">
+                <div className="px-3 py-2 border-b border-border/60 bg-card/40">
+                  <span className="text-[10px] uppercase tracking-wider text-muted font-medium">
+                    {watchlistSectionTitle}
+                  </span>
+                </div>
+                <ul className="divide-y divide-border/55">
                   {displayWatchlist.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="border-b border-border/50 last:border-0 group hover:bg-card/40 cursor-pointer transition-colors duration-150"
-                      onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(item.symbol)}`)}
-                    >
-                      <td className="sticky left-0 z-10 bg-background group-hover:bg-card/40 min-w-[100px] py-2.5 pr-4 transition-colors duration-150">
-                        <div className="font-semibold text-[12px] text-foreground">{item.symbol}</div>
-                        <div className="text-[10px] text-muted truncate max-w-[160px]">{item.name}</div>
-                      </td>
-                      <td className="px-2 py-2.5 text-right align-top">
-                        <RangeCell low={item.regularMarketDayLow} high={item.regularMarketDayHigh} />
-                      </td>
-                      <td className="px-2 py-2.5 text-right align-top">
-                        <RangeCell low={item.fiftyTwoWeekLow} high={item.fiftyTwoWeekHigh} />
-                      </td>
-                      <td className="px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top">
-                        ${formatPrice(item.currentPrice)}
-                      </td>
-                      <td className="px-2 py-2.5 text-right align-top">
-                        <ChangePill value={item.dayChangePercent} />
-                      </td>
-                      <td className="pl-2 py-2.5 text-right text-[11px] text-muted align-top">
-                        {fmtBn(item.marketCap / 1e9)}
-                      </td>
-                      <td className="w-9 py-2.5 text-center align-top">
+                    <li key={item.id}>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            router.push(`/analysis?symbol=${encodeURIComponent(item.symbol)}`);
+                          }
+                        }}
+                        className="flex items-center gap-2 pl-3 pr-1.5 py-3 w-full text-left hover:bg-card/45 transition-colors cursor-pointer touch-manipulation min-w-0"
+                        onClick={() =>
+                          router.push(`/analysis?symbol=${encodeURIComponent(item.symbol)}`)
+                        }
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-[13px] text-foreground tabular-nums tracking-tight">
+                            {item.symbol}
+                          </div>
+                          <div className="text-[10px] text-muted truncate pr-1">{item.name}</div>
+                        </div>
+                        <SymbolSparkline
+                          symbol={item.symbol}
+                          trendPositive={item.dayChangePercent >= 0}
+                        />
+                        <div className="shrink-0 flex flex-col items-end gap-0.5 pl-1 text-right">
+                          <span className="font-mono font-semibold text-[13px] text-foreground tabular-nums whitespace-nowrap">
+                            ${formatPrice(item.currentPrice)}
+                          </span>
+                          <ChangePercentPill value={item.dayChangePercent} />
+                          <span className="text-[10px] text-muted tabular-nums whitespace-nowrap">
+                            Mkt cap {fmtBn(item.marketCap / 1e9)}
+                          </span>
+                          {item.ytdReturn != null && Number.isFinite(item.ytdReturn) ? (
+                            <span className="text-[9px] font-medium tabular-nums text-violet-400/90 whitespace-nowrap">
+                              YTD {formatSignedPercentPct(item.ytdReturn)}
+                            </span>
+                          ) : null}
+                        </div>
                         <button
                           type="button"
-                          className="cursor-pointer rounded-md p-1 text-muted transition-colors hover:bg-card-hover hover:text-accent"
+                          className="shrink-0 self-center rounded-md p-1.5 text-muted hover:bg-card-hover hover:text-accent touch-manipulation"
                           aria-label="Show chart"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -625,19 +712,88 @@ export default function DashboardPortfolioPanel() {
                         >
                           <ChevronDown className="h-4 w-4" />
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </li>
                   ))}
-                </tbody>
-              </table>
-              {watchlist.length > 10 && (
-                <div className="mt-2 text-right">
-                  <Link href="/portfolio" className="text-[11px] text-accent hover:underline">
-                    Show all {watchlist.length} →
-                  </Link>
-                </div>
-              )}
-            </div>
+                </ul>
+                {watchlist.length > 10 && (
+                  <div className="border-t border-border/55 px-3 py-2.5 text-right">
+                    <Link
+                      href="/portfolio?tab=watchlist"
+                      className="text-[11px] text-accent hover:underline"
+                    >
+                      Show all {watchlist.length} →
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full border-separate border-spacing-0">
+                  <thead>
+                    <tr>
+                      <th className={`${thClass} sticky left-0 z-10 bg-background min-w-[100px] pr-4 text-left`}>Ticker</th>
+                      <th className={`${thClass} px-2 text-right`}>Day range</th>
+                      <th className={`${thClass} px-2 text-right`}>52W</th>
+                      <th className={`${thClass} px-2 text-right`}>Price</th>
+                      <th className={`${thClass} px-2 text-right`}>Day %</th>
+                      <th className={`${thClass} pl-2 text-right`}>Mkt Cap</th>
+                      <th className={`${thClass} w-9 px-0 text-center`} aria-label="Chart" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayWatchlist.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="border-b border-border/50 last:border-0 group hover:bg-card/40 cursor-pointer transition-colors duration-150"
+                        onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(item.symbol)}`)}
+                      >
+                        <td className="sticky left-0 z-10 bg-background group-hover:bg-card/40 min-w-[100px] py-2.5 pr-4 transition-colors duration-150">
+                          <div className="font-semibold text-[12px] text-foreground">{item.symbol}</div>
+                          <div className="text-[10px] text-muted truncate max-w-[160px]">{item.name}</div>
+                        </td>
+                        <td className="px-2 py-2.5 text-right align-top">
+                          <RangeCell low={item.regularMarketDayLow} high={item.regularMarketDayHigh} />
+                        </td>
+                        <td className="px-2 py-2.5 text-right align-top">
+                          <RangeCell low={item.fiftyTwoWeekLow} high={item.fiftyTwoWeekHigh} />
+                        </td>
+                        <td className="px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top">
+                          ${formatPrice(item.currentPrice)}
+                        </td>
+                        <td className="px-2 py-2.5 text-right align-top">
+                          <ChangePercentPill value={item.dayChangePercent} />
+                        </td>
+                        <td className="pl-2 py-2.5 text-right text-[11px] text-muted align-top">
+                          {fmtBn(item.marketCap / 1e9)}
+                        </td>
+                        <td className="w-9 py-2.5 text-center align-top">
+                          <button
+                            type="button"
+                            className="cursor-pointer rounded-md p-1 text-muted transition-colors hover:bg-card-hover hover:text-accent"
+                            aria-label="Show chart"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSheetSymbol(item.symbol);
+                              setSheetPeriod("1y");
+                            }}
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {watchlist.length > 10 && (
+                  <div className="mt-2 text-right">
+                    <Link href="/portfolio" className="text-[11px] text-accent hover:underline">
+                      Show all {watchlist.length} →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </>
       )}

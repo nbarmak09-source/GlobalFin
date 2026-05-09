@@ -29,29 +29,61 @@ export default function AlternativesRealEstatePage() {
   const [reits, setReits] = useState<AssetRow[]>([]);
   const [housing, setHousing] = useState<AssetRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [redfin, setRedfin] = useState<RedfinHousingSummary | null>(null);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
+      setError(false);
       try {
         const [a, b, d] = await Promise.all([
           fetch("/api/alternatives/reits"),
           fetch("/api/alternatives/housing"),
           fetch("/api/housing/redfin"),
         ]);
+        if (!a.ok) throw new Error(`REITs HTTP ${a.status}`);
+        if (!b.ok) throw new Error(`Housing HTTP ${b.status}`);
+        if (!d.ok) throw new Error(`Redfin HTTP ${d.status}`);
         const reitsJson = await a.json();
         const housingJson = await b.json();
         const redfinJson = await d.json();
-        setReits(reitsJson.rows ?? []);
-        setHousing(housingJson.rows ?? []);
-        setRedfin(redfinJson ?? null);
+        const { rows: reitsRows = [] } = reitsJson ?? {};
+        const { rows: housingRows = [] } = housingJson ?? {};
+        setReits(Array.isArray(reitsRows) ? reitsRows : []);
+        setHousing(Array.isArray(housingRows) ? housingRows : []);
+        setRedfin(
+          redfinJson && typeof redfinJson === "object" && !Array.isArray(redfinJson)
+            ? (redfinJson as RedfinHousingSummary)
+            : null
+        );
+      } catch (err) {
+        console.error("Alternatives fetch failed:", err);
+        setError(true);
+        setReits([]);
+        setHousing([]);
+        setRedfin(null);
       } finally {
         setLoading(false);
       }
     }
     load();
   }, []);
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <p className="text-muted text-sm">Alternative asset data unavailable.</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="btn-secondary"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 min-w-0">
@@ -150,7 +182,7 @@ export default function AlternativesRealEstatePage() {
             <span className="text-xs text-muted">Listed real estate</span>
           </div>
           <div className="space-y-2 text-sm">
-            {reits.map((r) => (
+            {(reits ?? []).map((r) => (
               <div
                 key={r.symbol}
                 className="flex items-center justify-between"
@@ -187,7 +219,7 @@ export default function AlternativesRealEstatePage() {
             <span className="text-xs text-muted">Homebuilders &amp; related</span>
           </div>
           <div className="space-y-2 text-sm">
-            {housing.map((r) => (
+            {(housing ?? []).map((r) => (
               <div
                 key={r.symbol}
                 className="flex items-center justify-between"
@@ -236,7 +268,7 @@ export default function AlternativesRealEstatePage() {
                 </tr>
               </thead>
               <tbody>
-                {redfin.topMetrosFastestGrowing.map((row, idx) => (
+                {(redfin?.topMetrosFastestGrowing ?? []).map((row, idx) => (
                   <tr
                     key={row.metro}
                     className="border-b border-border/60 last:border-0"
@@ -266,8 +298,8 @@ export default function AlternativesRealEstatePage() {
             <div>
               <div className="text-xs text-muted mb-1">Top inbound metros (net inflow)</div>
               <div className="space-y-1.5">
-                {redfin.migrationInbound.map((row) => {
-                  const max = redfin.migrationInbound?.[0]?.netInflow ?? 1;
+                {(redfin?.migrationInbound ?? []).map((row) => {
+                  const max = (redfin?.migrationInbound ?? [])[0]?.netInflow ?? 1;
                   const width = Math.max((row.netInflow / max) * 100, 8);
                   return (
                     <div key={row.metro} className="flex items-center gap-2">
@@ -294,8 +326,8 @@ export default function AlternativesRealEstatePage() {
             <div>
               <div className="text-xs text-muted mb-1">Top outbound metros (net outflow)</div>
               <div className="space-y-1.5">
-                {redfin.migrationOutbound.map((row) => {
-                  const max = redfin.migrationOutbound?.[0]?.netOutflow ?? 1;
+                {(redfin?.migrationOutbound ?? []).map((row) => {
+                  const max = (redfin?.migrationOutbound ?? [])[0]?.netOutflow ?? 1;
                   const width = Math.max((row.netOutflow / max) * 100, 8);
                   return (
                     <div key={row.metro} className="flex items-center gap-2">

@@ -9,6 +9,7 @@ import type { AlertRecord } from '@/lib/alerts'
 import SymbolSearch from '@/components/SymbolSearch'
 import TickerTape from '@/components/TickerTape'
 import { GlobalFinBrand } from '@/components/Logo'
+import { MarketSessionBadge } from '@/components/MarketSessionBadge'
 
 type AlertWithPrice = AlertRecord & { currentPrice?: number | null }
 
@@ -167,28 +168,7 @@ export function TopBar() {
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
-          <span
-            className="hidden lg:flex items-center gap-1.5"
-            style={{
-              color: 'var(--color-muted)',
-              fontSize: '0.72rem',
-              fontFamily: 'var(--font-heading)',
-              letterSpacing: '0.02em',
-            }}
-          >
-            <span
-              style={{
-                display: 'inline-block',
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: '#3fb950',
-                boxShadow: '0 0 6px #3fb950',
-              }}
-              aria-hidden="true"
-            />
-            Live
-          </span>
+          <MarketSessionBadge className="hidden lg:flex" />
 
           <div className="relative shrink-0" ref={notifRef}>
             <button

@@ -353,7 +353,7 @@ export async function getSectorsForSymbols(
 
 function getPeriodStart(period: string): { start: Date; interval: "1d" | "1wk" | "1mo" | "5m" | "15m" | "1h" } {
   const now = new Date();
-  switch (period) {
+  switch (period.toUpperCase()) {
     case "1D": {
       const d = new Date(now);
       d.setDate(d.getDate() - 1);
@@ -364,17 +364,20 @@ function getPeriodStart(period: string): { start: Date; interval: "1d" | "1wk" |
       d.setDate(d.getDate() - 5);
       return { start: d, interval: "15m" };
     }
-    case "1M": {
+    case "1M":
+    case "1MO": {
       const d = new Date(now);
       d.setMonth(d.getMonth() - 1);
       return { start: d, interval: "1d" };
     }
-    case "3M": {
+    case "3M":
+    case "3MO": {
       const d = new Date(now);
       d.setMonth(d.getMonth() - 3);
       return { start: d, interval: "1d" };
     }
-    case "6M": {
+    case "6M":
+    case "6MO": {
       const d = new Date(now);
       d.setMonth(d.getMonth() - 6);
       return { start: d, interval: "1d" };

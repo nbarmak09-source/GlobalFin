@@ -88,41 +88,84 @@ export default function FundLettersArchiveClient({ letters }: { letters: FundLet
           <p className="text-[12px] text-muted">No letters match your search</p>
         </div>
       ) : (
-        <ul className="border-t border-border/50">
-          {filteredLetters.map((letter, i) => (
-            <li
-              key={`${letter.fund}-${letter.quarter}-${letter.url}-${i}`}
-              className="border-b border-border/50 last:border-b-0"
-            >
-              <div className="px-2 py-3.5 flex items-center gap-4 hover:bg-card/40 transition-colors">
-                <span
-                  className="bg-accent/10 text-accent border border-accent/20 rounded-md px-2 py-0.5 text-[10px] font-semibold w-20 text-center shrink-0 leading-tight"
-                  title={letter.quarter}
-                >
-                  {letter.quarter}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-medium text-foreground truncate">{letter.fund}</div>
-                  <div className="text-[11px] text-muted truncate">{letter.manager}</div>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[10px] text-muted border border-border/50 rounded px-1.5 py-0.5 whitespace-nowrap">
+        <>
+          <div className="md:hidden flex flex-col">
+            {filteredLetters.map((letter, i) => (
+              <div
+                key={`${letter.fund}-${letter.quarter}-${letter.url}-${i}`}
+                className="border border-border rounded-xl p-3 mb-2 flex flex-col gap-1"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-mono text-muted">
+                    {letter.q} {letter.year}
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent shrink-0">
                     {letter.strategy}
                   </span>
-                  <span className="text-[11px] text-muted w-10 text-right tabular-nums">{letter.year}</span>
-                  <a
-                    href={letter.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] text-accent hover:underline font-medium whitespace-nowrap"
-                  >
-                    Read →
-                  </a>
                 </div>
+                <p className="text-sm font-medium text-foreground break-words">{letter.fund}</p>
+                <p className="text-xs text-muted break-words">{letter.manager}</p>
+                <a
+                  href={letter.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-accent mt-1"
+                >
+                  Read →
+                </a>
               </div>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+
+          <div className="hidden md:block rounded-xl border border-border overflow-hidden">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-border bg-card/60">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted font-mono whitespace-nowrap">
+                    Period
+                  </th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted">Fund</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted">Manager</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted whitespace-nowrap">
+                    Strategy
+                  </th>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-muted whitespace-nowrap">
+                    &nbsp;
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLetters.map((letter, i) => (
+                  <tr
+                    key={`${letter.fund}-${letter.quarter}-${letter.url}-${i}`}
+                    className="border-b border-border/50 last:border-b-0 hover:bg-card/40 transition-colors"
+                  >
+                    <td className="py-3 px-4 text-xs font-mono text-muted whitespace-nowrap align-top">
+                      {letter.q} {letter.year}
+                    </td>
+                    <td className="py-3 px-4 font-medium text-foreground align-top">{letter.fund}</td>
+                    <td className="py-3 px-4 text-muted align-top">{letter.manager}</td>
+                    <td className="py-3 px-4 align-top">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent whitespace-nowrap">
+                        {letter.strategy}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right align-top whitespace-nowrap">
+                      <a
+                        href={letter.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-accent hover:underline font-medium"
+                      >
+                        Read →
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )

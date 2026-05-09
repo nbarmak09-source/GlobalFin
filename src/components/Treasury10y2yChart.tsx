@@ -164,8 +164,8 @@ export default function Treasury10y2yChart() {
   if (error) {
     return (
       <div className="rounded-xl bg-card border border-border p-5 text-center text-sm text-muted">
-        10Y / 2Y Treasury history unavailable. Set{" "}
-        <span className="font-mono text-xs">FRED_API_KEY</span> for this chart.
+        Historical spread data is currently unavailable. The yield curve snapshot
+        above reflects today&apos;s rates from the US Treasury.
       </div>
     );
   }

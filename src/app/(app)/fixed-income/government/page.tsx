@@ -12,7 +12,7 @@ export default function FixedIncomeGovernmentPage() {
     <div className="space-y-4 min-w-0">
       <PageHeader
         title="Government bonds"
-        subtitle="G7 sovereign yield proxies (ETFs / indices) from the fixed-income feed."
+        subtitle="G7 10-year benchmark yields (Yahoo ^TMBMK… / ^TNX); data source is shown per row."
         action={
           <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent shrink-0">
             <LineChart className="h-3.5 w-3.5" />
@@ -21,7 +21,7 @@ export default function FixedIncomeGovernmentPage() {
         }
       />
       {loading && (
-        <p className="text-xs text-muted">Live rates loading from Yahoo Finance…</p>
+        <p className="text-xs text-muted">Loading sovereign yield data…</p>
       )}
       <SovereignDebtTable sovereign={sovereign} />
     </div>

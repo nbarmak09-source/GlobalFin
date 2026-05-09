@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 export type SovereignRow = {
   country: string;
   symbol: string;
-  level: number;
-  changePercent: number;
+  level: number | null;
+  changePercent: number | null;
 };
 
 export type SpreadRow = {

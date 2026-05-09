@@ -35,6 +35,7 @@ export default function AlternativesPage() {
   const [housing, setHousing] = useState<AssetRow[]>([]);
   const [commodities, setCommodities] = useState<AssetRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [redfin, setRedfin] = useState<RedfinHousingSummary | null>(null);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
@@ -42,6 +43,7 @@ export default function AlternativesPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
+      setError(false);
       try {
         const [a, b, c, d] = await Promise.all([
           fetch("/api/alternatives/reits"),
@@ -49,14 +51,32 @@ export default function AlternativesPage() {
           fetch("/api/alternatives/commodities"),
           fetch("/api/housing/redfin"),
         ]);
+        if (!a.ok) throw new Error(`REITs HTTP ${a.status}`);
+        if (!b.ok) throw new Error(`Housing HTTP ${b.status}`);
+        if (!c.ok) throw new Error(`Commodities HTTP ${c.status}`);
+        if (!d.ok) throw new Error(`Redfin HTTP ${d.status}`);
         const reitsJson = await a.json();
         const housingJson = await b.json();
         const commoditiesJson = await c.json();
         const redfinJson = await d.json();
-        setReits(reitsJson.rows ?? []);
-        setHousing(housingJson.rows ?? []);
-        setCommodities(commoditiesJson.rows ?? []);
-        setRedfin(redfinJson ?? null);
+        const { rows: reitsRows = [] } = reitsJson ?? {};
+        const { rows: housingRows = [] } = housingJson ?? {};
+        const { rows: commodityRows = [] } = commoditiesJson ?? {};
+        setReits(Array.isArray(reitsRows) ? reitsRows : []);
+        setHousing(Array.isArray(housingRows) ? housingRows : []);
+        setCommodities(Array.isArray(commodityRows) ? commodityRows : []);
+        setRedfin(
+          redfinJson && typeof redfinJson === "object" && !Array.isArray(redfinJson)
+            ? (redfinJson as RedfinHousingSummary)
+            : null
+        );
+      } catch (err) {
+        console.error("Alternatives fetch failed:", err);
+        setError(true);
+        setReits([]);
+        setHousing([]);
+        setCommodities([]);
+        setRedfin(null);
       } finally {
         setLoading(false);
       }
@@ -69,12 +89,13 @@ export default function AlternativesPage() {
       setNewsLoading(true);
       try {
         const res = await fetch("/api/alternatives/news", { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
-          setNews(data);
-        }
-      } catch {
-        // silently fail
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        setNews(list ?? []);
+      } catch (err) {
+        console.error("Alternatives news fetch failed:", err);
+        setNews([]);
       } finally {
         setNewsLoading(false);
       }
@@ -84,6 +105,21 @@ export default function AlternativesPage() {
 
   const goldRow = commodities.find((c) => c.symbol === "GC=F");
   const oilRow = commodities.find((c) => c.symbol === "CL=F");
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <p className="text-muted text-sm">Alternative asset data unavailable.</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="btn-secondary"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 min-w-0">
@@ -168,7 +204,7 @@ export default function AlternativesPage() {
               <p className="text-sm text-muted">No articles available right now.</p>
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
-                {news.map((article, i) => (
+                {(news ?? []).map((article, i) => (
                   <NewsCard key={i} article={article} />
                 ))}
               </div>
@@ -189,7 +225,7 @@ export default function AlternativesPage() {
               <span className="text-xs text-muted">Key macro commodities</span>
             </div>
             <div className="space-y-2 text-sm">
-              {commodities.map((r) => (
+              {(commodities ?? []).map((r) => (
                 <div
                   key={r.symbol}
                   className="flex items-center justify-between"
@@ -316,7 +352,7 @@ export default function AlternativesPage() {
                 <span className="text-xs text-muted">Listed real estate</span>
               </div>
               <div className="space-y-2 text-sm">
-                {reits.map((r) => (
+                {(reits ?? []).map((r) => (
                   <div
                     key={r.symbol}
                     className="flex items-center justify-between"
@@ -357,7 +393,7 @@ export default function AlternativesPage() {
                 <span className="text-xs text-muted">Homebuilders &amp; related</span>
               </div>
               <div className="space-y-2 text-sm">
-                {housing.map((r) => (
+                {(housing ?? []).map((r) => (
                   <div
                     key={r.symbol}
                     className="flex items-center justify-between"
@@ -408,7 +444,7 @@ export default function AlternativesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {redfin.topMetrosFastestGrowing.map((row, idx) => (
+                    {(redfin?.topMetrosFastestGrowing ?? []).map((row, idx) => (
                       <tr
                         key={row.metro}
                         className="border-b border-border/60 last:border-0"
@@ -442,8 +478,9 @@ export default function AlternativesPage() {
                     Top inbound metros (net inflow)
                   </div>
                   <div className="space-y-1.5">
-                    {redfin.migrationInbound.map((row) => {
-                      const max = redfin.migrationInbound?.[0]?.netInflow ?? 1;
+                    {(redfin?.migrationInbound ?? []).map((row) => {
+                      const max =
+                        (redfin?.migrationInbound ?? [])[0]?.netInflow ?? 1;
                       const width = Math.max((row.netInflow / max) * 100, 8);
                       return (
                         <div key={row.metro} className="flex items-center gap-2">
@@ -472,8 +509,9 @@ export default function AlternativesPage() {
                     Top outbound metros (net outflow)
                   </div>
                   <div className="space-y-1.5">
-                    {redfin.migrationOutbound.map((row) => {
-                      const max = redfin.migrationOutbound?.[0]?.netOutflow ?? 1;
+                    {(redfin?.migrationOutbound ?? []).map((row) => {
+                      const max =
+                        (redfin?.migrationOutbound ?? [])[0]?.netOutflow ?? 1;
                       const width = Math.max((row.netOutflow / max) * 100, 8);
                       return (
                         <div key={row.metro} className="flex items-center gap-2">

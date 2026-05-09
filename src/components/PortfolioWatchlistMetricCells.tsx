@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ChevronDown, TrendingDown, TrendingUp } from "lucide-react";
 import ExtendedHoursInline from "@/components/ExtendedHoursInline";
+import ChangePercentPill from "@/components/ChangePercentPill";
 import type { EnrichedPosition, EnrichedWatchlistItem } from "@/lib/types";
 import { getMetric } from "@/lib/metrics";
 import type { MetricDef } from "@/lib/metrics";
@@ -138,6 +139,10 @@ export interface MetricCellOpts {
   stocksHref: string;
   attachChevron: boolean;
   isExpanded: boolean;
+  /**
+   * When false, ticker cell hides the muted company subtitle (when a separate Name column is visible).
+   */
+  showTickerNameSubtitle?: boolean;
   /** Holdings/table large-number formatting; watchlist ignores where unused */
   numberScale?: NumberScale;
   /** Holdings table total value, used for % of portfolio. */
@@ -191,6 +196,7 @@ export function renderPortfolioWatchlistMetricCell(
     stocksHref,
     attachChevron,
     isExpanded,
+    showTickerNameSubtitle = true,
     numberScale = "B",
     totalPortfolioValue = 0,
     tdClassName = "",
@@ -205,15 +211,17 @@ export function renderPortfolioWatchlistMetricCell(
         return (
           <td className={`${metricCellThClass(metricKey)} min-w-0${tdClassName ? ` ${tdClassName}` : ""}`}>
             <div className="flex items-center gap-2 min-w-0">
-              <ClearbitOrLetterAvatar symbol={hp.symbol} />
+              <div className="hidden sm:block shrink-0">
+                <ClearbitOrLetterAvatar symbol={hp.symbol} />
+              </div>
               <div className="min-w-0 flex-1 leading-tight">
                 <div className="flex items-center gap-1 min-w-0">
                   <Link
                     href={stocksHref}
                     onClick={(e) => e.stopPropagation()}
-                    className="block min-w-0 truncate font-medium text-[13px] text-foreground hover:text-accent hover:underline"
+                    className="block min-w-0 truncate font-semibold text-[13px] text-foreground tabular-nums hover:text-accent hover:underline"
                   >
-                    {hp.name}
+                    {hp.symbol}
                   </Link>
                   {attachChevron ? (
                     <ChevronDown
@@ -224,9 +232,15 @@ export function renderPortfolioWatchlistMetricCell(
                     />
                   ) : null}
                 </div>
-                <div className="truncate text-[10px] text-muted">
-                  —:{hp.symbol}
-                </div>
+                {showTickerNameSubtitle ? (
+                  <Link
+                    href={stocksHref}
+                    onClick={(e) => e.stopPropagation()}
+                    className="block truncate text-[10px] text-muted hover:text-accent hover:underline"
+                  >
+                    {hp.name}
+                  </Link>
+                ) : null}
               </div>
             </div>
           </td>
@@ -235,21 +249,37 @@ export function renderPortfolioWatchlistMetricCell(
       return (
         <td className={`${metricCellThClass(metricKey)} min-w-0${tdClassName ? ` ${tdClassName}` : ""}`}>
           <div className="flex items-center gap-2 min-w-0">
-            <Link
-              href={stocksHref}
-              onClick={(e) => e.stopPropagation()}
-              className="block shrink-0 truncate font-semibold text-accent hover:underline"
-            >
-              {row.symbol}
-            </Link>
-            {attachChevron ? (
-              <ChevronDown
-                className={`h-4 w-4 shrink-0 text-muted transition-transform ${
-                  isExpanded ? "rotate-180" : ""
-                }`}
-                aria-hidden
-              />
-            ) : null}
+            <div className="hidden sm:block shrink-0">
+              <ClearbitOrLetterAvatar symbol={row.symbol} />
+            </div>
+            <div className="min-w-0 flex-1 leading-tight">
+              <div className="flex items-center gap-1 min-w-0">
+                <Link
+                  href={stocksHref}
+                  onClick={(e) => e.stopPropagation()}
+                  className="block min-w-0 truncate font-semibold text-[13px] text-foreground tabular-nums hover:text-accent hover:underline"
+                >
+                  {row.symbol}
+                </Link>
+                {attachChevron ? (
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 text-muted transition-transform ${
+                      isExpanded ? "rotate-180" : ""
+                    }`}
+                    aria-hidden
+                  />
+                ) : null}
+              </div>
+              {showTickerNameSubtitle ? (
+                <Link
+                  href={stocksHref}
+                  onClick={(e) => e.stopPropagation()}
+                  className="block truncate text-[10px] text-muted hover:text-accent hover:underline"
+                >
+                  {row.name}
+                </Link>
+              ) : null}
+            </div>
           </div>
         </td>
       );
@@ -304,15 +334,15 @@ export function renderPortfolioWatchlistMetricCell(
       );
     case "change":
       return (
-        <td className="px-4 py-2 text-right">
+        <td className="px-4 py-2 text-right whitespace-nowrap min-w-[5rem] pr-5">
           <div className="flex items-center justify-end gap-1">
             {row.dayChange >= 0 ? (
-              <TrendingUp className="h-3.5 w-3.5 text-green" />
+              <TrendingUp className="h-3.5 w-3.5 shrink-0 text-green" />
             ) : (
-              <TrendingDown className="h-3.5 w-3.5 text-red" />
+              <TrendingDown className="h-3.5 w-3.5 shrink-0 text-red" />
             )}
             <span
-              className={`font-mono ${
+              className={`font-mono tabular-nums ${
                 row.dayChange >= 0 ? "text-green" : "text-red"
               }`}
             >
@@ -324,15 +354,10 @@ export function renderPortfolioWatchlistMetricCell(
       );
     case "changePercent":
       return (
-        <td className="px-4 py-2 text-right">
-          <span
-            className={`font-mono ${
-              row.dayChangePercent >= 0 ? "text-green" : "text-red"
-            }`}
-          >
-            {row.dayChangePercent >= 0 ? "+" : ""}
-            {row.dayChangePercent.toFixed(2)}%
-          </span>
+        <td className="px-4 py-2 text-right whitespace-nowrap min-w-[4.5rem] pr-5">
+          <div className="flex justify-end">
+            <ChangePercentPill value={row.dayChangePercent} />
+          </div>
         </td>
       );
     case "marketCap":

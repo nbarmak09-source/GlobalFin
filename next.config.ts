@@ -35,6 +35,13 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_RELEASE_BUILD,
     NEXT_PUBLIC_RELEASE_SHA,
   },
+  /**
+   * Hide the framework dev indicator (route/build context bubble, often bottom corner).
+   * It is development-only but uses a high stacking context and can overlap the mobile
+   * bottom nav and header. `buildActivity` / `appIsrStatus` were removed in Next 16 — use `false`.
+   * @see https://nextjs.org/docs/app/api-reference/config/next-config-js/devIndicators
+   */
+  devIndicators: false,
   /* Avoid trailing-slash redirects that can cause 404s on Vercel */
   trailingSlash: false,
   images: {

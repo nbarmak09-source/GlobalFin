@@ -18,7 +18,9 @@ export function SovereignDebtTable({ sovereign }: { sovereign: SovereignRow[] })
           <TrendingUp className="h-4 w-4 text-accent" />
           G7 sovereign debt snapshot
         </h2>
-        <span className="text-xs text-muted">Level (proxy ETFs / indices)</span>
+        <span className="text-xs text-muted">
+          10Y benchmark &mdash; level (% yield)
+        </span>
       </div>
       <div className="divide-y divide-border/60 text-sm">
         {sovereign.map((r) => (
@@ -31,15 +33,21 @@ export function SovereignDebtTable({ sovereign }: { sovereign: SovereignRow[] })
               <span className="text-xs text-muted">{r.symbol}</span>
             </div>
             <div className="text-right">
-              <div className="font-mono text-sm">{r.level.toFixed(2)}</div>
-              <div
-                className={`text-xs font-mono ${
-                  r.changePercent >= 0 ? "text-green" : "text-red"
-                }`}
-              >
-                {r.changePercent >= 0 ? "+" : ""}
-                {r.changePercent.toFixed(2)}%
+              <div className="font-mono text-sm">
+                {r.level == null ? "—" : r.level.toFixed(2)}
               </div>
+              {r.level != null && r.changePercent != null ? (
+                <div
+                  className={`text-xs font-mono ${
+                    r.changePercent >= 0 ? "text-green" : "text-red"
+                  }`}
+                >
+                  {r.changePercent >= 0 ? "+" : ""}
+                  {r.changePercent.toFixed(2)}%
+                </div>
+              ) : (
+                <div className="text-xs font-mono text-muted">—</div>
+              )}
             </div>
           </div>
         ))}

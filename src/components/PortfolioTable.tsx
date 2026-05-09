@@ -245,6 +245,7 @@ function SortableRow({
                 stocksHref,
                 attachChevron: metricKey === chevronAnchorKey,
                 isExpanded,
+                showTickerNameSubtitle: !visibleKeys.includes("name"),
                 numberScale,
                 totalPortfolioValue,
                 tdClassName: i === 0
@@ -381,7 +382,7 @@ export default function PortfolioTable({
     return (
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="table-fade-right">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto pr-4 max-sm:pr-5">
             <table className="w-full border-separate border-spacing-0 text-sm">
               <thead>
                 <tr>
@@ -624,7 +625,7 @@ export default function PortfolioTable({
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="table-fade-right">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto pr-4 max-sm:pr-5">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
