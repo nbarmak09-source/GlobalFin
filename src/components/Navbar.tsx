@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useTour } from "@/lib/useTour";
 import { Logo } from "@/components/Logo";
+import SymbolSearch from "@/components/SymbolSearch";
 import { useMobileNav } from "@/components/MobileNavProvider";
 import {
   LayoutDashboard,
@@ -17,7 +18,6 @@ import {
   Building2,
   ChevronDown,
   TrendingUp,
-  Menu,
   X,
   Briefcase,
   Layers,
@@ -92,6 +92,24 @@ function filterSections(query: string) {
 // ── helpers ─────────────────────────────────────────────────────────────────
 function isActive(pathname: string, href: string, exact: boolean) {
   return exact ? pathname === href : pathname.startsWith(href);
+}
+
+function userInitials(user: { name?: string | null; email?: string | null } | undefined): string {
+  if (!user) return "?";
+  const name = user.name?.trim();
+  const email = user.email?.trim();
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  }
+  if (email) {
+    const local = email.split("@")[0] ?? email;
+    return local.slice(0, 2).toUpperCase();
+  }
+  return "?";
 }
 
 function useDropdown() {
@@ -205,11 +223,14 @@ function DropdownGroup({
 // ── main Navbar ─────────────────────────────────────────────────────────────
 export default function Navbar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const loginHref = `/login?callbackUrl=${encodeURIComponent(pathname || "/")}`;
   const { openWelcome } = useTour();
-  const { menuOpen: mobileOpen, closeMenu, toggleMenu } = useMobileNav();
+  const { menuOpen: mobileOpen, closeMenu } = useMobileNav();
   const [portalReady, setPortalReady] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileSearchTab, setMobileSearchTab] = useState<"tickers" | "sections">("tickers");
   const [mobileSearchQuery, setMobileSearchQuery] = useState("");
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchButtonsRef = useRef<HTMLDivElement>(null);
@@ -218,6 +239,7 @@ export default function Navbar() {
   const closeMobileSearch = useCallback(() => {
     setMobileSearchOpen(false);
     setMobileSearchQuery("");
+    setMobileSearchTab("tickers");
   }, []);
 
   const searchResults = useMemo(
@@ -246,12 +268,12 @@ export default function Navbar() {
   }, [pathname, closeMobileSearch]);
 
   useEffect(() => {
-    if (!mobileSearchOpen) return;
+    if (!mobileSearchOpen || mobileSearchTab !== "sections") return;
     const id = requestAnimationFrame(() => {
       mobileSearchInputRef.current?.focus();
     });
     return () => cancelAnimationFrame(id);
-  }, [mobileSearchOpen]);
+  }, [mobileSearchOpen, mobileSearchTab]);
 
   useEffect(() => {
     if (!mobileSearchOpen) return;
@@ -312,7 +334,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className="sticky top-9 z-40 flex flex-col border-b border-border bg-card/90 backdrop-blur-md pt-[env(safe-area-inset-top)]"
+      className="sticky top-10 z-40 md:top-0 flex flex-col border-b border-border bg-card/90 backdrop-blur-md pt-[env(safe-area-inset-top)]"
     >
       <div className="flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 sm:px-4">
         {/* Logo */}
@@ -416,11 +438,47 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile: section search + hamburger */}
+        {/* Mobile: section search (drawer via MobileBottomNav "More") */}
         <div
           ref={mobileSearchButtonsRef}
           className="flex md:hidden items-center gap-1 shrink-0"
         >
+          {status === "unauthenticated" && (
+            <Link
+              href={loginHref}
+              className="text-accent text-[13px] font-medium px-2 min-h-[44px] flex items-center rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              Sign in
+            </Link>
+          )}
+          {status === "authenticated" && session?.user && (
+            <Link
+              href="/account"
+              className="rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+              aria-label="Account"
+              title={session.user.email ?? "Account"}
+            >
+              <span
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "rgba(201,162,39,0.15)",
+                  border: "1px solid rgba(201,162,39,0.3)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "var(--font-heading)",
+                  fontWeight: 600,
+                  fontSize: 12,
+                  color: "var(--color-primary)",
+                  flexShrink: 0,
+                }}
+              >
+                {userInitials(session.user)}
+              </span>
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -431,24 +489,11 @@ export default function Navbar() {
               }
             }}
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-muted hover:bg-card-hover hover:text-foreground transition-colors duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-            aria-label={mobileSearchOpen ? "Close search" : "Search sections"}
+            aria-label={mobileSearchOpen ? "Close search" : "Open search"}
             aria-expanded={mobileSearchOpen}
             aria-controls="gcm-mobile-search-panel"
           >
             <Search className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (mobileSearchOpen) closeMobileSearch();
-              toggleMenu();
-            }}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-muted hover:bg-card-hover hover:text-foreground transition-colors duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileOpen}
-            aria-controls="gcm-mobile-drawer"
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
@@ -460,62 +505,104 @@ export default function Navbar() {
           ref={mobileSearchPanelRef}
           className="md:hidden w-full border-t border-border bg-card/90 px-3 pb-3 pt-2 sm:px-4"
         >
-          <div className="relative">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-              aria-hidden
-            />
-            <input
-              ref={mobileSearchInputRef}
-              type="search"
-              role="combobox"
-              enterKeyHint="search"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              value={mobileSearchQuery}
-              onChange={(e) => setMobileSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  closeMobileSearch();
-                }
-              }}
-              placeholder="Search sections…"
-              className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-11 text-sm text-foreground placeholder:text-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              aria-autocomplete="list"
-              aria-controls="gcm-mobile-search-results"
-              aria-expanded={searchResults.length > 0}
-              aria-haspopup="listbox"
-            />
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex flex-1 flex-wrap items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setMobileSearchTab("tickers")}
+                className={`rounded-full px-3 py-1 text-[12px] font-medium transition-colors ${
+                  mobileSearchTab === "tickers"
+                    ? "text-accent bg-accent/10"
+                    : "text-muted hover:text-foreground bg-transparent"
+                }`}
+              >
+                Tickers
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileSearchTab("sections")}
+                className={`rounded-full px-3 py-1 text-[12px] font-medium transition-colors ${
+                  mobileSearchTab === "sections"
+                    ? "text-accent bg-accent/10"
+                    : "text-muted hover:text-foreground bg-transparent"
+                }`}
+              >
+                Sections
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => closeMobileSearch()}
-              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-card-hover hover:text-foreground cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
               aria-label="Close search"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
-          {searchResults.length > 0 && (
-            <ul
-              id="gcm-mobile-search-results"
-              role="listbox"
-              className="mt-2 max-h-[min(40vh,20rem)] overflow-y-auto overscroll-contain rounded-xl border border-border bg-card shadow-lg shadow-black/20"
-            >
-              {searchResults.map((s) => (
-                <li key={s.href} role="option" aria-selected={false}>
-                  <Link
-                    href={s.href}
-                    className="block border-b border-border/60 px-3 py-2.5 transition-colors last:border-b-0 hover:bg-card-hover focus-visible:bg-card-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-                    onClick={() => closeMobileSearch()}
-                  >
-                    <span className="text-sm font-[500] text-foreground">{s.label}</span>
-                    <span className="mt-0.5 block font-mono text-[11px] text-muted">{s.href}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+
+          {mobileSearchTab === "tickers" && (
+            <SymbolSearch
+              variant="topbar"
+              placeholder="Search tickers…"
+              onSelect={(symbol) => {
+                router.push("/analysis?symbol=" + encodeURIComponent(symbol));
+                closeMobileSearch();
+              }}
+            />
+          )}
+
+          {mobileSearchTab === "sections" && (
+            <>
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                  aria-hidden
+                />
+                <input
+                  ref={mobileSearchInputRef}
+                  type="search"
+                  role="combobox"
+                  enterKeyHint="search"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  value={mobileSearchQuery}
+                  onChange={(e) => setMobileSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      closeMobileSearch();
+                    }
+                  }}
+                  placeholder="Search sections…"
+                  className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  aria-autocomplete="list"
+                  aria-controls="gcm-mobile-search-results"
+                  aria-expanded={searchResults.length > 0}
+                  aria-haspopup="listbox"
+                />
+              </div>
+              {searchResults.length > 0 && (
+                <ul
+                  id="gcm-mobile-search-results"
+                  role="listbox"
+                  className="mt-2 max-h-[min(40vh,20rem)] overflow-y-auto overscroll-contain rounded-xl border border-border bg-card shadow-lg shadow-black/20"
+                >
+                  {searchResults.map((s) => (
+                    <li key={s.href} role="option" aria-selected={false}>
+                      <Link
+                        href={s.href}
+                        className="block border-b border-border/60 px-3 py-2.5 transition-colors last:border-b-0 hover:bg-card-hover focus-visible:bg-card-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                        onClick={() => closeMobileSearch()}
+                      >
+                        <span className="text-sm font-[500] text-foreground">{s.label}</span>
+                        <span className="mt-0.5 block font-mono text-[11px] text-muted">{s.href}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </div>
       )}
@@ -537,8 +624,8 @@ export default function Navbar() {
             />
             <aside
               id="gcm-mobile-drawer"
-              className={`absolute top-0 right-0 flex h-dvh min-h-0 w-[min(20.5rem,100vw)] flex-col border-l border-border bg-card shadow-2xl transition-transform duration-300 ease-out ${
-                mobileOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
+              className={`absolute top-0 left-0 flex h-dvh min-h-0 w-[min(20.5rem,100vw)] flex-col border-r border-border bg-card shadow-2xl transition-transform duration-300 ease-out ${
+                mobileOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
               }`}
             >
               <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">

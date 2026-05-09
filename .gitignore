@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/screenshots
 
 # next.js
 /.next/
@@ -28,6 +29,7 @@ visual-capitalist-cache.json
 vc-daily-cache.json
 sec-financials-cache.json
 capital-markets*.zip
+capital-markets-mobile-review-*.tar.gz
 public/vc-daily.*
 *.pem
 

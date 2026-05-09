@@ -51,7 +51,7 @@ export default function AppLayout({
 
               <footer
                 className="border-t py-3 sm:py-4
-                  pb-[max(0.75rem,env(safe-area-inset-bottom))]
+                  pb-[calc(4rem+env(safe-area-inset-bottom))]
                   md:pb-[max(1rem,env(safe-area-inset-bottom))]"
                 style={{ borderColor: 'var(--border)' }}
               >

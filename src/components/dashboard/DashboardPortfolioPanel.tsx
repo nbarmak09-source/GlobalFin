@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -16,6 +16,32 @@ import TradingViewChart from "@/components/TradingViewChart";
 const MASK = "••••";
 
 const ACTIVE_WATCHLIST_GROUP_KEY = "active-watchlist-group-id";
+
+const HOLDINGS_COL_COUNT_MOBILE = 6;
+const HOLDINGS_COL_COUNT_MD = 7;
+
+function subscribeMdBreakpoint(cb: () => void): () => void {
+  const mq = window.matchMedia("(min-width: 768px)");
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+
+function holdingsExpandedColSpanMdUp(): boolean {
+  return window.matchMedia("(min-width: 768px)").matches;
+}
+
+/**
+ * Holdings table hides “Mkt Value” below md (`hidden md:table-cell`), so the live
+ * column count is 6 on small viewports vs 7 on md+. An expanded chart row must
+ * use that colspan or the table grid/column anchors break — including sticky ticker cells.
+ */
+function useHoldingsExpandedColSpan(): number {
+  return useSyncExternalStore(
+    subscribeMdBreakpoint,
+    () => (holdingsExpandedColSpanMdUp() ? HOLDINGS_COL_COUNT_MD : HOLDINGS_COL_COUNT_MOBILE),
+    () => HOLDINGS_COL_COUNT_MOBILE
+  );
+}
 
 function loadValuesVisible(): boolean {
   try {
@@ -158,6 +184,7 @@ export default function DashboardPortfolioPanel() {
   const [activeView, setActiveView] = useState<"holdings" | "watchlist">("holdings");
   const [valuesVisible, setValuesVisible] = useState(loadValuesVisible);
   const [expandedChartKey, setExpandedChartKey] = useState<string | null>(null);
+  const holdingsExpandedChartColSpan = useHoldingsExpandedColSpan();
 
   function setActiveViewAndCollapseChart(next: "holdings" | "watchlist") {
     setExpandedChartKey(null);
@@ -473,10 +500,10 @@ export default function DashboardPortfolioPanel() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full border-separate border-spacing-0">
                 <thead>
                   <tr>
-                    <th className={`${thClass} sticky left-0 z-10 bg-card min-w-[100px] text-left pr-4`}>Ticker</th>
+                    <th className={`${thClass} sticky left-0 z-10 bg-background min-w-[100px] text-left pr-4`}>Ticker</th>
                     <th
                       className={`${thClass} w-[7.25rem] text-center px-0`}
                       title="Regular session low / high (Yahoo). Marker = regular market price within that range."
@@ -499,10 +526,10 @@ export default function DashboardPortfolioPanel() {
                     return (
                       <Fragment key={pos.id}>
                         <tr
-                          className="border-b border-border/50 last:border-0 hover:bg-card/40 cursor-pointer transition-colors duration-150"
+                          className="border-b border-border/50 last:border-0 group hover:bg-card/40 cursor-pointer transition-colors duration-150"
                           onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(pos.symbol)}`)}
                         >
-                          <td className="sticky left-0 z-10 bg-card min-w-[100px] py-2.5 pr-4 align-top">
+                          <td className="sticky left-0 z-10 bg-background group-hover:bg-card/40 min-w-[100px] py-2.5 pr-4 align-top transition-colors duration-150">
                             <div className="font-semibold text-[12px] text-foreground">{pos.symbol}</div>
                             <div className="text-[10px] text-muted truncate max-w-[160px]">
                               {pos.name.length > 18 ? pos.name.slice(0, 18) + "…" : pos.name}
@@ -547,7 +574,7 @@ export default function DashboardPortfolioPanel() {
                         </tr>
                         {chartOpen && (
                           <tr className="border-b border-border/50 bg-card/20">
-                            <td colSpan={7} className="p-0 px-1 py-3">
+                            <td colSpan={holdingsExpandedChartColSpan} className="p-0 px-1 py-3">
                               <div onClick={(e) => e.stopPropagation()} className="min-w-0">
                                 <TradingViewChart
                                   symbol={pos.symbol}
@@ -593,10 +620,10 @@ export default function DashboardPortfolioPanel() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full border-separate border-spacing-0">
                 <thead>
                   <tr>
-                    <th className={`${thClass} sticky left-0 z-10 bg-card min-w-[100px] pr-4 text-left`}>Ticker</th>
+                    <th className={`${thClass} sticky left-0 z-10 bg-background min-w-[100px] pr-4 text-left`}>Ticker</th>
                     <th className={`${thClass} px-2 text-right`}>Day range</th>
                     <th className={`${thClass} px-2 text-right`}>52W</th>
                     <th className={`${thClass} px-2 text-right`}>Price</th>
@@ -612,10 +639,10 @@ export default function DashboardPortfolioPanel() {
                     return (
                       <Fragment key={item.id}>
                         <tr
-                          className="border-b border-border/50 last:border-0 hover:bg-card/40 cursor-pointer transition-colors duration-150"
+                          className="border-b border-border/50 last:border-0 group hover:bg-card/40 cursor-pointer transition-colors duration-150"
                           onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(item.symbol)}`)}
                         >
-                          <td className="sticky left-0 z-10 bg-card min-w-[100px] py-2.5 pr-4">
+                          <td className="sticky left-0 z-10 bg-background group-hover:bg-card/40 min-w-[100px] py-2.5 pr-4 transition-colors duration-150">
                             <div className="font-semibold text-[12px] text-foreground">{item.symbol}</div>
                             <div className="text-[10px] text-muted truncate max-w-[160px]">{item.name}</div>
                           </td>

@@ -16,7 +16,10 @@
     "db:url:set": "node scripts/db-url.cjs set",
     "db:url:vercel-pull": "node scripts/db-url.cjs vercel-pull",
     "db:url:vercel-push": "node scripts/db-url.cjs vercel-push",
-    "db:doctor": "node scripts/db-url.cjs doctor"
+    "db:doctor": "node scripts/db-url.cjs doctor",
+    "playwright:install": "env -u PLAYWRIGHT_BROWSERS_PATH npx playwright install chromium",
+    "screenshots:mobile": "env -u PLAYWRIGHT_BROWSERS_PATH node mobile-screenshots.mjs",
+    "pack:mobile-review": "bash scripts/pack-mobile-review-bundle.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -57,6 +60,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16.2.6",
+    "playwright": "^1.59.1",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "typescript": "^5"
