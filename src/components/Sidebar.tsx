@@ -10,6 +10,19 @@ const EMPTY_SEARCH_PARAMS = new URLSearchParams()
 
 const SIDEBAR_W = 88
 
+/** Maps git commit count (e.g. 63) to sidebar label `v6.3`. Override env can be digits or `major.minor`. */
+function sidebarReleaseDisplay(raw: string | undefined): string {
+  if (raw == null || raw === "") return "v—"
+  const trimmed = raw.trim()
+  if (trimmed === "dev") return "v-dev"
+  if (/^[0-9]+$/.test(trimmed)) {
+    const n = Number.parseInt(trimmed, 10)
+    return `v${Math.floor(n / 10)}.${n % 10}`
+  }
+  if (/^\d+\.\d+$/.test(trimmed)) return `v${trimmed}`
+  return `v${trimmed}`
+}
+
 /** Match flyout row active state; path + query must match when the child href includes search params. */
 function isSidebarChildActive(
   childHref: string,
@@ -487,7 +500,7 @@ export function Sidebar() {
             <span
               title={
                 process.env.NEXT_PUBLIC_RELEASE_SHA
-                  ? `Build ${process.env.NEXT_PUBLIC_RELEASE_BUILD} · ${process.env.NEXT_PUBLIC_RELEASE_SHA}`
+                  ? `Build ${process.env.NEXT_PUBLIC_RELEASE_BUILD ?? ""} · ${process.env.NEXT_PUBLIC_RELEASE_SHA}`
                   : `Build ${process.env.NEXT_PUBLIC_RELEASE_BUILD ?? ""}`
               }
               style={{
@@ -501,7 +514,7 @@ export function Sidebar() {
                 fontFamily: 'var(--font-heading)',
               }}
             >
-              #{process.env.NEXT_PUBLIC_RELEASE_BUILD ?? "—"}
+              {sidebarReleaseDisplay(process.env.NEXT_PUBLIC_RELEASE_BUILD)}
             </span>
           </div>
         </div>
