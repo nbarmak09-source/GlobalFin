@@ -124,7 +124,7 @@ function SortableRow({
           </button>
         )}
       </td>
-      {visibleKeys.map((metricKey) => (
+      {visibleKeys.map((metricKey, i) => (
         <Fragment key={metricKey}>
           {renderPortfolioWatchlistMetricCell(
             metricKey,
@@ -133,6 +133,7 @@ function SortableRow({
               stocksHref,
               attachChevron: metricKey === chevronAnchorKey,
               isExpanded,
+              tdClassName: i === 0 ? "sticky left-8 z-10 bg-card min-w-[120px] hover:bg-card-hover" : undefined,
             }
           )}
         </Fragment>
@@ -653,10 +654,10 @@ export default function WatchlistTable({
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
                 <th className="sticky left-0 z-10 bg-card px-2 py-3 w-8"></th>
-                {visibleKeys.map((key) => (
+                {visibleKeys.map((key, i) => (
                   <th
                     key={key}
-                    className={`${metricCellThClass(key)} text-xs uppercase tracking-wider`}
+                    className={`${metricCellThClass(key)} text-xs uppercase tracking-wider${i === 0 ? " sticky left-8 z-10 bg-card min-w-[120px]" : ""}`}
                   >
                     {tableMetricLabel(key)}
                   </th>
@@ -700,10 +701,10 @@ export default function WatchlistTable({
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted uppercase tracking-wider">
                   <th className="sticky left-0 z-10 bg-card px-2 py-3 w-8"></th>
-                  {visibleKeys.map((key) => (
+                  {visibleKeys.map((key, i) => (
                     <th
                       key={key}
-                      className={`${metricCellThClass(key)} text-xs uppercase tracking-wider`}
+                      className={`${metricCellThClass(key)} text-xs uppercase tracking-wider${i === 0 ? " sticky left-8 z-10 bg-card min-w-[120px]" : ""}`}
                     >
                       {tableMetricLabel(key)}
                     </th>

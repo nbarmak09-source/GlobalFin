@@ -335,7 +335,7 @@ export default function DashboardPortfolioPanel() {
   const displayWatchlist = watchlist.slice(0, 10);
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 overflow-hidden space-y-3">
       {/* Header row */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         {/* Toggle pills */}
@@ -473,10 +473,10 @@ export default function DashboardPortfolioPanel() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="table-fixed w-full">
+              <table className="w-full">
                 <thead>
                   <tr>
-                    <th className={`${thClass} min-w-0 text-left pr-4`}>Ticker</th>
+                    <th className={`${thClass} sticky left-0 z-10 bg-card min-w-[100px] text-left pr-4`}>Ticker</th>
                     <th
                       className={`${thClass} w-[7.25rem] text-center px-0`}
                       title="Regular session low / high (Yahoo). Marker = regular market price within that range."
@@ -502,7 +502,7 @@ export default function DashboardPortfolioPanel() {
                           className="border-b border-border/50 last:border-0 hover:bg-card/40 cursor-pointer transition-colors duration-150"
                           onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(pos.symbol)}`)}
                         >
-                          <td className="py-2.5 pr-4 min-w-0 align-top">
+                          <td className="sticky left-0 z-10 bg-card min-w-[100px] py-2.5 pr-4 align-top">
                             <div className="font-semibold text-[12px] text-foreground">{pos.symbol}</div>
                             <div className="text-[10px] text-muted truncate max-w-[160px]">
                               {pos.name.length > 18 ? pos.name.slice(0, 18) + "…" : pos.name}
@@ -596,7 +596,7 @@ export default function DashboardPortfolioPanel() {
               <table className="w-full">
                 <thead>
                   <tr>
-                    <th className={`${thClass} pr-4 text-left`}>Ticker</th>
+                    <th className={`${thClass} sticky left-0 z-10 bg-card min-w-[100px] pr-4 text-left`}>Ticker</th>
                     <th className={`${thClass} px-2 text-right`}>Day range</th>
                     <th className={`${thClass} px-2 text-right`}>52W</th>
                     <th className={`${thClass} px-2 text-right`}>Price</th>
@@ -615,7 +615,7 @@ export default function DashboardPortfolioPanel() {
                           className="border-b border-border/50 last:border-0 hover:bg-card/40 cursor-pointer transition-colors duration-150"
                           onClick={() => router.push(`/analysis?symbol=${encodeURIComponent(item.symbol)}`)}
                         >
-                          <td className="py-2.5 pr-4">
+                          <td className="sticky left-0 z-10 bg-card min-w-[100px] py-2.5 pr-4">
                             <div className="font-semibold text-[12px] text-foreground">{item.symbol}</div>
                             <div className="text-[10px] text-muted truncate max-w-[160px]">{item.name}</div>
                           </td>

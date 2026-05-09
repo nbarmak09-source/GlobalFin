@@ -214,7 +214,7 @@ function SortableRow({
           </button>
         )}
       </td>
-      {visibleKeys.map((metricKey) => {
+      {visibleKeys.map((metricKey, i) => {
         if (metricKey === "shares" && onUpdatePosition) {
           return (
             <EditableNumberCell
@@ -247,6 +247,7 @@ function SortableRow({
                 isExpanded,
                 numberScale,
                 totalPortfolioValue,
+                tdClassName: i === 0 ? "sticky left-8 z-10 bg-card min-w-[120px] hover:bg-card-hover" : undefined,
               }
             )}
           </Fragment>
@@ -381,8 +382,8 @@ export default function PortfolioTable({
               <thead>
                 <tr>
                   <th className={headerThStickyFirst} />
-                  {visibleKeys.map((key) => (
-                    <th key={key} className={`${metricCellThClass(key)} ${headerTh}`}>
+                  {visibleKeys.map((key, i) => (
+                    <th key={key} className={`${metricCellThClass(key)} ${headerTh}${i === 0 ? " sticky left-8 z-10 bg-card min-w-[120px]" : ""}`}>
                       {tableMetricLabel(key)}
                     </th>
                   ))}
@@ -446,11 +447,12 @@ export default function PortfolioTable({
     p.ytdReturn != null && Number.isFinite(p.ytdReturn) ? p.ytdReturn : null
   );
 
-  function totalCell(metricKey: string): ReactNode {
+  function totalCell(metricKey: string, isFirst = false): ReactNode {
+    const firstColClass = isFirst ? " sticky left-8 z-10 bg-card min-w-[120px]" : "";
     switch (metricKey) {
       case "ticker":
         return (
-          <td className={`${metricCellThClass(metricKey)} font-medium text-[13px] text-foreground`}>
+          <td className={`${metricCellThClass(metricKey)} font-medium text-[13px] text-foreground${firstColClass}`}>
             Total Position
           </td>
         );
@@ -461,7 +463,7 @@ export default function PortfolioTable({
       case "week52High":
       case "week52Low":
         return (
-          <td className={metricCellThClass(metricKey)}>
+          <td className={`${metricCellThClass(metricKey)}${firstColClass}`}>
             <span className="text-muted">—</span>
           </td>
         );
@@ -627,10 +629,10 @@ export default function PortfolioTable({
                 <thead>
                   <tr>
                     <th className={headerThStickyFirst} />
-                    {visibleKeys.map((key) => (
+                    {visibleKeys.map((key, i) => (
                       <th
                         key={key}
-                        className={`${metricCellThClass(key)} ${headerTh}`}
+                        className={`${metricCellThClass(key)} ${headerTh}${i === 0 ? " sticky left-8 z-10 bg-card min-w-[120px]" : ""}`}
                       >
                         {tableMetricLabel(key)}
                       </th>
@@ -678,8 +680,8 @@ export default function PortfolioTable({
                   </SortableContext>
                   <tr className="border-t border-border bg-card/60">
                     <td className="sticky left-0 z-10 bg-card w-8 px-2 py-3" />
-                    {visibleKeys.map((key) => (
-                      <Fragment key={`total-${key}`}>{totalCell(key)}</Fragment>
+                    {visibleKeys.map((key, i) => (
+                      <Fragment key={`total-${key}`}>{totalCell(key, i === 0)}</Fragment>
                     ))}
                     <td className="px-4 py-3" />
                   </tr>

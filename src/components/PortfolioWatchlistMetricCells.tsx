@@ -142,6 +142,8 @@ export interface MetricCellOpts {
   numberScale?: NumberScale;
   /** Holdings table total value, used for % of portfolio. */
   totalPortfolioValue?: number;
+  /** Extra classes merged onto the outer <td> (e.g. sticky positioning for the first column). */
+  tdClassName?: string;
 }
 
 function ClearbitOrLetterAvatar({ symbol }: { symbol: string }) {
@@ -191,6 +193,7 @@ export function renderPortfolioWatchlistMetricCell(
     isExpanded,
     numberScale = "B",
     totalPortfolioValue = 0,
+    tdClassName = "",
   } = opts;
   const row = pack.row;
   const isHoldings = pack.mode === "holdings";
@@ -200,7 +203,7 @@ export function renderPortfolioWatchlistMetricCell(
       if (isHoldings) {
         const hp = pack.row;
         return (
-          <td className={`${metricCellThClass(metricKey)} min-w-0`}>
+          <td className={`${metricCellThClass(metricKey)} min-w-0${tdClassName ? ` ${tdClassName}` : ""}`}>
             <div className="flex items-center gap-2 min-w-0">
               <ClearbitOrLetterAvatar symbol={hp.symbol} />
               <div className="min-w-0 flex-1">
@@ -230,7 +233,7 @@ export function renderPortfolioWatchlistMetricCell(
         );
       }
       return (
-        <td className={`${metricCellThClass(metricKey)} min-w-0`}>
+        <td className={`${metricCellThClass(metricKey)} min-w-0${tdClassName ? ` ${tdClassName}` : ""}`}>
           <div className="flex items-center gap-2 min-w-0">
             <Link
               href={stocksHref}
@@ -252,7 +255,7 @@ export function renderPortfolioWatchlistMetricCell(
       );
     case "name":
       return (
-        <td className={`${metricCellThClass(metricKey)} min-w-0 max-w-[12rem]`}>
+        <td className={`${metricCellThClass(metricKey)} min-w-0 max-w-[12rem]${tdClassName ? ` ${tdClassName}` : ""}`}>
           <div className="flex items-center gap-2 min-w-0">
             <Link
               href={stocksHref}
