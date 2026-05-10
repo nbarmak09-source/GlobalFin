@@ -28,6 +28,8 @@ market-summary-cache.json
 visual-capitalist-cache.json
 vc-daily-cache.json
 sec-financials-cache.json
+globalfin*.zip
+globalfin-mobile-review-*.tar.gz
 capital-markets*.zip
 capital-markets-mobile-review-*.tar.gz
 public/vc-daily.*

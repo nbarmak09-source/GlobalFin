@@ -9,14 +9,14 @@ So Vercel (or anyone) can clone and deploy your app.
 1. Go to [github.com](https://github.com) and sign in.
 2. Click the **+** (top right) → **New repository**.
 3. Fill in:
-   - **Repository name:** e.g. `capital-markets` or `gcm-hq` (no spaces).
-   - **Description:** optional (e.g. "Personal capital markets dashboard").
+   - **Repository name:** e.g. `globalfin` (no spaces).
+   - **Description:** optional (e.g. "Personal finance / GlobalFin dashboard").
    - **Public** (so Vercel can access it).
    - **Do not** check "Add a README" or "Add .gitignore" — you already have a project.
 4. Click **Create repository**.
 
 GitHub will show you a page with a URL like:
-`https://github.com/YOUR_USERNAME/capital-markets.git`
+`https://github.com/YOUR_USERNAME/globalfin.git`
 
 Copy that URL — you’ll use it in the next step.
 
@@ -34,7 +34,7 @@ git remote add origin https://github.com/YOUR_USERNAME/REPO_NAME.git
 git add .
 
 # Commit
-git commit -m "Initial commit: Capital Markets app"
+git commit -m "Initial commit: GlobalFin"
 
 # Push to GitHub (first time: set upstream for main)
 git push -u origin main
@@ -49,7 +49,7 @@ If GitHub asks for a password, use a **Personal Access Token** (see below), not 
 GitHub no longer accepts account passwords over HTTPS. Use a **Personal Access Token**:
 
 1. GitHub → **Settings** (your profile) → **Developer settings** → **Personal access tokens** → **Tokens (classic)**.
-2. **Generate new token (classic)**. Name it e.g. "Vercel / Capital Markets".
+2. **Generate new token (classic)**. Name it e.g. "Vercel / GlobalFin".
 3. Set an expiration (e.g. 90 days or No expiration).
 4. Under **Scopes**, check **repo** (full control of private repositories).
 5. **Generate token** and copy it once (GitHub won’t show it again).

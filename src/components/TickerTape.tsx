@@ -53,7 +53,18 @@ export default function TickerTape() {
 
   const [items, setItems] = useState<TickerItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tabVisible, setTabVisible] = useState(true);
   const rowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onVisibilityChange() {
+      setTabVisible(!document.hidden);
+    }
+    onVisibilityChange();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
 
   async function fetchTicker() {
     try {
@@ -138,6 +149,9 @@ export default function TickerTape() {
       <div
         ref={rowRef}
         className="ticker-animate flex h-full touch-pan-x items-center whitespace-nowrap w-max"
+        style={{
+          animationPlayState: tabVisible ? "running" : "paused",
+        }}
       >
         {/* Live dot — shown once before the first item */}
         <span

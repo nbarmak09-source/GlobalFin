@@ -165,7 +165,7 @@ export default function EquitiesDashboard({
         action={
           <span className="badge badge-gold">
             <Sparkles className="h-3 w-3" />
-            <span className="hidden sm:inline">Capital markets</span>
+            <span className="hidden sm:inline">GlobalFin</span>
           </span>
         }
       />

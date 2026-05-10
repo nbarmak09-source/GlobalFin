@@ -52,7 +52,7 @@ export async function GET() {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Content-Disposition": `attachment; filename="capital-markets-hub-export-${dateStr}.json"`,
+        "Content-Disposition": `attachment; filename="globalfin-export-${dateStr}.json"`,
       },
     });
     return res;

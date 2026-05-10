@@ -354,7 +354,7 @@ export default function AccountPage() {
       const res = await fetch("/api/account/export");
       if (!res.ok) return;
       const cd = res.headers.get("Content-Disposition");
-      let filename = `capital-markets-hub-export-${new Date().toISOString().split("T")[0]}.json`;
+      let filename = `globalfin-export-${new Date().toISOString().split("T")[0]}.json`;
       if (cd) {
         const m = cd.match(/filename="([^"]+)"/);
         if (m) filename = m[1];

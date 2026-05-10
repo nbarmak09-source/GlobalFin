@@ -194,7 +194,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className="sticky top-10 z-40 md:top-0 flex flex-col border-b border-border bg-card/90 backdrop-blur-md pt-[env(safe-area-inset-top)]"
+      className="sticky top-10 z-40 md:top-0 flex flex-col border-b border-border bg-card pt-[env(safe-area-inset-top)] md:bg-card/90 md:backdrop-blur-md"
     >
       <div className="flex h-14 w-full min-w-0 items-center justify-between gap-2 px-3 sm:px-4">
         <Link

@@ -43,6 +43,8 @@ export const metadata: Metadata = {
   description:
     "Institutional-grade market intelligence, execution systems, and analytics designed for modern finance.",
   keywords: [
+    "GlobalFin",
+    "globalfin",
     "capital markets",
     "market intelligence",
     "institutional finance",

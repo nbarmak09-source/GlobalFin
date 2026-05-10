@@ -1,6 +1,6 @@
 # Vercel setup guide
 
-Get your Capital Markets app deployed on Vercel and wired to your database and auth.
+Get your GlobalFin app deployed on Vercel and wired to your database and auth.
 
 ---
 
@@ -52,7 +52,7 @@ See also: **`npm run db:url`** (prints this flow).
 
 1. Go to [vercel.com](https://vercel.com) and sign in (GitHub is easiest if your repo is on GitHub).
 2. Click **Add New…** → **Project**.
-3. **Import** your Git repository (e.g. `your-username/Capital-Markets`).
+3. **Import** your Git repository (e.g. `your-username/globalfin`).
 4. Vercel will detect Next.js. Leave the defaults unless you use a different root:
    - **Framework Preset:** Next.js
    - **Root Directory:** `./` (or the folder that contains `package.json` if different)

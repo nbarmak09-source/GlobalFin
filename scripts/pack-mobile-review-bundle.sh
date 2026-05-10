@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Build a chat-safe archive: mobile PNGs + review prompt only (no .env, no source).
-# Output: capital-markets-mobile-review-YYYYMMDD-HHMM.tar.gz (not .zip — fewer upload blocks)
+# Output: globalfin-mobile-review-YYYYMMDD-HHMM.tar.gz (not .zip — fewer upload blocks)
 
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 STAMP="$(date +%Y%m%d-%H%M)"
-OUT="capital-markets-mobile-review-${STAMP}.tar.gz"
+OUT="globalfin-mobile-review-${STAMP}.tar.gz"
 MANIFEST="mobile-review-bundle-MANIFEST.txt"
 
 if [[ ! -d screenshots ]] || [[ -z "$(ls -A screenshots 2>/dev/null)" ]]; then
@@ -21,7 +21,7 @@ if [[ ! -f mobile-screenshot-review-prompt.md ]]; then
 fi
 
 {
-  echo "Capital Markets — mobile screenshot review pack"
+  echo "GlobalFin — mobile screenshot review pack"
   echo "Built: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   echo ""
   echo "Contains only:"

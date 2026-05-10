@@ -134,12 +134,7 @@ export function TopBar() {
 
   return (
     <header
-      className="fixed top-0 right-0 z-20 flex flex-col left-0 md:left-[88px]"
-      style={{
-        background: 'rgba(11,11,15,0.9)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-      }}
+      className="gcm-topbar-shell fixed top-0 right-0 z-20 flex flex-col left-0 md:left-[88px]"
     >
       {/* Search row — desktop only */}
       <div

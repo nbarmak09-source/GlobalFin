@@ -29,16 +29,12 @@ export default function MobileBottomNav() {
 
   return (
     <nav
-      className={`fixed bottom-0 left-0 right-0 z-30 md:hidden transition-all duration-200 ${
+      className={`gcm-mobile-bottom-nav-shell fixed bottom-0 left-0 right-0 z-30 md:hidden transition-all duration-200 ${
         menuOpen ? "opacity-0 pointer-events-none translate-y-2" : "opacity-100 translate-y-0"
       }`}
       style={{
-        background: "rgba(11,11,15,0.95)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
         borderTop: "1px solid rgba(255,255,255,0.08)",
         paddingBottom: "env(safe-area-inset-bottom)",
-        willChange: "transform",
       }}
       aria-label="Primary navigation"
     >
