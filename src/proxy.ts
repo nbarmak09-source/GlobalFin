@@ -37,6 +37,7 @@ const PUBLIC_API_ROUTES = [
   "/api/macro-indicators",
   "/api/macro-indicators/global",
   "/api/macro-news",
+  "/api/cron/alerts",
 ];
 
 function getClientIp(request: NextRequest): string {

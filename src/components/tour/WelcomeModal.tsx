@@ -56,7 +56,7 @@ export default function WelcomeModal({ onStart, onSkip }: Props) {
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-muted">
             You now have access to live market data, financial models, AI research tools, and supply
-            chain intelligence — all in one platform. This 2-minute tour covers the essentials.
+            chain intelligence — all in one platform. This 3-minute tour covers every major feature.
           </p>
 
           <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
@@ -77,7 +77,7 @@ export default function WelcomeModal({ onStart, onSkip }: Props) {
         </div>
 
         <div className="flex flex-col gap-3 border-t border-card-hover px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted">About 2 minutes</p>
+          <p className="text-sm text-muted">About 3 minutes</p>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"

@@ -33,6 +33,7 @@ export async function GET() {
           createdAt: true,
           tickerTapeMode: true,
           tickerTapeSymbols: true,
+          priceAlertEmails: true,
         },
       }),
       prisma.account.findMany({
@@ -59,6 +60,7 @@ export async function GET() {
         ? user.tickerTapeMode
         : "default") as TickerTapeMode,
       tickerTapeSymbols: customSyms,
+      priceAlertEmails: user.priceAlertEmails,
     });
   } catch (e) {
     console.error("GET /api/account/profile:", e);
@@ -78,6 +80,7 @@ export async function PATCH(request: NextRequest) {
       bio?: unknown;
       tickerTapeMode?: unknown;
       tickerTapeSymbols?: unknown;
+      priceAlertEmails?: unknown;
     } | null;
     if (!body || typeof body !== "object") {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
@@ -87,6 +90,7 @@ export async function PATCH(request: NextRequest) {
     const bioRaw = body.bio;
     const tickerTapeModeRaw = body.tickerTapeMode;
     const tickerTapeSymbolsRaw = body.tickerTapeSymbols;
+    const priceAlertEmailsRaw = body.priceAlertEmails;
 
     if (nameRaw !== undefined) {
       if (typeof nameRaw !== "string") {
@@ -124,6 +128,16 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    if (
+      priceAlertEmailsRaw !== undefined &&
+      typeof priceAlertEmailsRaw !== "boolean"
+    ) {
+      return NextResponse.json(
+        { error: "priceAlertEmails must be a boolean" },
+        { status: 400 }
+      );
+    }
+
     const hasTickerPatch =
       tickerTapeModeRaw !== undefined || tickerTapeSymbolsRaw !== undefined;
 
@@ -139,6 +153,9 @@ export async function PATCH(request: NextRequest) {
     const data: Prisma.UserUpdateInput = {};
     if (nameRaw !== undefined) data.name = (nameRaw as string).trim();
     if (bioRaw !== undefined) data.bio = bioRaw === null ? null : (bioRaw as string);
+    if (priceAlertEmailsRaw !== undefined) {
+      data.priceAlertEmails = priceAlertEmailsRaw as boolean;
+    }
 
     if (tickerTapeModeRaw !== undefined) {
       data.tickerTapeMode = tickerTapeModeRaw;
@@ -194,6 +211,7 @@ export async function PATCH(request: NextRequest) {
         createdAt: true,
         tickerTapeMode: true,
         tickerTapeSymbols: true,
+        priceAlertEmails: true,
       },
     });
 
@@ -205,6 +223,7 @@ export async function PATCH(request: NextRequest) {
         ? updated.tickerTapeMode
         : "default") as TickerTapeMode,
       tickerTapeSymbols: customSyms,
+      priceAlertEmails: updated.priceAlertEmails,
     });
   } catch (e) {
     console.error("PATCH /api/account/profile:", e);

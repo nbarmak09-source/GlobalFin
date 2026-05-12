@@ -61,11 +61,15 @@ function DayRangeIndicator({
   high,
   price,
   dayChangePercent,
+  compact = false,
+  className = "w-[7.25rem] shrink-0 mx-auto",
 }: {
   low: number;
   high: number;
   price: number;
   dayChangePercent: number;
+  compact?: boolean;
+  className?: string;
 }) {
   const ok =
     Number.isFinite(low) &&
@@ -74,10 +78,20 @@ function DayRangeIndicator({
     low > 0 &&
     high >= low;
 
+  const emptyMinH = compact ? "min-h-[1.125rem]" : "min-h-[2.25rem]";
+  const emptyText = compact ? "text-[9px]" : "text-[10px]";
+  const labelClass = compact
+    ? "flex justify-between gap-0.5 text-[8px] font-mono text-muted tabular-nums leading-none px-px"
+    : "flex justify-between gap-1 text-[9px] font-mono text-muted tabular-nums leading-none px-px";
+  const barH = compact ? "h-1" : "h-1.5";
+  const markerClassSuffix = compact
+    ? "w-[2px] h-2.5 rounded-[1px] shadow-sm ring-1 ring-background"
+    : "w-[3px] h-3.5 rounded-[2px] shadow-sm ring-1 ring-background";
+
   if (!ok) {
     return (
-      <div className="opacity-80 w-[7.25rem] shrink-0 flex justify-center mx-auto min-h-[2.25rem] items-center" aria-hidden>
-        <span className="text-[10px] text-muted">—</span>
+      <div className={`opacity-80 flex justify-center ${emptyMinH} items-center ${className}`} aria-hidden>
+        <span className={`${emptyText} text-muted`}>—</span>
       </div>
     );
   }
@@ -93,23 +107,29 @@ function DayRangeIndicator({
 
   return (
     <div
-      className="opacity-95 w-[7.25rem] shrink-0 flex flex-col justify-center gap-0.5 mx-auto py-0.5"
+      className={`opacity-95 flex flex-col justify-center ${compact ? "gap-px py-0" : "gap-0.5 py-0.5"} ${className}`}
       role="img"
       title={tip}
       aria-label={`Regular session range ${formatSessionEndpoint(low)} to ${formatSessionEndpoint(high)}; price about ${Math.round(pctThrough)}% from low toward high${clamped ? "; pinned to end of bar" : ""}`}
     >
-      <div className="flex justify-between gap-1 text-[9px] font-mono text-muted tabular-nums leading-none px-px">
+      <div className={labelClass}>
         <span className="truncate min-w-0">{formatSessionEndpoint(low)}</span>
         <span className="truncate min-w-0 text-right">{formatSessionEndpoint(high)}</span>
       </div>
-      <div className="relative h-1.5 w-full rounded-full bg-gradient-to-r from-red/20 via-muted/40 to-green/20 overflow-visible">
+      <div className={`relative ${barH} w-full rounded-full bg-gradient-to-r from-red/20 via-muted/40 to-green/20 overflow-visible`}>
         <div
-          className={`absolute top-1/2 z-[1] -translate-x-1/2 -translate-y-1/2 w-[3px] h-3.5 rounded-[2px] shadow-sm ring-1 ring-background ${markerClass}`}
+          className={`absolute top-1/2 z-[1] -translate-x-1/2 -translate-y-1/2 ${markerClassSuffix} ${markerClass}`}
           style={{ left: `${pctThrough}%` }}
         />
       </div>
     </div>
   );
+}
+
+/** Company market cap from Yahoo (USD raw); billions via fmtBn. */
+function formatCompanyMarketCap(usdRaw: number): string {
+  if (!Number.isFinite(usdRaw) || usdRaw <= 0) return "—";
+  return fmtBn(usdRaw / 1e9);
 }
 
 
@@ -446,7 +466,7 @@ export default function DashboardPortfolioPanel() {
       )}
 
       {/* Loading */}
-      {loading && <SkeletonRows colSpan={7} />}
+      {loading && <SkeletonRows colSpan={9} />}
 
       {/* Error */}
       {!loading && error && (
@@ -555,17 +575,21 @@ export default function DashboardPortfolioPanel() {
                       <th className={`${thClass} sticky left-0 z-10 bg-background min-w-[100px] text-left pr-4`}>
                         Ticker
                       </th>
+                      <th className={`${thClass} max-w-[7rem] text-left px-2`}>Sector</th>
+                      <th className={`${thClass} w-[4.25rem] text-right tabular-nums px-2`}>
+                        Mkt cap
+                      </th>
                       <th
-                        className={`${thClass} w-[7.25rem] text-center px-0`}
-                        title="Regular session low / high (Yahoo). Marker = regular market price within that range."
+                        className={`${thClass} px-3`}
+                        title="5-day sparkline and regular session low / high (Yahoo). Marker = regular market price within that range."
                       >
-                        <span className="sr-only">Day range</span>
+                        <span className="sr-only">Trend / Session range</span>
                       </th>
                       <th className={`${thClass} w-20 text-right tabular-nums px-2`}>Price</th>
                       <th className={`${thClass} w-20 text-right px-2`}>Day %</th>
                       <th className={`${thClass} w-20 text-right px-2`}>P&amp;L %</th>
                       <th className={`${thClass} hidden md:table-cell w-24 text-right tabular-nums pl-2`}>
-                        Mkt Value
+                        Value
                       </th>
                       <th className={`${thClass} w-9 px-0 text-center`} aria-label="Chart" />
                     </tr>
@@ -585,13 +609,33 @@ export default function DashboardPortfolioPanel() {
                             {pos.name.length > 18 ? pos.name.slice(0, 18) + "…" : pos.name}
                           </div>
                         </td>
-                        <td className="w-[7.25rem] text-center align-middle py-2.5 px-0">
-                          <DayRangeIndicator
-                            low={pos.regularMarketDayLow}
-                            high={pos.regularMarketDayHigh}
-                            price={pos.currentPrice}
-                            dayChangePercent={pos.dayChangePercent}
-                          />
+                        <td className="max-w-[7rem] px-2 py-2.5 align-top">
+                          <span
+                            className="text-[11px] text-muted leading-snug line-clamp-2"
+                            title={(pos.sector || "").trim() || undefined}
+                          >
+                            {(pos.sector || "").trim() || "—"}
+                          </span>
+                        </td>
+                        <td className="w-[4.25rem] px-2 py-2.5 text-right font-mono text-[11px] text-muted align-top tabular-nums whitespace-nowrap">
+                          {formatCompanyMarketCap(pos.marketCap)}
+                        </td>
+                        <td className="align-middle py-2.5 px-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <SymbolSparkline
+                              symbol={pos.symbol}
+                              trendPositive={pos.dayChangePercent >= 0}
+                              width={72}
+                            />
+                            <DayRangeIndicator
+                              low={pos.regularMarketDayLow}
+                              high={pos.regularMarketDayHigh}
+                              price={pos.currentPrice}
+                              dayChangePercent={pos.dayChangePercent}
+                              compact
+                              className="flex-1 min-w-[4.25rem] max-w-[14rem]"
+                            />
+                          </div>
                         </td>
                         <td className="w-20 px-2 py-2.5 text-right font-mono text-[12px] text-foreground align-top tabular-nums">
                           ${formatPrice(pos.currentPrice)}

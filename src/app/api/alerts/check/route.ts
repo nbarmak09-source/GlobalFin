@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getAlerts, markTriggered } from "@/lib/alerts";
-import { getMultipleQuotes } from "@/lib/yahoo";
+import { processPendingPriceAlerts } from "@/lib/priceAlertJobs";
 
 export async function POST() {
   try {
@@ -10,38 +9,17 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.user.id;
-    const alerts = await getAlerts(userId);
-    if (alerts.length === 0) {
-      return NextResponse.json({ updated: 0, total: 0 });
-    }
-
-    const symbols = [...new Set(alerts.map((a) => a.symbol))];
-    const quotes = await getMultipleQuotes(symbols);
-    const priceMap = new Map(
-      quotes.map((q) => [q.symbol, q.regularMarketPrice as number | null]),
+    const result = await processPendingPriceAlerts(
+      { userId: session.user.id },
+      { sendEmail: true },
     );
 
-    let updated = 0;
-
-    await Promise.all(
-      alerts.map(async (alert) => {
-        const currentPrice = priceMap.get(alert.symbol);
-        if (currentPrice == null) return;
-
-        const shouldTrigger =
-          alert.direction === "above"
-            ? currentPrice >= alert.targetPrice
-            : currentPrice <= alert.targetPrice;
-
-        if (shouldTrigger && !alert.triggered) {
-          await markTriggered(userId, alert.id);
-          updated += 1;
-        }
-      }),
-    );
-
-    return NextResponse.json({ updated, total: alerts.length });
+    return NextResponse.json({
+      updated: result.newlyTriggered,
+      total: result.scanned,
+      emailsSent: result.emailsSent,
+      emailFailures: result.emailFailures,
+    });
   } catch (error) {
     console.error("Alerts CHECK error:", error);
     return NextResponse.json(
@@ -50,4 +28,3 @@ export async function POST() {
     );
   }
 }
-

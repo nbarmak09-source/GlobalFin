@@ -23,6 +23,8 @@ model User {
   /** JSON string[] of Yahoo symbols when mode is custom */
   tickerTapeSymbols Json?    @map("ticker_tape_symbols")
   hashedPassword String?  // for credentials provider
+  /** When true, user receives email when a price alert fires (verified email only). */
+  priceAlertEmails Boolean @default(false) @map("price_alert_emails")
   accounts      Account[]
   sessions      Session[]
   positions     Position[]

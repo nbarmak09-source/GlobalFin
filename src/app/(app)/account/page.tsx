@@ -51,6 +51,7 @@ type ProfilePayload = {
   providers: string[];
   tickerTapeMode?: TickerTapeMode;
   tickerTapeSymbols?: string[];
+  priceAlertEmails?: boolean;
 };
 
 type StatsPayload = {
@@ -97,17 +98,22 @@ function formatPitchDate(iso: string) {
 function PrefToggle({
   on,
   onChange,
+  disabled,
 }: {
   on: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
-      onClick={() => onChange(!on)}
-      className="relative h-[18px] w-[34px] shrink-0 rounded-[9px] transition-colors duration-150 ease-out"
+      disabled={disabled}
+      onClick={() => {
+        if (!disabled) onChange(!on);
+      }}
+      className="relative h-[18px] w-[34px] shrink-0 rounded-[9px] transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50"
       style={{ backgroundColor: on ? "#c9a227" : "#2d333b" }}
     >
       <span
@@ -143,7 +149,7 @@ export default function AccountPage() {
   const [deleteInput, setDeleteInput] = useState("");
   const [deletePending, setDeletePending] = useState(false);
 
-  const [alertEmails, setAlertEmails] = useState(true);
+  const [alertEmails, setAlertEmails] = useState(false);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
 
   const [defaultModel, setDefaultModel] = useState("DCF");
@@ -168,8 +174,6 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const a = localStorage.getItem("gcm_alert_emails");
-    setAlertEmails(a !== "false");
     const w = localStorage.getItem("gcm_weekly_digest");
     setWeeklyDigest(w === "true");
     setDefaultModel(localStorage.getItem("gcm_default_model") ?? "DCF");
@@ -192,6 +196,29 @@ export default function AccountPage() {
         setDraftBio(data.bio ?? "");
         setTickerTapeMode(data.tickerTapeMode ?? "default");
         setTickerTapeCustomDraft((data.tickerTapeSymbols ?? []).join(", "));
+        setAlertEmails(!!data.priceAlertEmails);
+
+        if (typeof window !== "undefined") {
+          const legacy = localStorage.getItem("gcm_alert_emails");
+          if (legacy === "true" && !data.priceAlertEmails) {
+            localStorage.removeItem("gcm_alert_emails");
+            void (async () => {
+              try {
+                const res = await fetch("/api/account/profile", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ priceAlertEmails: true }),
+                  credentials: "include",
+                });
+                if (res.ok) setAlertEmails(true);
+              } catch {
+                /* silent */
+              }
+            })();
+          } else if (legacy !== null) {
+            localStorage.removeItem("gcm_alert_emails");
+          }
+        }
       } catch {
         /* silent */
       } finally {
@@ -797,15 +824,31 @@ export default function AccountPage() {
                   <Bell className="h-4 w-4 text-muted shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm text-foreground">Price alert emails</p>
-                    <p className="text-xs text-muted">Send me an email when alerts trigger</p>
-                    {/* TODO: Wire gcm_alert_emails to /api/alerts/check (or mailer) when email pipeline is ready */}
+                    <p className="text-xs text-muted">
+                      Email when a price target is hit (verified email only). Alerts are also checked
+                      every few minutes while the app is closed.
+                    </p>
                   </div>
                 </div>
                 <PrefToggle
                   on={alertEmails}
-                  onChange={(v) => {
+                  disabled={profileLoading}
+                  onChange={async (v) => {
+                    const prev = alertEmails;
                     setAlertEmails(v);
-                    localStorage.setItem("gcm_alert_emails", v ? "true" : "false");
+                    try {
+                      const res = await fetch("/api/account/profile", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ priceAlertEmails: v }),
+                        credentials: "include",
+                      });
+                      if (!res.ok) setAlertEmails(prev);
+                      else if (profile)
+                        setProfile({ ...profile, priceAlertEmails: v });
+                    } catch {
+                      setAlertEmails(prev);
+                    }
                   }}
                 />
               </div>

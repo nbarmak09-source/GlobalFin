@@ -48,25 +48,25 @@ export default function TourComplete({ onDone }: Props) {
 
         <div className="mt-6 grid grid-cols-2 gap-2">
           <Link
-            href="/stocks"
+            href="/analysis"
             onClick={onDone}
             className="rounded-xl border border-border bg-card-hover px-3 py-3 text-center text-xs font-medium text-foreground transition-colors duration-200 hover:bg-border cursor-pointer"
           >
-            Search a ticker
+            Analyse a stock
           </Link>
           <Link
             href="/research"
             onClick={onDone}
             className="rounded-xl border border-border bg-card-hover px-3 py-3 text-center text-xs font-medium text-foreground transition-colors duration-200 hover:bg-border cursor-pointer"
           >
-            Research page
+            Research ideas
           </Link>
           <Link
             href="/models"
             onClick={onDone}
             className="rounded-xl border border-border bg-card-hover px-3 py-3 text-center text-xs font-medium text-foreground transition-colors duration-200 hover:bg-border cursor-pointer"
           >
-            Tools &rarr; Models
+            Build a model
           </Link>
           <button
             type="button"
@@ -76,7 +76,7 @@ export default function TourComplete({ onDone }: Props) {
             }}
             className="rounded-xl border border-border bg-card-hover px-3 py-3 text-center text-xs font-medium text-foreground transition-colors duration-200 hover:bg-border cursor-pointer"
           >
-            Menu &rarr; Tour
+            Restart tour
           </button>
         </div>
 

@@ -7,6 +7,8 @@ interface SymbolSparklineProps {
   /** Fallback trend when fewer than two closes (e.g. still loading). */
   trendPositive: boolean;
   className?: string;
+  /** SVG render width in px. Scales via viewBox — defaults to 56. */
+  width?: number;
 }
 
 const MAX_POINTS = 48;
@@ -53,10 +55,16 @@ async function fetch5dCloses(symbol: string): Promise<number[]> {
   return p;
 }
 
+/** Avoid setState during the synchronous observe() callback / layout flush (DEV Fast Refresh races). */
+function scheduleIdle(cb: () => void) {
+  queueMicrotask(cb);
+}
+
 function SymbolSparkline({
   symbol,
   trendPositive,
   className = "",
+  width = 56,
 }: SymbolSparklineProps) {
   const rootRef = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
@@ -66,19 +74,32 @@ function SymbolSparkline({
     const el = rootRef.current;
     if (!el) return;
 
+    let cancelled = false;
+
     if (typeof IntersectionObserver !== "undefined") {
       const ob = new IntersectionObserver(
         ([e]) => {
-          if (e?.isIntersecting) setVisible(true);
+          if (!e?.isIntersecting) return;
+          ob.disconnect();
+          scheduleIdle(() => {
+            if (!cancelled) setVisible(true);
+          });
         },
         { rootMargin: "120px 0px", threshold: 0 }
       );
       ob.observe(el);
-      return () => ob.disconnect();
+      return () => {
+        cancelled = true;
+        ob.disconnect();
+      };
     }
 
-    setVisible(true);
-    return undefined;
+    scheduleIdle(() => {
+      if (!cancelled) setVisible(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -86,7 +107,11 @@ function SymbolSparkline({
     let alive = true;
     void (async () => {
       const c = await fetch5dCloses(symbol);
-      if (alive) setCloses(c.length >= 2 ? c : []);
+      if (!alive) return;
+      scheduleIdle(() => {
+        if (!alive) return;
+        setCloses(c.length >= 2 ? c : []);
+      });
     })();
     return () => {
       alive = false;
@@ -122,7 +147,7 @@ function SymbolSparkline({
   return (
     <span ref={rootRef} className={`inline-flex shrink-0 ${className}`}>
       <svg
-        width={56}
+        width={width}
         height={28}
         viewBox="0 0 56 28"
         className={`shrink-0 ${up ? "text-green" : "text-red"}`}

@@ -14,6 +14,10 @@ import {
   Filter,
   LineChart,
   Bell,
+  Globe,
+  TrendingUp,
+  BarChart3,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
 
@@ -31,6 +35,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Filter,
   LineChart,
   Bell,
+  Globe,
+  TrendingUp,
+  BarChart3,
+  Layers,
 };
 
 function findAttachTarget(selector?: string): HTMLElement | null {
