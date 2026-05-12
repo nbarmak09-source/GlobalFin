@@ -91,8 +91,6 @@ Add these for **Production** (and optionally **Preview** if you want branch depl
 | `NEXTAUTH_URL` | `https://your-project.vercel.app` | Replace with your actual Vercel URL after first deploy, or use a custom domain later. |
 | `NEXTAUTH_SECRET` | *(long random string)* | Run `openssl rand -base64 32` and paste the result. |
 | `RESEND_API_KEY` | `re_...` | From [resend.com](https://resend.com) → API Keys. |
-| `CRON_SECRET` | *(long random string)* | e.g. `openssl rand -base64 32`. Vercel Cron calls `/api/cron/alerts` with `Authorization: Bearer <CRON_SECRET>` when this env var is set. Required for background price-alert checks. |
-| `EMAIL_FROM` | `notifications@yourdomain.com` | Optional. Verified sender in Resend; defaults to `onboarding@resend.dev`. |
 
 Optional (add if you use them):
 
@@ -100,6 +98,7 @@ Optional (add if you use them):
 |------|--------|
 | `FRED_API_KEY` | Your FRED API key |
 | `ANTHROPIC_API_KEY` | Your Anthropic API key for chat/pitch |
+| `EMAIL_FROM` | e.g. `noreply@yourdomain.com` (verified in Resend) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | If using Google OAuth |
 | `GITHUB_ID` / `GITHUB_SECRET` | If using GitHub OAuth |
 
@@ -150,7 +149,7 @@ If you use Google or GitHub sign-in:
 
 - [ ] Repo connected to Vercel, build command is `npm run build`
 - [ ] Production DB exists, `prisma migrate deploy` run once with production `DATABASE_URL`
-- [ ] All required env vars set in Vercel (Production): `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `RESEND_API_KEY`, `CRON_SECRET`
+- [ ] All required env vars set in Vercel (Production): `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `RESEND_API_KEY`
 - [ ] First deploy succeeded
 - [ ] `NEXTAUTH_URL` updated to the real Vercel (or custom) URL and redeployed
 - [ ] (Optional) Custom domain added and `NEXTAUTH_URL` updated
