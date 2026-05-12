@@ -212,8 +212,11 @@ function findMillisForEtHm(
   hour: number,
   minute: number
 ): number {
-  const dayStart = Date.UTC(y, m - 1, d, 0, 0, 0);
-  for (let i = 0; i < 24 * 60; i++) {
+  // Start 1 hour before UTC midnight so we don't miss late ET times like
+  // 20:00 ET (= UTC 00:00 in EDT / UTC 01:00 in EST) that fall at or beyond
+  // the 24-hour boundary. Search 27 hours total to cover any DST offset.
+  const dayStart = Date.UTC(y, m - 1, d, 0, 0, 0) - 60 * 60_000;
+  for (let i = 0; i < 27 * 60; i++) {
     const t = dayStart + i * 60_000;
     const p = etParts(new Date(t));
     if (
