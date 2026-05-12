@@ -149,7 +149,7 @@ export async function GET() {
         date: sentimentObs[0]?.date,
         sourceUrl: fredSeriesUrl(SERIES.consumerSentiment),
       },
-    });
+    }, { headers: { "Cache-Control": "public, max-age=1800, stale-while-revalidate=3600" } });
   } catch (error) {
     console.error("Macro indicators error:", error);
     return NextResponse.json(
