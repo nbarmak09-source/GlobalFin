@@ -10,6 +10,24 @@ function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
+// Reuse a single formatter instance — creating Intl.DateTimeFormat on every
+// call is extremely expensive and caused the page to freeze on load.
+const _etPartsFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: TZ,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
+const _etWeekdayFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: TZ,
+  weekday: "short",
+});
+
 function etParts(d: Date): {
   y: number;
   m: number;
@@ -18,17 +36,7 @@ function etParts(d: Date): {
   min: number;
   sec: number;
 } {
-  const f = new Intl.DateTimeFormat("en-CA", {
-    timeZone: TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
-  const parts = f.formatToParts(d);
+  const parts = _etPartsFormatter.formatToParts(d);
   const get = (ty: Intl.DateTimeFormatPartTypes) =>
     parts.find((p) => p.type === ty)?.value ?? "0";
   return {
@@ -42,10 +50,7 @@ function etParts(d: Date): {
 }
 
 function etWeekdayJs(d: Date): number {
-  const s = new Intl.DateTimeFormat("en-US", {
-    timeZone: TZ,
-    weekday: "short",
-  }).format(d);
+  const s = _etWeekdayFormatter.format(d);
   const map: Record<string, number> = {
     Sun: 0,
     Mon: 1,
@@ -212,11 +217,16 @@ function findMillisForEtHm(
   hour: number,
   minute: number
 ): number {
-  // Start 1 hour before UTC midnight so we don't miss late ET times like
-  // 20:00 ET (= UTC 00:00 in EDT / UTC 01:00 in EST) that fall at or beyond
-  // the 24-hour boundary. Search 27 hours total to cover any DST offset.
-  const dayStart = Date.UTC(y, m - 1, d, 0, 0, 0) - 60 * 60_000;
-  for (let i = 0; i < 27 * 60; i++) {
+  // For times >= 19:00 ET, the UTC equivalent can fall at or after UTC midnight
+  // (e.g. 20:00 EDT = UTC 00:00 next day). Start the search window early and
+  // extend it so those times are always found. For earlier hours the standard
+  // 24h window from UTC midnight is sufficient.
+  const lateNight = hour >= 19;
+  const dayStart = lateNight
+    ? Date.UTC(y, m - 1, d, 0, 0, 0) - 60 * 60_000
+    : Date.UTC(y, m - 1, d, 0, 0, 0);
+  const windowMins = lateNight ? 27 * 60 : 24 * 60;
+  for (let i = 0; i < windowMins; i++) {
     const t = dayStart + i * 60_000;
     const p = etParts(new Date(t));
     if (
